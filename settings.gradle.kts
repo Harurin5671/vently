@@ -24,4 +24,10 @@ dependencyResolutionManagement {
 
 rootProject.name = "Vently"
 include(":app")
- 
+include(":core:ui")
+include(":data")
+include(":shared:domain")
+include(":shared:sunat")
+include(":shared:data")
+include(":core:domain")
+include(":core:common")
