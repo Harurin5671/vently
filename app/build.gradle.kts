@@ -61,4 +61,5 @@ dependencies {
     // Hilt
     ksp(libs.google.dagger.hilt.compiler)
     implementation(libs.google.dagger.hilt.android)
+    implementation(project(":core:designsystem"))
 }
