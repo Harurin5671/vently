@@ -2,4 +2,11 @@
 <resources>
 
     <style name="Theme.Vently" parent="android:Theme.Material.Light.NoActionBar" />
+
+    <style name="Theme.Vently.SplashScreen" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/splash_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@mipmap/ic_launcher_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Vently</item>
+    </style>
+
 </resources>

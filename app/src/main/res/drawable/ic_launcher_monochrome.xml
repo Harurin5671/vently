@@ -4,9 +4,6 @@
     android:viewportWidth="108"
     android:viewportHeight="108">
 
-    <!-- Versión monocroma para Android 13+ (themed icons) -->
-    <!-- Todo en blanco - el sistema aplica el color del tema -->
-
     <path
         android:strokeColor="#FFFFFF"
         android:strokeWidth="9"

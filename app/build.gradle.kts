@@ -61,5 +61,7 @@ dependencies {
     // Hilt
     ksp(libs.google.dagger.hilt.compiler)
     implementation(libs.google.dagger.hilt.android)
+    // Splash Screen
+    implementation(libs.androidx.core.splashscreen)
     implementation(project(":core:designsystem"))
 }
