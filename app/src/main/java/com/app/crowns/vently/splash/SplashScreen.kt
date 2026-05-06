@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -24,9 +25,17 @@ import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.vently.R
+import kotlinx.coroutines.delay
 
 @Composable
-fun SplashScreen() {
+fun SplashScreen(
+    onSplashFinished: () -> Unit
+) {
+    LaunchedEffect(Unit) {             // ← 2. se ejecuta una sola vez al entrar
+        delay(3_000L)                  // ← 3. espera 3 segundos
+        onSplashFinished()             // ← 4. notifica al NavHost para navegar
+    }
+
     Box(
         modifier = Modifier
             .fillMaxSize()
@@ -62,6 +71,6 @@ fun SplashScreen() {
 @Composable
 private fun SplashScreenPreview() {
     VentlyTheme {
-        SplashScreen()
+        SplashScreen(onSplashFinished = {})
     }
 }

@@ -1,0 +1,8 @@
+package com.app.crowns.auth.ui
+
+import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
+
+sealed class AuthEvent {
+    data object Logout : AuthEvent()
+    data class HandleGoogleResult(val result: NativeSignInResult) : AuthEvent()
+}
