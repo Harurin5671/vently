@@ -57,6 +57,9 @@ dependencies {
     implementation(libs.supabase.compose.auth.ui)
     // Ktor
     implementation(libs.ktor.client.android)
+    implementation(libs.ktor.client.content.negotiation)
+    implementation(libs.ktor.client.logging)
+    implementation(libs.ktor.serialization.kotlinx.json)
     // Hilt Dagger
     implementation(libs.google.dagger.hilt.android)
     ksp(libs.google.dagger.hilt.compiler)

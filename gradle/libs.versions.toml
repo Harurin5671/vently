@@ -8,18 +8,18 @@ espressoCore = "3.7.0"
 lifecycleRuntimeKtx = "2.10.0"
 activityCompose = "1.13.0"
 kotlin = "2.3.21"
-composeBom = "2026.04.01"
+composeBom = "2026.05.00"
 appcompat = "1.7.1"
 material = "1.13.0"
 
 nav3Core = "1.1.1"
 hilt = "2.59.2"
 hiltNavigationCompose = "1.3.0"
-googleFonts = "1.11.0"
+googleFonts = "1.11.1"
 ksp = "2.3.5"
 supabase = "3.6.0"
 ktor = "3.4.3"
-runtime = "1.11.0"
+runtime = "1.11.1"
 
 [libraries]
 androidx-core-ktx = { group = "androidx.core", name = "core-ktx", version.ref = "coreKtx" }
@@ -60,6 +60,9 @@ supabase-compose-auth = { group = "io.github.jan-tennert.supabase", name = "comp
 supabase-compose-auth-ui = { group = "io.github.jan-tennert.supabase", name = "compose-auth-ui" }
 # Ktor
 ktor-client-android = { group = "io.ktor", name = "ktor-client-android", version.ref = "ktor" }
+ktor-client-content-negotiation = { group = "io.ktor", name = "ktor-client-content-negotiation", version.ref = "ktor" }
+ktor-client-logging             = { group = "io.ktor", name = "ktor-client-logging", version.ref = "ktor" }
+ktor-serialization-kotlinx-json = { group = "io.ktor", name = "ktor-serialization-kotlinx-json", version.ref = "ktor" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
 
 [plugins]
