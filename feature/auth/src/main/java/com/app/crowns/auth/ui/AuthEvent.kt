@@ -6,3 +6,8 @@ sealed class AuthEvent {
     data object Logout : AuthEvent()
     data class HandleGoogleResult(val result: NativeSignInResult) : AuthEvent()
 }
+
+sealed class AuthNavigationEvent {
+    data object NavigateToOnboarding : AuthNavigationEvent()
+    data object NavigateToHome : AuthNavigationEvent()
+}

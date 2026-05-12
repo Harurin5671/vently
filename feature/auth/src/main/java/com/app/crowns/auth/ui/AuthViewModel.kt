@@ -11,9 +11,11 @@ import com.app.crowns.auth.domain.usecase.IsSessionActiveUseCase
 import com.app.crowns.auth.domain.usecase.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
@@ -27,6 +29,9 @@ class AuthViewModel @Inject constructor(
 
     private val _state = MutableStateFlow(AuthUiState())
     val state: StateFlow<AuthUiState> = _state.asStateFlow()
+
+    private val _navigationEvent = Channel<AuthNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
 
     init {
         checkSession()
@@ -45,6 +50,7 @@ class AuthViewModel @Inject constructor(
             if (active) {
                 val user = getCurrentUser()
                 _state.update { it.copy(user = user, isAuthenticated = true) }
+                _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
             }
         }
     }
@@ -59,6 +65,7 @@ class AuthViewModel @Inject constructor(
                     _state.update {
                         it.copy(isLoading = false, isAuthenticated = true, user = user)
                     }
+                    _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
                 }
 
                 is NativeSignInResult.Error -> {

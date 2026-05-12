@@ -1,5 +1,6 @@
 package com.app.crowns.vently.navigation
 
+import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
@@ -8,6 +9,8 @@ import androidx.navigation3.runtime.NavKey
 import com.app.crowns.vently.splash.SplashScreen
 import com.app.crowns.auth.ui.login.LoginScreen
 import androidx.navigation3.ui.NavDisplay
+import com.app.crowns.onboarding.ui.pages.OnboardingScreen
+import com.app.crowns.vently.navigation.transition.DefaultTransitions
 
 @Composable
 fun AppNavHost(
@@ -17,6 +20,8 @@ fun AppNavHost(
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
+        transitionSpec = { DefaultTransitions.enter togetherWith DefaultTransitions.exit },
+        popTransitionSpec = { DefaultTransitions.popEnter togetherWith DefaultTransitions.popExit },
         entryProvider = { destination ->
             when (destination as AppDestination) {
                 is AppDestination.Splash -> NavEntry(destination) {
@@ -29,10 +34,22 @@ fun AppNavHost(
                 }
 
                 is AppDestination.Auth -> NavEntry(destination) {
-                    LoginScreen()
+                    LoginScreen(
+                        onNavigateToOnboarding = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Onboarding)
+                        }
+                    )
                 }
 
-                is AppDestination.Onboarding -> NavEntry(destination) { }
+                is AppDestination.Onboarding -> NavEntry(destination) {
+                    OnboardingScreen(
+                        onFinished = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Home)
+                        }
+                    )
+                }
 
                 is AppDestination.Home -> NavEntry(destination) { }
             }

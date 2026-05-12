@@ -17,6 +17,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
@@ -37,6 +38,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.auth.di.SupabaseEntryPoint
 import com.app.crowns.auth.domain.model.AuthError
 import com.app.crowns.auth.ui.AuthEvent
+import com.app.crowns.auth.ui.AuthNavigationEvent
 import com.app.crowns.auth.ui.AuthUiState
 import com.app.crowns.auth.ui.AuthViewModel
 import com.app.crowns.designsystem.R
@@ -49,9 +51,19 @@ import io.github.jan.supabase.compose.auth.composeAuth
 
 @Composable
 fun LoginScreen(
+    onNavigateToOnboarding: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        viewModel.navigationEvent.collect { event ->
+            when (event) {
+                is AuthNavigationEvent.NavigateToOnboarding -> onNavigateToOnboarding()
+                is AuthNavigationEvent.NavigateToHome -> { /* futuro */ }
+            }
+        }
+    }
 
     val context = LocalContext.current
     val supabaseClient = remember {
