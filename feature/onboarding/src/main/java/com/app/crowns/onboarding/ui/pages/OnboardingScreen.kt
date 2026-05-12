@@ -54,7 +54,15 @@ fun OnboardingScreen(
                 searchError = state.searchError,
                 businessName = state.companyInfo?.businessName ?: ""
             )
-            1 -> OnboardingSecondPage()
+            1 -> OnboardingSuccessScreen(
+                businessName = state.companyInfo?.businessName ?: "",
+                ruc = state.companyInfo?.documentNumber ?: state.ruc,
+                address = state.companyInfo?.address ?: "",
+                currentStep = 2,
+                totalSteps = state.totalPages,
+                onNavigateToApp = { viewModel.onEvent(OnboardingEvent.Finish) },
+                onAddPhoto = { /* TODO: Implement photo selection */ }
+            )
         }
     }
 }
