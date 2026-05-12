@@ -31,6 +31,7 @@ android {
         buildConfigField("String", "SUPABASE_URL", "\"${localProps.getProperty("SUPABASE_URL") ?: ""}\"")
         buildConfigField("String", "SUPABASE_ANON_KEY", "\"${localProps.getProperty("SUPABASE_ANON_KEY") ?: ""}\"")
         buildConfigField("String", "GOOGLE_CLIENT_ID", "\"${localProps.getProperty("GOOGLE_CLIENT_ID") ?: ""}\"")
+        buildConfigField("String", "API_BASE_URL", "\"${localProps.getProperty("API_BASE_URL") ?: ""}\"")
     }
 
     compileOptions {
@@ -52,6 +53,7 @@ dependencies {
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.auth)
+    implementation(libs.supabase.storage)
     implementation(libs.supabase.realtime)
     implementation(libs.supabase.compose.auth)
     implementation(libs.supabase.compose.auth.ui)

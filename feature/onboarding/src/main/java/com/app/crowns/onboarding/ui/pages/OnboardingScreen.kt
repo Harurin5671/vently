@@ -48,8 +48,11 @@ fun OnboardingScreen(
                 onBack = { viewModel.onEvent(OnboardingEvent.PreviousPage) },
                 onContinue = { viewModel.onEvent(OnboardingEvent.NextPage) },
                 ruc = state.ruc,
-                onChangedRuc = { rucVal -> viewModel.onEvent(OnboardingEvent.OnChangedRuc(ruc = rucVal))},
+                onChangedRuc = { rucVal -> viewModel.onEvent(OnboardingEvent.OnChangedRuc(ruc = rucVal)) },
                 isValid = state.isValid,
+                isSearching = state.isSearching,
+                searchError = state.searchError,
+                businessName = state.companyInfo?.businessName ?: ""
             )
             1 -> OnboardingSecondPage()
         }

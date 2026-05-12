@@ -39,10 +39,11 @@ dependencies {
     implementation(libs.androidx.compose.material3)
     implementation(libs.androidx.compose.material.icons.extended)
 
-    implementation(project(":core:designsystem"))
     implementation(libs.google.dagger.hilt.android)
     ksp(libs.google.dagger.hilt.compiler)
     implementation(libs.androidx.hilt.navigation.compose)
+    implementation(project(":core:designsystem"))
+    implementation(project(":core:network"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

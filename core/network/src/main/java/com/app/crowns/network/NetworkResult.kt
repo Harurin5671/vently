@@ -18,3 +18,12 @@ inline fun <T, R> NetworkResult<T>.fold(
     is NetworkResult.NetworkError -> onNetworkError(this)
     is NetworkResult.Unauthorized -> onUnauthorized()
 }
+
+inline fun <T, R> NetworkResult<T>.map(transform: (T) -> R): NetworkResult<R> {
+    return when (this) {
+        is NetworkResult.Success -> NetworkResult.Success(transform(data))
+        is NetworkResult.HttpError -> this
+        is NetworkResult.NetworkError -> this
+        is NetworkResult.Unauthorized -> this
+    }
+}

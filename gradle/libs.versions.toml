@@ -57,6 +57,7 @@ androidx-compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = 
 supabase-bom = { group = "io.github.jan-tennert.supabase", name = "bom", version.ref = "supabase" }
 supabase-postgrest = { group = "io.github.jan-tennert.supabase", name = "postgrest-kt" }
 supabase-auth = { group = "io.github.jan-tennert.supabase", name = "auth-kt" }
+supabase-storage = { group = "io.github.jan-tennert.supabase", name = "storage-kt" }
 supabase-realtime = { group = "io.github.jan-tennert.supabase", name = "realtime-kt" }
 supabase-compose-auth = { group = "io.github.jan-tennert.supabase", name = "compose-auth" }
 supabase-compose-auth-ui = { group = "io.github.jan-tennert.supabase", name = "compose-auth-ui" }

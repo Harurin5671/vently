@@ -41,6 +41,8 @@ fun VincularRucScreen(
     ruc: String,
     onChangedRuc: (String) -> Unit,
     isValid: Boolean,
+    isSearching: Boolean = false,          // ← nuevo
+    searchError: String? = null,
     businessName: String = "Ferretería López",
     currentStep: Int = 1,
     totalSteps: Int = 2,
@@ -53,7 +55,7 @@ fun VincularRucScreen(
             VincularRucTopBar(onBack = onBack)
         },
         bottomBar = {
-            VincularRucBottomBar(onContinue = onContinue)
+            VincularRucBottomBar(onContinue = onContinue, isValid = isValid, isSearching)
         }
     ) { innerPadding ->
         Column(
@@ -98,7 +100,14 @@ fun VincularRucScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ── Input RUC ──
-            RucInputSection(ruc = ruc, businessName = businessName, onChanged = onChangedRuc, isValid = isValid)
+            RucInputSection(
+                ruc = ruc,
+                businessName = businessName,
+                onChanged = onChangedRuc,
+                isValid = isValid,
+                isSearching = isSearching,
+                searchError = searchError,
+            )
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -152,7 +161,7 @@ private fun VincularRucTopBar(onBack: () -> Unit) {
 //  Bottom Bar con botón "Continuar"
 // ─────────────────────────────────────────────
 @Composable
-private fun VincularRucBottomBar(onContinue: () -> Unit) {
+private fun VincularRucBottomBar(onContinue: () -> Unit, isValid: Boolean, isSearching: Boolean) {
     Surface(
         color = Surface.copy(alpha = 0.9f),
         tonalElevation = 0.dp
@@ -165,6 +174,7 @@ private fun VincularRucBottomBar(onContinue: () -> Unit) {
         ) {
             Button(
                 onClick = onContinue,
+                enabled = isValid && !isSearching,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(48.dp),
@@ -174,17 +184,25 @@ private fun VincularRucBottomBar(onContinue: () -> Unit) {
                     contentColor = OnPrimary
                 )
             ) {
-                Text(
-                    text = "Continuar",
-                    fontWeight = FontWeight.SemiBold,
-                    fontSize = 16.sp
-                )
-                Spacer(modifier = Modifier.width(8.dp))
-                Icon(
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = null,
-                    modifier = Modifier.size(20.dp)
-                )
+                if (isSearching) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = OnPrimary,
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text(
+                        text = "Continuar",
+                        fontWeight = FontWeight.SemiBold,
+                        fontSize = 16.sp
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Icon(
+                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                }
             }
         }
     }
@@ -272,6 +290,8 @@ private fun RucInputSection(
     businessName: String,
     onChanged: (String) -> Unit,
     isValid: Boolean,
+    isSearching: Boolean,
+    searchError: String? = null,
 ) {
     Column {
         // Label + contador
@@ -304,7 +324,11 @@ private fun RucInputSection(
                 .background(SurfaceContainerLowest)
                 .border(
                     width = 1.5.dp,
-                    color = if (isValid) PrimaryContainer else OutlineVariant,
+                    color = when {
+                        searchError != null -> Error
+                        isValid -> Success
+                        else -> OutlineVariant
+                    },
                     shape = RoundedCornerShape(12.dp)
                 ),
             contentAlignment = Alignment.Center
@@ -312,6 +336,7 @@ private fun RucInputSection(
             BasicTextField(
                 value = ruc,
                 onValueChange = { if (it.length <= 11) onChanged(it) },
+                enabled = !isSearching,
                 modifier = Modifier
                     .fillMaxWidth()
                     .padding(horizontal = 16.dp),
@@ -339,23 +364,44 @@ private fun RucInputSection(
                             innerTextField()
                         }
 
-                        // Ícono de validación
-                        if (isValid) {
-                            Icon(
-                                imageVector = Icons.Filled.CheckCircle,
-                                contentDescription = "RUC válido",
-                                tint = Success,
-                                modifier = Modifier.size(24.dp)
-                            )
-                        } else {
-                            Spacer(modifier = Modifier.size(24.dp))
+                        // Ícono de validación o progreso
+                        Box(modifier = Modifier.size(24.dp)) {
+                            if (isSearching) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(20.dp),
+                                    color = PrimaryContainer,
+                                    strokeWidth = 2.dp
+                                )
+                            } else if (isValid) {
+                                Icon(
+                                    imageVector = Icons.Filled.CheckCircle,
+                                    contentDescription = "RUC válido",
+                                    tint = Success,
+                                    modifier = Modifier.size(24.dp)
+                                )
+                            }
                         }
                     }
                 }
             )
         }
 
-        if (isValid) {
+        if (isSearching) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "Buscando información...",
+                fontSize = 12.sp,
+                color = PrimaryContainer
+            )
+        } else if (searchError != null) {
+            Spacer(modifier = Modifier.height(8.dp))
+            Text(
+                text = "✕  $searchError",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Error
+            )
+        } else if (isValid && businessName.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
 
             // Feedback de validación

@@ -13,6 +13,7 @@ import javax.inject.Singleton
 import com.app.crowns.network.BuildConfig
 import io.github.jan.supabase.compose.auth.ComposeAuth
 import io.github.jan.supabase.compose.auth.googleNativeLogin
+import io.github.jan.supabase.storage.Storage
 
 @Module
 @InstallIn(SingletonComponent::class)
@@ -29,6 +30,7 @@ object SupabaseModule {
             host = "callback"
         }
         install(Postgrest)
+        install(Storage)
         install(ComposeAuth) {
             googleNativeLogin(serverClientId = BuildConfig.GOOGLE_CLIENT_ID)
         }

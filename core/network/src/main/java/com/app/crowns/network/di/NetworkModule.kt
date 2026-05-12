@@ -13,6 +13,7 @@ import io.ktor.client.plugins.logging.LogLevel
 import io.ktor.client.plugins.logging.Logging
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
+import javax.inject.Qualifier
 import javax.inject.Singleton
 
 @Module
@@ -46,4 +47,13 @@ object NetworkModule {
             level = if (BuildConfig.DEBUG) LogLevel.BODY else LogLevel.NONE
         }
     }
+
+    @Provides
+    @Singleton
+    @ApiBaseUrl                          // ← qualifier para no confundir con otras Strings
+    fun provideApiBaseUrl(): String = BuildConfig.API_BASE_URL
 }
+
+@Qualifier
+@Retention(AnnotationRetention.BINARY)
+annotation class ApiBaseUrl

@@ -1,7 +1,10 @@
 package com.app.crowns.onboarding.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.network.NetworkResult
+import com.app.crowns.onboarding.domain.usecase.GetCompanyInfoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +16,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class OnboardingViewModel @Inject constructor() : ViewModel() {
+class OnboardingViewModel @Inject constructor(
+    private val getCompanyInfoUseCase: GetCompanyInfoUseCase
+) : ViewModel() {
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
 
@@ -50,6 +55,53 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
     }
 
     private fun onChangedRuc(ruc: String) {
-        _state.update { it.copy(ruc = ruc, isValid = ruc.length == 11) }
+        _state.update {
+            it.copy(
+                ruc = ruc,
+                isValid = ruc.length == 11,
+                companyInfo = null,
+                searchError = null
+            )
+        }
+
+        if (ruc.length == 11) searchCompany(ruc)
+    }
+
+    private fun searchCompany(ruc: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isSearching = true, searchError = null) }
+            val result = getCompanyInfoUseCase(ruc)
+            Log.d("OnboardingViewModel", "Search result for RUC $ruc: $result")
+            when (result) {
+                is NetworkResult.Success -> _state.update {
+                    it.copy(
+                        isSearching = false,
+                        isValid = true,
+                        companyInfo = result.data,
+                    )
+                }
+                is NetworkResult.HttpError -> _state.update {
+                    it.copy(
+                        isSearching = false,
+                        isValid = false,
+                        searchError = "Error ${result.code}: ${result.message}",
+                    )
+                }
+                is NetworkResult.NetworkError -> _state.update {
+                    it.copy(
+                        isSearching = false,
+                        isValid = false,
+                        searchError = "No internet connection",
+                    )
+                }
+                is NetworkResult.Unauthorized -> _state.update {
+                    it.copy(
+                        isSearching = false,
+                        isValid = false,
+                        searchError = "Unauthorized",
+                    )
+                }
+            }
+        }
     }
 }
