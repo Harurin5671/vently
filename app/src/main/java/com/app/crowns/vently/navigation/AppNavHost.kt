@@ -26,9 +26,13 @@ fun AppNavHost(
             when (destination as AppDestination) {
                 is AppDestination.Splash -> NavEntry(destination) {
                     SplashScreen(
-                        onSplashFinished = {
+                        onNavigateToAuth = {
                             backStack.clear()
                             backStack.add(AppDestination.Auth)
+                        },
+                        onNavigateToHome = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Home)
                         }
                     )
                 }

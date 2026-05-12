@@ -13,6 +13,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -20,20 +21,26 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.vently.R
-import kotlinx.coroutines.delay
 
 @Composable
 fun SplashScreen(
-    onSplashFinished: () -> Unit
+    onNavigateToAuth: () -> Unit,
+    onNavigateToHome: () -> Unit,
+    viewModel: SplashViewModel = hiltViewModel()
 ) {
-    LaunchedEffect(Unit) {             // ← 2. se ejecuta una sola vez al entrar
-        delay(3_000L)                  // ← 3. espera 3 segundos
-        onSplashFinished()             // ← 4. notifica al NavHost para navegar
+    val isSessionActive by viewModel.isSessionActive.collectAsStateWithLifecycle()
+
+    LaunchedEffect(isSessionActive) {
+        isSessionActive?.let { active ->
+            if (active) onNavigateToHome() else onNavigateToAuth()
+        }
     }
 
     Box(
@@ -71,6 +78,9 @@ fun SplashScreen(
 @Composable
 private fun SplashScreenPreview() {
     VentlyTheme {
-        SplashScreen(onSplashFinished = {})
+        SplashScreen(
+            onNavigateToAuth = {},
+            onNavigateToHome = {}
+        )
     }
 }
