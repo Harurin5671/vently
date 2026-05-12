@@ -25,6 +25,7 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
             is OnboardingEvent.NextPage -> nextPage()
             is OnboardingEvent.PreviousPage -> previousPage()
             is OnboardingEvent.Finish -> finish()
+            is OnboardingEvent.OnChangedRuc -> onChangedRuc(ruc = event.ruc)
         }
     }
 
@@ -46,5 +47,9 @@ class OnboardingViewModel @Inject constructor() : ViewModel() {
         viewModelScope.launch {
             _navigationEvent.send(OnboardingNavigationEvent.NavigateToHome)
         }
+    }
+
+    private fun onChangedRuc(ruc: String) {
+        _state.update { it.copy(ruc = ruc, isValid = ruc.length == 11) }
     }
 }

@@ -1,30 +1,36 @@
 package com.app.crowns.onboarding.ui.pages
 
+import androidx.compose.foundation.Image
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import com.app.crowns.designsystem.preview.ThemePreviews
-import com.app.crowns.designsystem.theme.VentlyTheme
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.ArrowForward
+import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.crowns.designsystem.R
 import com.app.crowns.designsystem.color.*
 
 // ─────────────────────────────────────────────
@@ -32,12 +38,14 @@ import com.app.crowns.designsystem.color.*
 // ─────────────────────────────────────────────
 @Composable
 fun VincularRucScreen(
-    ruc: String = "20601234567",
+    ruc: String,
+    onChangedRuc: (String) -> Unit,
+    isValid: Boolean,
     businessName: String = "Ferretería López",
-    currentStep: Int = 2,
-    totalSteps: Int = 3,
+    currentStep: Int = 1,
+    totalSteps: Int = 2,
     onBack: () -> Unit = {},
-    onContinue: () -> Unit = {}
+    onContinue: () -> Unit = {},
 ) {
     Scaffold(
         containerColor = Surface,
@@ -90,7 +98,7 @@ fun VincularRucScreen(
             Spacer(modifier = Modifier.height(24.dp))
 
             // ── Input RUC ──
-            RucInputSection(ruc = ruc, businessName = businessName)
+            RucInputSection(ruc = ruc, businessName = businessName, onChanged = onChangedRuc, isValid = isValid)
 
             Spacer(modifier = Modifier.height(32.dp))
 
@@ -101,19 +109,15 @@ fun VincularRucScreen(
             ) {
                 // Reemplaza R.drawable.sunat_illustration con tu recurso
                 // Si no tienes imagen, elimina este bloque o usa un Placeholder
-                /*
+
                 Image(
-                    painter = painterResource(id = R.drawable.sunat_illustration),
+                    painter = painterResource(id = R.drawable.vently_logo_icon),
                     contentDescription = "Representación visual de la conexión con SUNAT",
                     modifier = Modifier
                         .size(128.dp)
                         .graphicsLayer(alpha = 0.8f),
                     contentScale = ContentScale.Fit
                 )
-                */
-
-                // Placeholder mientras no tengas el drawable
-                SunatIllustrationPlaceholder()
             }
 
             Spacer(modifier = Modifier.height(24.dp))
@@ -251,7 +255,7 @@ private fun InfoCard() {
             modifier = Modifier.size(24.dp)
         )
         Text(
-            text = "Necesitas tu RUC de 11 dígitos y tu clave SOL para emitir comprobantes electrónicos.",
+            text = "Necesitas tu RUC de 11 dígitos para emitir comprobantes electrónicos.",
             fontSize = 14.sp,
             color = OnPrimaryFixed,
             lineHeight = 20.sp
@@ -265,7 +269,9 @@ private fun InfoCard() {
 @Composable
 private fun RucInputSection(
     ruc: String,
-    businessName: String
+    businessName: String,
+    onChanged: (String) -> Unit,
+    isValid: Boolean,
 ) {
     Column {
         // Label + contador
@@ -290,7 +296,6 @@ private fun RucInputSection(
 
         Spacer(modifier = Modifier.height(4.dp))
 
-        // Campo RUC (solo lectura / display)
         Box(
             modifier = Modifier
                 .fillMaxWidth()
@@ -299,67 +304,68 @@ private fun RucInputSection(
                 .background(SurfaceContainerLowest)
                 .border(
                     width = 1.5.dp,
-                    color = PrimaryContainer,
+                    color = if (isValid) PrimaryContainer else OutlineVariant,
                     shape = RoundedCornerShape(12.dp)
-                )
-                .padding(horizontal = 16.dp),
+                ),
             contentAlignment = Alignment.Center
         ) {
-            Text(
-                text = ruc,
-                fontSize = 24.sp,
-                fontWeight = FontWeight.Bold,
-                color = OnSurface,
-                letterSpacing = 4.sp,
-                textAlign = TextAlign.Center,
-                modifier = Modifier.fillMaxWidth()
-            )
+            BasicTextField(
+                value = ruc,
+                onValueChange = { if (it.length <= 11) onChanged(it) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 16.dp),
+                textStyle = TextStyle(
+                    fontSize = 24.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = OnSurface,
+                    letterSpacing = 4.sp,
+                    textAlign = TextAlign.Center
+                ),
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
+                decorationBox = { innerTextField ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        // Spacer izquierdo para balancear el ícono derecho
+                        Spacer(modifier = Modifier.size(24.dp))
 
-            // Ícono de check a la derecha
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.End,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Usando un ícono de Material estándar como placeholder para check_circle
-                Icon(
-                    // En tu proyecto usa Icons.Filled.CheckCircle
-                    imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "RUC válido",
-                    tint = Success,
-                    modifier = Modifier.size(24.dp)
-                )
-            }
+                        Box(
+                            modifier = Modifier.weight(1f),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            innerTextField()
+                        }
+
+                        // Ícono de validación
+                        if (isValid) {
+                            Icon(
+                                imageVector = Icons.Filled.CheckCircle,
+                                contentDescription = "RUC válido",
+                                tint = Success,
+                                modifier = Modifier.size(24.dp)
+                            )
+                        } else {
+                            Spacer(modifier = Modifier.size(24.dp))
+                        }
+                    }
+                }
+            )
         }
 
-        Spacer(modifier = Modifier.height(8.dp))
+        if (isValid) {
+            Spacer(modifier = Modifier.height(8.dp))
 
-        // Feedback de validación
-        Text(
-            text = "✓  RUC válido — $businessName",
-            fontSize = 12.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = Success
-        )
-    }
-}
-
-// ─────────────────────────────────────────────
-//  Placeholder para la ilustración
-// ─────────────────────────────────────────────
-@Composable
-private fun SunatIllustrationPlaceholder() {
-    Box(
-        modifier = Modifier
-            .size(128.dp)
-            .clip(RoundedCornerShape(16.dp))
-            .background(PrimaryFixed.copy(alpha = 0.3f)),
-        contentAlignment = Alignment.Center
-    ) {
-        Text(
-            text = "🏛️",
-            fontSize = 48.sp
-        )
+            // Feedback de validación
+            Text(
+                text = "✓  RUC válido — $businessName",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.SemiBold,
+                color = Success
+            )
+        }
     }
 }
 
@@ -370,6 +376,10 @@ private fun SunatIllustrationPlaceholder() {
 @Composable
 fun VincularRucScreenPreview() {
     MaterialTheme {
-        VincularRucScreen()
+        VincularRucScreen(
+            ruc = "2131",
+            isValid = false,
+            onChangedRuc = {},
+        )
     }
 }

@@ -46,10 +46,12 @@ fun OnboardingScreen(
                 currentStep = 1,
                 totalSteps = state.totalPages,
                 onBack = { viewModel.onEvent(OnboardingEvent.PreviousPage) },
-                onContinue = { viewModel.onEvent(OnboardingEvent.NextPage) }
+                onContinue = { viewModel.onEvent(OnboardingEvent.NextPage) },
+                ruc = state.ruc,
+                onChangedRuc = { rucVal -> viewModel.onEvent(OnboardingEvent.OnChangedRuc(ruc = rucVal))},
+                isValid = state.isValid,
             )
             1 -> OnboardingSecondPage()
-            2 -> OnboardingThirdPage()
         }
     }
 }
