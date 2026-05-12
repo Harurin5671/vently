@@ -1,5 +1,6 @@
 package com.app.crowns.onboarding.ui
 
+import android.net.Uri
 import com.app.crowns.onboarding.domain.model.CompanyInfo
 
 data class OnboardingUiState(
@@ -10,6 +11,7 @@ data class OnboardingUiState(
     val isSearching: Boolean = false,
     val companyInfo: CompanyInfo? = null,
     val searchError: String? = null,
+    val logoUri: Uri? = null,
 )
 
 val OnboardingUiState.isFirstPage get() = currentPage == 0

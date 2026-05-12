@@ -28,6 +28,7 @@ object SupabaseModule {
 
     @Provides
     @Singleton
+    @Suppress("DEPRECATION")
     fun provideEncryptedSharedPreferences(
         @ApplicationContext context: Context
     ): SharedPreferences {

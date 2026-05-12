@@ -60,8 +60,9 @@ fun OnboardingScreen(
                 address = state.companyInfo?.address ?: "",
                 currentStep = 2,
                 totalSteps = state.totalPages,
+                logoUri = state.logoUri,
                 onNavigateToApp = { viewModel.onEvent(OnboardingEvent.Finish) },
-                onAddPhoto = { /* TODO: Implement photo selection */ }
+                onLogoSelected = { uri -> viewModel.onEvent(OnboardingEvent.OnLogoSelected(uri)) }
             )
         }
     }

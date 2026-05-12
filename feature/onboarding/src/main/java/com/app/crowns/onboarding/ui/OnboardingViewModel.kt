@@ -31,6 +31,7 @@ class OnboardingViewModel @Inject constructor(
             is OnboardingEvent.PreviousPage -> previousPage()
             is OnboardingEvent.Finish -> finish()
             is OnboardingEvent.OnChangedRuc -> onChangedRuc(ruc = event.ruc)
+            is OnboardingEvent.OnLogoSelected -> _state.update { it.copy(logoUri = event.uri) }
         }
     }
 

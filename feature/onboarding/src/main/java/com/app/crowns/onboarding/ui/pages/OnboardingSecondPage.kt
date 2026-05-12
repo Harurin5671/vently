@@ -1,5 +1,6 @@
 package com.app.crowns.onboarding.ui.pages
 
+import android.net.Uri
 import androidx.compose.animation.core.EaseInOutSine
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
@@ -26,9 +27,8 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.AddAPhoto
-import androidx.compose.material.icons.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -37,7 +37,6 @@ import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -63,12 +62,12 @@ import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.SecondaryContainer
 import com.app.crowns.designsystem.color.Success
-import com.app.crowns.designsystem.color.SuccessBg
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceLowest
 import com.app.crowns.designsystem.color.SurfaceVariant
 import com.app.crowns.designsystem.color.TextMuted
 import com.app.crowns.designsystem.color.TextVeryMuted
+import com.app.crowns.ui.components.VentlyImageSelector
 
 // ─────────────────────────────────────────────
 // SCREEN ROOT
@@ -81,8 +80,9 @@ fun OnboardingSuccessScreen(
     address: String,
     currentStep: Int,
     totalSteps: Int,
+    logoUri: Uri?,
     onNavigateToApp: () -> Unit,
-    onAddPhoto: () -> Unit,
+    onLogoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -113,7 +113,11 @@ fun OnboardingSuccessScreen(
 
             Spacer(Modifier.height(32.dp))
 
-            SuccessHeroSection(businessName = businessName)
+            SuccessHeroSection(
+                businessName = businessName,
+                logoUri = logoUri,
+                onLogoSelected = onLogoSelected
+            )
 
             Spacer(Modifier.height(32.dp))
 
@@ -121,7 +125,8 @@ fun OnboardingSuccessScreen(
                 businessName = businessName,
                 ruc = ruc,
                 address = address,
-                onAddPhoto = onAddPhoto,
+                logoUri = logoUri,
+                onLogoSelected = onLogoSelected,
             )
 
             Spacer(Modifier.weight(1f))
@@ -152,7 +157,7 @@ private fun VentlyTopBar() {
                 color = Primary,
             )
         },
-        colors = TopAppBarDefaults.centerAlignedTopAppBarColors(
+        colors = TopAppBarDefaults.topAppBarColors(
             containerColor = SurfaceLowest,
         ),
     )
@@ -208,6 +213,8 @@ fun OnboardingProgressBar(
 @Composable
 fun SuccessHeroSection(
     businessName: String,
+    logoUri: Uri?,
+    onLogoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     // Pulse animation on the check icon
@@ -228,18 +235,34 @@ fun SuccessHeroSection(
     ) {
         Box(
             contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(80.dp)
-                .clip(CircleShape)
-                .background(SuccessBg)
-                .scale(scale),
+            modifier = Modifier.size(100.dp)
         ) {
-            Icon(
-                imageVector = Icons.Filled.CheckCircle,
-                contentDescription = "Éxito",
-                tint = Success,
-                modifier = Modifier.size(40.dp),
+            VentlyImageSelector(
+                selectedImageUri = logoUri,
+                onImageSelected = onLogoSelected,
+                size = 80.dp,
+                modifier = Modifier.scale(scale)
             )
+
+            // Small check badge
+            Box(
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .offset(x = (-8).dp, y = (-8).dp)
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(Color.White)
+                    .padding(2.dp)
+                    .background(Success, CircleShape),
+                contentAlignment = Alignment.Center
+            ) {
+                Icon(
+                    imageVector = Icons.Filled.CheckCircle,
+                    contentDescription = null,
+                    tint = Color.White,
+                    modifier = Modifier.size(16.dp)
+                )
+            }
         }
 
         Spacer(Modifier.height(24.dp))
@@ -275,7 +298,8 @@ fun BusinessSummaryCard(
     businessName: String,
     ruc: String,
     address: String,
-    onAddPhoto: () -> Unit,
+    logoUri: Uri?,
+    onLogoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Card(
@@ -294,13 +318,16 @@ fun BusinessSummaryCard(
             modifier = Modifier.padding(24.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Header row: business name + photo button
+            // Header row: business name + photo selector
             Row(
                 horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.Top,
+                verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth(),
             ) {
-                Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Column(
+                    modifier = Modifier.weight(1f),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
                     SummaryLabel(text = "Negocio")
                     Text(
                         text = businessName,
@@ -310,20 +337,12 @@ fun BusinessSummaryCard(
                     )
                 }
 
-                IconButton(
-                    onClick = onAddPhoto,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(PrimaryContainer.copy(alpha = 0.1f)),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.AddAPhoto,
-                        contentDescription = "Agregar foto",
-                        tint = Primary,
-                        modifier = Modifier.size(24.dp),
-                    )
-                }
+                VentlyImageSelector(
+                    selectedImageUri = logoUri,
+                    onImageSelected = onLogoSelected,
+                    size = 56.dp,
+                    shape = RoundedCornerShape(12.dp)
+                )
             }
 
             // Divider
@@ -489,7 +508,7 @@ fun VentlyPrimaryButton(
         )
         Spacer(Modifier.width(8.dp))
         Icon(
-            imageVector = Icons.Filled.ArrowForward,
+            imageVector = Icons.Filled.Search,
             contentDescription = null,
             modifier = Modifier.size(20.dp),
         )
@@ -510,8 +529,9 @@ private fun OnboardingSuccessScreenPreview() {
             address = "Av. Benavides 1234, Miraflores",
             currentStep = 2,
             totalSteps = 2,
+            logoUri = null,
             onNavigateToApp = {},
-            onAddPhoto = {},
+            onLogoSelected = {},
         )
     }
 }
