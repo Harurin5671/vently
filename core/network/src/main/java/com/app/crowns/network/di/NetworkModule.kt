@@ -50,8 +50,11 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    @ApiBaseUrl                          // ← qualifier para no confundir con otras Strings
-    fun provideApiBaseUrl(): String = BuildConfig.API_BASE_URL
+    @ApiBaseUrl
+    fun provideApiBaseUrl(): String {
+        val url = BuildConfig.API_BASE_URL
+        return if (url.endsWith("/")) url else "$url/"
+    }
 }
 
 @Qualifier
