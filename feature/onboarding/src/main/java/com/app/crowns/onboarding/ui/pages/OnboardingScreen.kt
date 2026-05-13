@@ -10,6 +10,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.crowns.common.util.ImageUtils
 import com.app.crowns.onboarding.ui.OnboardingEvent
 import com.app.crowns.onboarding.ui.OnboardingNavigationEvent
 import com.app.crowns.onboarding.ui.OnboardingViewModel
@@ -67,11 +68,9 @@ fun OnboardingScreen(
                 isFinishing = state.isFinishing,
                 error = state.searchError,
                 onNavigateToApp = {
-                    // convierte Uri a bytes aquí antes de enviar al ViewModel
+                    // Comprime la imagen antes de enviarla
                     val logoBytes = state.logoUri?.let { uri ->
-                        context.contentResolver
-                            .openInputStream(uri)
-                            ?.use { it.readBytes() }
+                        ImageUtils.compressImage(context, uri)
                     }
                     viewModel.onEvent(OnboardingEvent.Finish(logoBytes = logoBytes))
                 },
