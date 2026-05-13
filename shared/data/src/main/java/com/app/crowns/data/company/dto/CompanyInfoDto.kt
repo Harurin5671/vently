@@ -1,8 +1,7 @@
-package com.app.crowns.onboarding.data.dto
+package com.app.crowns.data.company.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import com.app.crowns.onboarding.domain.model.CompanyInfo
 
 @Serializable
 data class CompanyInfoDto(
@@ -29,17 +28,4 @@ data class CompanyInfoDto(
     @SerialName("EsAgenteRetencion") val isRetentionAgent: Boolean,
     @SerialName("EsBuenContribuyente") val isGoodTaxpayer: Boolean,
     @SerialName("localesAnexos") val annexedLocations: String? = null,
-)
-
-fun CompanyInfoDto.toDomain() = CompanyInfo(
-    businessName = businessName,
-    documentNumber = documentNumber,
-    status = status,
-    condition = condition,
-    address = address,
-    district = district,
-    province = province,
-    department = department,
-    isRetentionAgent = isRetentionAgent,
-    isGoodTaxpayer = isGoodTaxpayer
 )

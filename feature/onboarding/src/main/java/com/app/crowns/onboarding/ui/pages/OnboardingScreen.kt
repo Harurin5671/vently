@@ -7,6 +7,7 @@ import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.platform.LocalContext
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.onboarding.ui.OnboardingEvent
@@ -19,6 +20,7 @@ fun OnboardingScreen(
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -54,6 +56,7 @@ fun OnboardingScreen(
                 searchError = state.searchError,
                 businessName = state.companyInfo?.businessName ?: ""
             )
+
             1 -> OnboardingSuccessScreen(
                 businessName = state.companyInfo?.businessName ?: "",
                 ruc = state.companyInfo?.documentNumber ?: state.ruc,
@@ -61,7 +64,16 @@ fun OnboardingScreen(
                 currentStep = 2,
                 totalSteps = state.totalPages,
                 logoUri = state.logoUri,
-                onNavigateToApp = { viewModel.onEvent(OnboardingEvent.Finish) },
+                isFinishing = state.isFinishing,
+                onNavigateToApp = {
+                    // convierte Uri a bytes aquí antes de enviar al ViewModel
+                    val logoBytes = state.logoUri?.let { uri ->
+                        context.contentResolver
+                            .openInputStream(uri)
+                            ?.use { it.readBytes() }
+                    }
+                    viewModel.onEvent(OnboardingEvent.Finish(logoBytes = logoBytes))
+                },
                 onLogoSelected = { uri -> viewModel.onEvent(OnboardingEvent.OnLogoSelected(uri)) }
             )
         }

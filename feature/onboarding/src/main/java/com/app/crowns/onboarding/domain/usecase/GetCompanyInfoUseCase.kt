@@ -1,7 +1,7 @@
 package com.app.crowns.onboarding.domain.usecase
 
+import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.network.NetworkResult
-import com.app.crowns.onboarding.domain.model.CompanyInfo
 import com.app.crowns.onboarding.domain.repository.OnboardingRepository
 import javax.inject.Inject
 

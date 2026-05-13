@@ -1,7 +1,7 @@
-package com.app.crowns.onboarding.data.mapper
+package com.app.crowns.data.company.mapper
 
-import com.app.crowns.onboarding.data.dto.CompanyInfoDto
-import com.app.crowns.onboarding.domain.model.CompanyInfo
+import com.app.crowns.data.company.dto.CompanyInfoDto
+import com.app.crowns.domain.company.model.CompanyInfo
 
 fun CompanyInfoDto.toDomain(): CompanyInfo = CompanyInfo(
     businessName = businessName,

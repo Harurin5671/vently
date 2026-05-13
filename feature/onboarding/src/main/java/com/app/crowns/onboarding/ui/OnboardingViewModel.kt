@@ -5,6 +5,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.network.NetworkResult
 import com.app.crowns.onboarding.domain.usecase.GetCompanyInfoUseCase
+import com.app.crowns.onboarding.domain.usecase.SaveCompanyUseCase
+import com.app.crowns.onboarding.domain.usecase.UploadCompanyLogoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -17,7 +19,9 @@ import javax.inject.Inject
 
 @HiltViewModel
 class OnboardingViewModel @Inject constructor(
-    private val getCompanyInfoUseCase: GetCompanyInfoUseCase
+    private val getCompanyInfoUseCase: GetCompanyInfoUseCase,
+    private val saveCompanyUseCase: SaveCompanyUseCase,
+    private val uploadCompanyLogoUseCase: UploadCompanyLogoUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(OnboardingUiState())
     val state: StateFlow<OnboardingUiState> = _state.asStateFlow()
@@ -29,7 +33,7 @@ class OnboardingViewModel @Inject constructor(
         when (event) {
             is OnboardingEvent.NextPage -> nextPage()
             is OnboardingEvent.PreviousPage -> previousPage()
-            is OnboardingEvent.Finish -> finish()
+            is OnboardingEvent.Finish -> saveAndFinish(event.logoBytes)
             is OnboardingEvent.OnChangedRuc -> onChangedRuc(ruc = event.ruc)
             is OnboardingEvent.OnLogoSelected -> _state.update { it.copy(logoUri = event.uri) }
         }
@@ -51,7 +55,45 @@ class OnboardingViewModel @Inject constructor(
 
     private fun finish() {
         viewModelScope.launch {
-            _navigationEvent.send(OnboardingNavigationEvent.NavigateToHome)
+//            saveAndFinish()
+        }
+    }
+
+    private fun saveAndFinish(logoBytes: ByteArray?) {
+        viewModelScope.launch {
+            val state = _state.value
+            if (state.isFinishing) return@launch
+            val companyInfo = state.companyInfo ?: return@launch
+            _state.update { it.copy(isFinishing = true, searchError = null) }
+
+            var logoUrl: String? = null
+            if (logoBytes != null) {
+                uploadCompanyLogoUseCase(
+                    imageBytes = logoBytes,
+                ).onSuccess { url ->
+                    logoUrl = url
+                }
+            }
+
+            saveCompanyUseCase(companyInfo, logoUrl)
+                .onSuccess {
+                    _navigationEvent.send(OnboardingNavigationEvent.NavigateToHome)
+                }
+                .onFailure { error ->
+                    val message = when {
+                        error.message?.contains("companies_ruc_unique") == true ->
+                            "This RUC is already registered"
+                        error.message?.contains("companies_user_id_unique") == true ->
+                            "You already have a registered company"
+                        else -> error.message ?: "Error saving company"
+                    }
+                    _state.update {
+                        it.copy(
+                            isFinishing = false,
+                            searchError = message
+                        )
+                    }
+                }
         }
     }
 

@@ -1,4 +1,4 @@
-package com.app.crowns.onboarding.domain.model
+package com.app.crowns.domain.company.model
 
 data class CompanyInfo(
     val businessName: String,

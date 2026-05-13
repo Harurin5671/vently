@@ -34,6 +34,7 @@ import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.CenterAlignedTopAppBar
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -81,6 +82,7 @@ fun OnboardingSuccessScreen(
     currentStep: Int,
     totalSteps: Int,
     logoUri: Uri?,
+    isFinishing: Boolean,
     onNavigateToApp: () -> Unit,
     onLogoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
@@ -91,6 +93,8 @@ fun OnboardingSuccessScreen(
             VentlyPrimaryButton(
                 label = "Ir a Vently",
                 onClick = onNavigateToApp,
+                enabled = !isFinishing,
+                isLoading = isFinishing,
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
             )
         },
@@ -484,9 +488,12 @@ fun VentlyPrimaryButton(
     label: String,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
+    enabled: Boolean = true,
+    isLoading: Boolean = false,
 ) {
     Button(
         onClick = onClick,
+        enabled = enabled,
         shape = RoundedCornerShape(12.dp),
         colors = ButtonDefaults.buttonColors(
             containerColor = PrimaryContainer,
@@ -501,17 +508,25 @@ fun VentlyPrimaryButton(
             .fillMaxWidth()
             .height(48.dp),
     ) {
-        Text(
-            text = label,
-            fontSize = 16.sp,
-            fontWeight = FontWeight.SemiBold,
-        )
-        Spacer(Modifier.width(8.dp))
-        Icon(
-            imageVector = Icons.Filled.Search,
-            contentDescription = null,
-            modifier = Modifier.size(20.dp),
-        )
+        if (isLoading) {
+            CircularProgressIndicator(
+                modifier = Modifier.size(24.dp),
+                color = Color.White,
+                strokeWidth = 2.dp
+            )
+        } else {
+            Text(
+                text = label,
+                fontSize = 16.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Spacer(Modifier.width(8.dp))
+            Icon(
+                imageVector = Icons.Filled.Search,
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+        }
     }
 }
 
@@ -530,6 +545,7 @@ private fun OnboardingSuccessScreenPreview() {
             currentStep = 2,
             totalSteps = 2,
             logoUri = null,
+            isFinishing = false,
             onNavigateToApp = {},
             onLogoSelected = {},
         )

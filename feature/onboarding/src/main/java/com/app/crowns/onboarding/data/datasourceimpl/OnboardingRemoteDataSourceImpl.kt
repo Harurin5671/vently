@@ -1,11 +1,11 @@
 package com.app.crowns.onboarding.data.datasourceimpl
 
+import com.app.crowns.data.company.dto.CompanyInfoDto
 import com.app.crowns.network.NetworkResult
 import com.app.crowns.network.client.HttpClient
 import com.app.crowns.network.client.get
 import com.app.crowns.network.di.ApiBaseUrl
 import com.app.crowns.onboarding.data.datasource.OnboardingRemoteDataSource
-import com.app.crowns.onboarding.data.dto.CompanyInfoDto
 import javax.inject.Inject
 
 class OnboardingRemoteDataSourceImpl @Inject constructor(
