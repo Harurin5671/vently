@@ -11,6 +11,7 @@ import com.app.crowns.vently.splash.SplashScreen
 import com.app.crowns.auth.ui.login.LoginScreen
 import androidx.navigation3.ui.NavDisplay
 import com.app.crowns.home.ui.HomeScreen
+import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
 
@@ -63,7 +64,12 @@ fun AppNavHost(
 
                 is AppDestination.Home -> NavEntry(destination) {
                     HomeScreen(
-                        dashboardContent = { Text("Dashboard") },
+                        dashboardContent = {
+                            DashboardScreen(
+                                onNavigateToStock = { /* cambiar tab */ },
+                                onNavigateToHistory = { /* cambiar tab */ },
+                            )
+                        },
                         stockContent = { Text("Stock") },
                         historyContent = { Text("Historial") },
                         settingsContent = { Text("Ajustes") },
