@@ -58,6 +58,7 @@ object SupabaseModule {
             scheme = "com.app.crowns.vently"
             host = "callback"
             sessionManager = SettingsSessionManager(SharedPreferencesSettings(encryptedSharedPreferences))
+            alwaysAutoRefresh = true
         }
         install(Postgrest)
         install(Storage)

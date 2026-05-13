@@ -4,7 +4,7 @@ import androidx.navigation3.runtime.NavKey
 import kotlinx.serialization.Serializable
 
 @Serializable
-sealed interface AppDestination: NavKey {
+sealed interface AppDestination : NavKey {
     @Serializable
     data object Splash : AppDestination
 
@@ -17,4 +17,16 @@ sealed interface AppDestination: NavKey {
     @Serializable
     data object Home : AppDestination
 
+}
+
+@Serializable
+sealed interface HomeTab : NavKey {
+    @Serializable
+    data object Dashboard : HomeTab
+    @Serializable
+    data object Stock : HomeTab
+    @Serializable
+    data object History : HomeTab
+    @Serializable
+    data object Settings : HomeTab
 }

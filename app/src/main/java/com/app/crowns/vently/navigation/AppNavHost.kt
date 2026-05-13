@@ -1,6 +1,7 @@
 package com.app.crowns.vently.navigation
 
 import androidx.compose.animation.togetherWith
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
@@ -9,6 +10,7 @@ import androidx.navigation3.runtime.NavKey
 import com.app.crowns.vently.splash.SplashScreen
 import com.app.crowns.auth.ui.login.LoginScreen
 import androidx.navigation3.ui.NavDisplay
+import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
 
@@ -29,6 +31,10 @@ fun AppNavHost(
                         onNavigateToAuth = {
                             backStack.clear()
                             backStack.add(AppDestination.Auth)
+                        },
+                        onNavigateToOnboarding = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Onboarding)
                         },
                         onNavigateToHome = {
                             backStack.clear()
@@ -55,7 +61,17 @@ fun AppNavHost(
                     )
                 }
 
-                is AppDestination.Home -> NavEntry(destination) { }
+                is AppDestination.Home -> NavEntry(destination) {
+                    HomeScreen(
+                        dashboardContent = { Text("Dashboard") },
+                        stockContent = { Text("Stock") },
+                        historyContent = { Text("Historial") },
+                        settingsContent = { Text("Ajustes") },
+                        onFabClick = {
+                            // aquí después abres el BottomSheet de boleta/factura
+                        }
+                    )
+                }
             }
         }
     )

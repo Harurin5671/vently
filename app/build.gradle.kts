@@ -101,9 +101,14 @@ dependencies {
     implementation(libs.google.dagger.hilt.android)
     // Splash Screen
     implementation(libs.androidx.core.splashscreen)
+    implementation(project(":shared:domain"))
     implementation(project(":core:network"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))
+    implementation(project(":feature:home"))
+    implementation(project(":feature:stock"))
+    implementation(project(":feature:history"))
+    implementation(project(":feature:settings"))
 }

@@ -31,14 +31,18 @@ import com.app.crowns.vently.R
 @Composable
 fun SplashScreen(
     onNavigateToAuth: () -> Unit,
+    onNavigateToOnboarding: () -> Unit,
     onNavigateToHome: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel()
 ) {
-    val isSessionActive by viewModel.isSessionActive.collectAsStateWithLifecycle()
+    val uiState by viewModel.uiState.collectAsStateWithLifecycle()
 
-    LaunchedEffect(isSessionActive) {
-        isSessionActive?.let { active ->
-            if (active) onNavigateToHome() else onNavigateToAuth()
+    LaunchedEffect(uiState) {
+        when (uiState) {
+            SplashUiState.NavigateToLogin -> onNavigateToAuth()
+            SplashUiState.NavigateToOnboarding -> onNavigateToOnboarding()
+            SplashUiState.NavigateToHome -> onNavigateToHome()
+            SplashUiState.Idle -> Unit
         }
     }
 
@@ -79,6 +83,7 @@ private fun SplashScreenPreview() {
     VentlyTheme {
         SplashScreen(
             onNavigateToAuth = {},
+            onNavigateToOnboarding = {},
             onNavigateToHome = {}
         )
     }

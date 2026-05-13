@@ -9,6 +9,10 @@ import com.app.crowns.common.Result
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.auth.providers.Google
+import io.github.jan.supabase.auth.status.SessionStatus
+import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.filterNotNull
+import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -33,6 +37,19 @@ class AuthRepositoryImpl @Inject constructor(
     override suspend fun getCurrentUser(): User? =
         supabase.auth.currentSessionOrNull()?.toUser()
 
-    override suspend fun isSessionActive(): Boolean =
-        supabase.auth.currentSessionOrNull() != null
+    override suspend fun isSessionActive(): Boolean {
+        // Al tener alwaysAutoRefresh = true, currentSessionOrNull() 
+        // gestionará la carga y el refresco automáticamente.
+        return supabase.auth.currentSessionOrNull() != null
+    }
+
+    override fun observeSession(): Flow<Boolean> {
+        return supabase.auth.sessionStatus.map { status ->
+            when (status) {
+                is SessionStatus.Authenticated -> true
+                is SessionStatus.NotAuthenticated -> false
+                else -> null
+            }
+        }.filterNotNull()
+    }
 }
