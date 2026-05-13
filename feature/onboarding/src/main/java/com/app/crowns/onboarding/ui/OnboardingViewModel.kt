@@ -82,10 +82,10 @@ class OnboardingViewModel @Inject constructor(
                 .onFailure { error ->
                     val message = when {
                         error.message?.contains("companies_ruc_unique") == true ->
-                            "This RUC is already registered"
+                            "Este RUC ya se encuentra registrado"
                         error.message?.contains("companies_user_id_unique") == true ->
-                            "You already have a registered company"
-                        else -> error.message ?: "Error saving company"
+                            "Ya tienes una empresa registrada"
+                        else -> error.message ?: "Error al guardar los datos"
                     }
                     _state.update {
                         it.copy(
@@ -134,14 +134,14 @@ class OnboardingViewModel @Inject constructor(
                     it.copy(
                         isSearching = false,
                         isValid = false,
-                        searchError = "No internet connection",
+                        searchError = "Sin conexión a internet",
                     )
                 }
                 is NetworkResult.Unauthorized -> _state.update {
                     it.copy(
                         isSearching = false,
                         isValid = false,
-                        searchError = "Unauthorized",
+                        searchError = "Sesión no autorizada",
                     )
                 }
             }

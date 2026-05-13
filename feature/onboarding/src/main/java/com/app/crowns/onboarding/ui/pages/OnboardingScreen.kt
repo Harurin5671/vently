@@ -65,6 +65,7 @@ fun OnboardingScreen(
                 totalSteps = state.totalPages,
                 logoUri = state.logoUri,
                 isFinishing = state.isFinishing,
+                error = state.searchError,
                 onNavigateToApp = {
                     // convierte Uri a bytes aquí antes de enviar al ViewModel
                     val logoBytes = state.logoUri?.let { uri ->

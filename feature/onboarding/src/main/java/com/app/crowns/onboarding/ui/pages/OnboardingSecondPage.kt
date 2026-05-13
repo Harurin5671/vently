@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowForward
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
@@ -51,6 +52,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -69,6 +71,7 @@ import com.app.crowns.designsystem.color.SurfaceVariant
 import com.app.crowns.designsystem.color.TextMuted
 import com.app.crowns.designsystem.color.TextVeryMuted
 import com.app.crowns.ui.components.VentlyImageSelector
+import com.app.crowns.ui.components.VentlyInfoBanner
 
 // ─────────────────────────────────────────────
 // SCREEN ROOT
@@ -83,6 +86,7 @@ fun OnboardingSuccessScreen(
     totalSteps: Int,
     logoUri: Uri?,
     isFinishing: Boolean,
+    error: String?,
     onNavigateToApp: () -> Unit,
     onLogoSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
@@ -90,13 +94,19 @@ fun OnboardingSuccessScreen(
     Scaffold(
         topBar = { VentlyTopBar() },
         bottomBar = {
-            VentlyPrimaryButton(
-                label = "Ir a Vently",
-                onClick = onNavigateToApp,
-                enabled = !isFinishing,
-                isLoading = isFinishing,
-                modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
-            )
+            Column {
+                VentlyInfoBanner(
+                    message = error,
+                    modifier = Modifier.padding(horizontal = 16.dp)
+                )
+                VentlyPrimaryButton(
+                    label = "Ir a Vently",
+                    onClick = onNavigateToApp,
+                    enabled = !isFinishing,
+                    isLoading = isFinishing,
+                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 24.dp),
+                )
+            }
         },
         containerColor = Surface,
         modifier = modifier,
@@ -490,6 +500,7 @@ fun VentlyPrimaryButton(
     modifier: Modifier = Modifier,
     enabled: Boolean = true,
     isLoading: Boolean = false,
+    icon: ImageVector = Icons.AutoMirrored.Filled.ArrowForward,
 ) {
     Button(
         onClick = onClick,
@@ -522,7 +533,7 @@ fun VentlyPrimaryButton(
             )
             Spacer(Modifier.width(8.dp))
             Icon(
-                imageVector = Icons.Filled.Search,
+                imageVector = icon,
                 contentDescription = null,
                 modifier = Modifier.size(20.dp),
             )
@@ -546,6 +557,7 @@ private fun OnboardingSuccessScreenPreview() {
             totalSteps = 2,
             logoUri = null,
             isFinishing = false,
+            error = null,
             onNavigateToApp = {},
             onLogoSelected = {},
         )

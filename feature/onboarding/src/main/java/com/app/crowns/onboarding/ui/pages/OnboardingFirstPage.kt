@@ -32,6 +32,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.R
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.ui.components.VentlyInfoBanner
 
 // ─────────────────────────────────────────────
 //  Screen
@@ -394,13 +395,8 @@ private fun RucInputSection(
                 color = PrimaryContainer
             )
         } else if (searchError != null) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(
-                text = "✕  $searchError",
-                fontSize = 12.sp,
-                fontWeight = FontWeight.SemiBold,
-                color = Error
-            )
+            Spacer(modifier = Modifier.height(16.dp))
+            VentlyInfoBanner(message = searchError)
         } else if (isValid && businessName.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
 
