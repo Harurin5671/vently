@@ -52,6 +52,7 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
     implementation(project(":core:common"))
+    implementation(project(":shared:domain"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

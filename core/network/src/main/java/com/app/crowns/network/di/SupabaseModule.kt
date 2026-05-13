@@ -32,13 +32,27 @@ object SupabaseModule {
     fun provideEncryptedSharedPreferences(
         @ApplicationContext context: Context
     ): SharedPreferences {
+        val fileName = "secure_vently_prefs"
+        return try {
+            val prefs = createEncryptedSharedPreferences(context, fileName)
+            // Force a read of all preferences to check for corruption (AEADBadTagException)
+            prefs.all
+            prefs
+        } catch (e: Exception) {
+            // If creation or reading fails, delete the file and try again
+            context.deleteSharedPreferences(fileName)
+            createEncryptedSharedPreferences(context, fileName)
+        }
+    }
+
+    private fun createEncryptedSharedPreferences(context: Context, fileName: String): SharedPreferences {
         val masterKey = MasterKey.Builder(context)
             .setKeyScheme(MasterKey.KeyScheme.AES256_GCM)
             .build()
 
         return EncryptedSharedPreferences.create(
             context,
-            "secure_vently_prefs",
+            fileName,
             masterKey,
             EncryptedSharedPreferences.PrefKeyEncryptionScheme.AES256_SIV,
             EncryptedSharedPreferences.PrefValueEncryptionScheme.AES256_GCM

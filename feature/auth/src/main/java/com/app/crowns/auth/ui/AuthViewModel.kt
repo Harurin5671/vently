@@ -9,6 +9,7 @@ import com.app.crowns.common.Result
 import com.app.crowns.auth.domain.usecase.GetCurrentUserUseCase
 import com.app.crowns.auth.domain.usecase.IsSessionActiveUseCase
 import com.app.crowns.auth.domain.usecase.LogoutUseCase
+import com.app.crowns.domain.company.usecase.HasCompanyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult
 import kotlinx.coroutines.channels.Channel
@@ -24,7 +25,8 @@ import javax.inject.Inject
 class AuthViewModel @Inject constructor(
     private val logout: LogoutUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
-    private val isSessionActive: IsSessionActiveUseCase
+    private val isSessionActive: IsSessionActiveUseCase,
+    private val hasCompanyUseCase: HasCompanyUseCase
 ): ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -50,7 +52,11 @@ class AuthViewModel @Inject constructor(
             if (active) {
                 val user = getCurrentUser()
                 _state.update { it.copy(user = user, isAuthenticated = true) }
-                _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
+                if (hasCompanyUseCase()) {
+                    _navigationEvent.send(AuthNavigationEvent.NavigateToHome)
+                } else {
+                    _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
+                }
             }
         }
     }
@@ -65,7 +71,11 @@ class AuthViewModel @Inject constructor(
                     _state.update {
                         it.copy(isLoading = false, isAuthenticated = true, user = user)
                     }
-                    _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
+                    if (hasCompanyUseCase()) {
+                        _navigationEvent.send(AuthNavigationEvent.NavigateToHome)
+                    } else {
+                        _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
+                    }
                 }
 
                 is NativeSignInResult.Error -> {

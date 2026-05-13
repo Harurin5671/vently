@@ -50,6 +50,10 @@ fun AppNavHost(
                         onNavigateToOnboarding = {
                             backStack.clear()
                             backStack.add(AppDestination.Onboarding)
+                        },
+                        onNavigateToHome = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Home)
                         }
                     )
                 }

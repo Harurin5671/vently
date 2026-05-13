@@ -52,6 +52,7 @@ import io.github.jan.supabase.compose.auth.composeAuth
 @Composable
 fun LoginScreen(
     onNavigateToOnboarding: () -> Unit,
+    onNavigateToHome: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -60,7 +61,7 @@ fun LoginScreen(
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is AuthNavigationEvent.NavigateToOnboarding -> onNavigateToOnboarding()
-                is AuthNavigationEvent.NavigateToHome -> { /* futuro */ }
+                is AuthNavigationEvent.NavigateToHome -> onNavigateToHome()
             }
         }
     }
