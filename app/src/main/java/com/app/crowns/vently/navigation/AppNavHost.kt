@@ -13,6 +13,7 @@ import androidx.navigation3.ui.NavDisplay
 import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
+import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
 
 @Composable
@@ -70,7 +71,7 @@ fun AppNavHost(
                                 onNavigateToHistory = { /* cambiar tab */ },
                             )
                         },
-                        stockContent = { Text("Stock") },
+                        stockContent = { StockScreen() },
                         historyContent = { Text("Historial") },
                         settingsContent = { Text("Ajustes") },
                         onFabClick = {
