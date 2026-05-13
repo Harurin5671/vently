@@ -43,6 +43,7 @@ class AuthViewModel @Inject constructor(
         when (event) {
             is AuthEvent.HandleGoogleResult -> handleGoogleResult(event.result)
             is AuthEvent.Logout -> performLogout()
+            AuthEvent.SignInWithGoogle -> _state.update { it.copy(isLoading = true) }
         }
     }
 

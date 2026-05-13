@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.size
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -72,6 +73,12 @@ fun SplashScreen(
                 text = "Facturación Electrónica Simple",
                 style = MaterialTheme.typography.bodyLarge,
                 color = Color(0xFF64748B),
+            )
+            Spacer(modifier = Modifier.height(48.dp))
+            CircularProgressIndicator(
+                modifier = Modifier.size(32.dp),
+                color = MaterialTheme.colorScheme.primary,
+                strokeWidth = 3.dp
             )
         }
     }

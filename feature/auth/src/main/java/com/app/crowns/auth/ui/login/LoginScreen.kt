@@ -45,6 +45,7 @@ import com.app.crowns.designsystem.R
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
+import com.app.crowns.ui.components.VentlyLoadingScreen
 import dagger.hilt.android.EntryPointAccessors
 import io.github.jan.supabase.compose.auth.composable.rememberSignInWithGoogle
 import io.github.jan.supabase.compose.auth.composeAuth
@@ -81,8 +82,10 @@ fun LoginScreen(
 
     LoginContent(
         state = state,
-        onLoginClick = { googleSignInState.startFlow() },
-        onLogoutClick = { viewModel.onEvent(AuthEvent.Logout) }
+        onLoginClick = {
+            viewModel.onEvent(AuthEvent.SignInWithGoogle)
+            googleSignInState.startFlow()
+        }
     )
 }
 
@@ -90,38 +93,24 @@ fun LoginScreen(
 fun LoginContent(
     state: AuthUiState,
     onLoginClick: () -> Unit,
-    onLogoutClick: () -> Unit = {}
 ) {
-    Box(
-        modifier = Modifier
-            .fillMaxSize(),
-        contentAlignment = Alignment.Center
-    ) {
-        Column(
+    if (state.isLoading || state.isAuthenticated) {
+        VentlyLoadingScreen(
+            message = if (state.isAuthenticated) "Preparando tu espacio..." else "Iniciando sesión..."
+        )
+    } else {
+        Box(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 32.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.Center
+                .fillMaxSize(),
+            contentAlignment = Alignment.Center
         ) {
-
-            if (state.isAuthenticated) {
-                Text(
-                    text = "¡Estás autenticado!",
-                    style = MaterialTheme.typography.headlineSmall,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                Text(
-                    text = "Usuario: ${state.user?.email}",
-                    style = MaterialTheme.typography.bodyMedium,
-                    textAlign = TextAlign.Center
-                )
-                Spacer(modifier = Modifier.height(24.dp))
-                Button(onClick = onLogoutClick) {
-                    Text("Cerrar sesión")
-                }
-            } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.Center
+            ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -159,30 +148,23 @@ fun LoginContent(
 
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Botón o loader
-                if (state.isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(48.dp),
-                        color = MaterialTheme.colorScheme.primary
-                    )
-                } else {
-                    GoogleSignInButton(
-                        onClick = onLoginClick
-                    )
-                }
+                GoogleSignInButton(
+                    onClick = onLoginClick
+                )
+
                 Spacer(Modifier.height(16.dp))
                 TextRegister {}
-            }
 
-            // Error
-            state.error?.let { error ->
-                Spacer(modifier = Modifier.height(16.dp))
-                Text(
-                    text = error.toMessage(),
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodySmall,
-                    textAlign = TextAlign.Center
-                )
+                // Error
+                state.error?.let { error ->
+                    Spacer(modifier = Modifier.height(16.dp))
+                    Text(
+                        text = error.toMessage(),
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodySmall,
+                        textAlign = TextAlign.Center
+                    )
+                }
             }
         }
     }
