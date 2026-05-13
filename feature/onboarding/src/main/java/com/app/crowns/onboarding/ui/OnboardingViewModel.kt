@@ -53,12 +53,6 @@ class OnboardingViewModel @Inject constructor(
         }
     }
 
-    private fun finish() {
-        viewModelScope.launch {
-//            saveAndFinish()
-        }
-    }
-
     private fun saveAndFinish(logoBytes: ByteArray?) {
         viewModelScope.launch {
             val state = _state.value
