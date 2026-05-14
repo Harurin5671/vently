@@ -14,4 +14,5 @@ fun CompanyInfoDto.toDomain(): CompanyInfo = CompanyInfo(
     department = department,
     isRetentionAgent = isRetentionAgent,
     isGoodTaxpayer = isGoodTaxpayer,
+    logoUrl = null,
 )

@@ -46,6 +46,13 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
+import androidx.compose.foundation.layout.width
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Inventory
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import com.app.crowns.ui.components.shimmerEffect
+
 @Composable
 fun StockScreen(
     onNavigateToProductDetail: (String) -> Unit = {},
@@ -90,12 +97,14 @@ private fun StockContent(
                     )
                 },
                 actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Filled.Search,
-                            contentDescription = "Buscar",
-                            tint = OnSurfaceVariant,
-                        )
+                    if (state.products.isNotEmpty() || state.isLoading) {
+                        IconButton(onClick = { }) {
+                            Icon(
+                                imageVector = Icons.Filled.Search,
+                                contentDescription = "Buscar",
+                                tint = OnSurfaceVariant,
+                            )
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -104,40 +113,194 @@ private fun StockContent(
             )
         }
     ) { innerPadding ->
-        LazyColumn(
+        if (state.products.isEmpty() && !state.isLoading) {
+            EmptyStockState(
+                onAddProduct = { onEvent(StockEvent.OnAddProduct) },
+                modifier = Modifier.padding(innerPadding)
+            )
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp),
+            ) {
+                // Stats
+                item {
+                    Spacer(Modifier.height(4.dp))
+                    if (state.isLoading && state.products.isEmpty()) {
+                        Row(
+                            horizontalArrangement = Arrangement.spacedBy(8.dp),
+                            modifier = Modifier.fillMaxWidth(),
+                        ) {
+                            repeat(3) {
+                                Box(
+                                    modifier = Modifier
+                                        .weight(1f)
+                                        .height(72.dp)
+                                        .clip(RoundedCornerShape(12.dp))
+                                        .shimmerEffect()
+                                )
+                            }
+                        }
+                    } else {
+                        StockStatsRow(
+                            total = state.totalProducts,
+                            lowStock = state.lowStockCount,
+                            noStock = state.noStockCount,
+                        )
+                    }
+                }
+
+                // Filters
+                item {
+                    if (state.isLoading && state.products.isEmpty()) {
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            repeat(3) {
+                                Box(
+                                    modifier = Modifier
+                                        .size(width = 80.dp, height = 36.dp)
+                                        .clip(RoundedCornerShape(999.dp))
+                                        .shimmerEffect()
+                                )
+                            }
+                        }
+                    } else {
+                        StockFiltersRow(
+                            selectedFilter = state.selectedFilter,
+                            onFilterSelected = { onEvent(StockEvent.OnFilterSelected(it)) },
+                        )
+                    }
+                }
+
+                // Products
+                if (state.isLoading && state.products.isEmpty()) {
+                    items(6) {
+                        ProductItemSkeleton()
+                    }
+                } else {
+                    items(state.filteredProducts, key = { it.id }) { product ->
+                        ProductItem(
+                            product = product,
+                            onClick = { onEvent(StockEvent.OnProductClick(product.id)) },
+                        )
+                    }
+                }
+
+                if (state.filteredProducts.isEmpty() && state.searchQuery.isNotEmpty() && !state.isLoading) {
+                    item {
+                        Box(
+                            modifier = Modifier.fillMaxWidth().padding(top = 32.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No se encontraron productos",
+                                color = OnSurfaceVariant,
+                                fontSize = 14.sp
+                            )
+                        }
+                    }
+                }
+
+                item { Spacer(Modifier.height(80.dp)) }
+            }
+        }
+    }
+}
+
+@Composable
+private fun ProductItemSkeleton() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceContainerLowest)
+            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
+            .padding(16.dp),
+        horizontalArrangement = Arrangement.spacedBy(12.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Box(
             modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .padding(horizontal = 16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
+                .size(12.dp)
+                .clip(CircleShape)
+                .shimmerEffect()
+        )
+
+        Column(modifier = Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(width = 140.dp, height = 16.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+            Box(
+                modifier = Modifier
+                    .size(width = 80.dp, height = 12.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+        }
+
+        Column(horizontalAlignment = Alignment.End, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Box(
+                modifier = Modifier
+                    .size(width = 60.dp, height = 20.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+            Box(
+                modifier = Modifier
+                    .size(width = 40.dp, height = 14.dp)
+                    .clip(RoundedCornerShape(4.dp))
+                    .shimmerEffect()
+            )
+        }
+    }
+}
+
+@Composable
+private fun EmptyStockState(
+    onAddProduct: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(32.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Inventory,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = OutlineVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "Tu inventario está vacío",
+            fontSize = 18.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = OnSurface
+        )
+        Spacer(Modifier.height(8.dp))
+        Text(
+            text = "Comienza agregando tu primer producto para llevar el control de tu stock.",
+            fontSize = 14.sp,
+            color = OnSurfaceVariant,
+            textAlign = androidx.compose.ui.text.style.TextAlign.Center
+        )
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = onAddProduct,
+            colors = ButtonDefaults.buttonColors(containerColor = Primary),
+            shape = RoundedCornerShape(12.dp)
         ) {
-            // Stats
-            item {
-                Spacer(Modifier.height(4.dp))
-                StockStatsRow(
-                    total = state.totalProducts,
-                    lowStock = state.lowStockCount,
-                    noStock = state.noStockCount,
-                )
-            }
-
-            // Filters
-            item {
-                StockFiltersRow(
-                    selectedFilter = state.selectedFilter,
-                    onFilterSelected = { onEvent(StockEvent.OnFilterSelected(it)) },
-                )
-            }
-
-            // Products
-            items(state.filteredProducts, key = { it.id }) { product ->
-                ProductItem(
-                    product = product,
-                    onClick = { onEvent(StockEvent.OnProductClick(product.id)) },
-                )
-            }
-
-            item { Spacer(Modifier.height(80.dp)) }
+            Icon(Icons.Filled.Add, contentDescription = null)
+            Spacer(Modifier.width(8.dp))
+            Text("Agregar producto")
         }
     }
 }

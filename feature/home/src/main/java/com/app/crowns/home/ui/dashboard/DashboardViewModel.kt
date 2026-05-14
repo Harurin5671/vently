@@ -2,6 +2,7 @@ package com.app.crowns.home.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -13,7 +14,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class DashboardViewModel @Inject constructor() : ViewModel() {
+class DashboardViewModel @Inject constructor(
+    private val getCompanyUseCase: GetCompanyUseCase,
+) : ViewModel() {
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
 
@@ -38,10 +41,15 @@ class DashboardViewModel @Inject constructor() : ViewModel() {
     private fun loadDashboard() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+
+            val companyResult = getCompanyUseCase()
+            val companyInfo = companyResult.getOrNull()
+
             _state.update {
                 it.copy(
                     isLoading = false,
                     userName = "Carlos",
+                    companyInfo = companyInfo,
                     todaySales = 1240.00,
                     salesGrowthPercent = 8.0,
                     totalInvoices = 8,

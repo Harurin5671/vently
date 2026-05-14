@@ -2,18 +2,25 @@ package com.app.crowns.stock.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.stock.domain.usecase.GetProductsUseCase
+import com.app.crowns.stock.domain.repository.StockRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class StockViewModel @Inject constructor() : ViewModel() {
+class StockViewModel @Inject constructor(
+    private val getProductsUseCase: GetProductsUseCase,
+    private val repository: StockRepository,
+) : ViewModel() {
 
     private val _state = MutableStateFlow(StockUiState())
     val state: StateFlow<StockUiState> = _state.asStateFlow()
@@ -23,6 +30,14 @@ class StockViewModel @Inject constructor() : ViewModel() {
 
     init {
         loadStock()
+        
+        repository.stockChanges
+            .onEach { 
+                // Al detectar un cambio (ej. producto guardado), limpiamos y recargamos
+                _state.update { it.copy(products = emptyList(), filteredProducts = emptyList()) }
+                loadStock() 
+            }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: StockEvent) {
@@ -38,46 +53,65 @@ class StockViewModel @Inject constructor() : ViewModel() {
     private fun loadStock() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            // mock data — reemplazar con usecases reales
-            val mockProducts = listOf(
-                Product("1", "Agua Mineral 500ml", "BEB-0012", "Bebidas", 5, 2.50, "#3B82F6"),
-                Product("2", "Polo Algodón M", "ROP-0941", "Ropa", 0, 45.00, "#10B981"),
-                Product("3", "Gaseosa Inka 1.5L", "BEB-0412", "Bebidas", 24, 7.50, "#3B82F6"),
-                Product("4", "Galletas Soda Pack", "SNA-0052", "Snacks", 48, 1.20, "#F59E0B"),
-                Product("5", "Jean Slim Fit 32", "ROP-0231", "Ropa", 12, 89.90, "#10B981"),
-            )
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    products = mockProducts,
-                    filteredProducts = mockProducts,
-                    totalProducts = mockProducts.size,
-                    lowStockCount = mockProducts.count { p -> p.stockStatus == StockStatus.LOW },
-                    noStockCount = mockProducts.count { p -> p.stockStatus == StockStatus.NONE },
-                )
+            
+            getProductsUseCase().onSuccess { domainProducts ->
+                val uiProducts = domainProducts.map { p ->
+                    Product(
+                        id = p.id ?: "",
+                        name = p.name,
+                        sku = p.sku ?: "S/SKU",
+                        category = p.category?.name ?: "Sin categoría",
+                        quantity = p.currentStock,
+                        price = p.salePrice,
+                        colorHex = "#3B82F6" // Opcional: podrías guardarlo en el modelo si quieres
+                    )
+                }
+                
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        products = uiProducts,
+                        filteredProducts = uiProducts,
+                        totalProducts = uiProducts.size,
+                        lowStockCount = uiProducts.count { it.stockStatus == StockStatus.LOW },
+                        noStockCount = uiProducts.count { it.stockStatus == StockStatus.NONE },
+                    )
+                }
+                filterAndSearch()
+            }.onFailure { e ->
+                _state.update { it.copy(isLoading = false, error = e.message) }
             }
         }
     }
 
     private fun applyFilter(filter: StockFilter) {
+        _state.update { it.copy(selectedFilter = filter) }
+        filterAndSearch()
+    }
+
+    private fun applySearch(query: String) {
+        _state.update { it.copy(searchQuery = query) }
+        filterAndSearch()
+    }
+
+    private fun filterAndSearch() {
         _state.update { state ->
-            val filtered = when (filter) {
+            val filteredByStatus = when (state.selectedFilter) {
                 StockFilter.ALL -> state.products
                 StockFilter.LOW_STOCK -> state.products.filter { it.stockStatus == StockStatus.LOW }
                 StockFilter.NO_STOCK -> state.products.filter { it.stockStatus == StockStatus.NONE }
             }
-            state.copy(selectedFilter = filter, filteredProducts = filtered)
-        }
-    }
 
-    private fun applySearch(query: String) {
-        _state.update { state ->
-            val filtered = if (query.isBlank()) state.products
-            else state.products.filter {
-                it.name.contains(query, ignoreCase = true) ||
-                        it.sku.contains(query, ignoreCase = true)
+            val filteredBySearch = if (state.searchQuery.isBlank()) {
+                filteredByStatus
+            } else {
+                filteredByStatus.filter {
+                    it.name.contains(state.searchQuery, ignoreCase = true) ||
+                            it.sku.contains(state.searchQuery, ignoreCase = true)
+                }
             }
-            state.copy(searchQuery = query, filteredProducts = filtered)
+
+            state.copy(filteredProducts = filteredBySearch)
         }
     }
 

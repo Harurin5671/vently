@@ -14,6 +14,7 @@ fun CompanyEntity.toDomain(): CompanyInfo = CompanyInfo(
     department = department.orEmpty(),
     isRetentionAgent = isRetentionAgent,
     isGoodTaxpayer = isGoodTaxpayer,
+    logoUrl = logoUrl,
 )
 
 fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity = CompanyEntity(
@@ -28,5 +29,5 @@ fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity
     department = department,
     isRetentionAgent = isRetentionAgent,
     isGoodTaxpayer = isGoodTaxpayer,
-    logoUrl = logoUrl,
+    logoUrl = logoUrl ?: this.logoUrl,
 )

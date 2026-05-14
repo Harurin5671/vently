@@ -1,8 +1,11 @@
 package com.app.crowns.home.ui.dashboard
 
+import com.app.crowns.domain.company.model.CompanyInfo
+
 data class DashboardUiState(
     val isLoading: Boolean = false,
     val userName: String = "",
+    val companyInfo: CompanyInfo? = null,
     val todaySales: Double = 0.0,
     val salesGrowthPercent: Double = 0.0,
     val totalInvoices: Int = 0,

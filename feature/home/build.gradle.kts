@@ -46,6 +46,10 @@ dependencies {
     // Design system
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
+    implementation(project(":shared:domain"))
+
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.espresso.core)

@@ -13,7 +13,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -22,16 +21,12 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.Notifications
-import androidx.compose.material3.CenterAlignedTopAppBar
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -52,9 +47,12 @@ import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.color.TextMuted
+import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.QuickActionCard
 import com.app.crowns.home.ui.components.RecentInvoiceItem
 import com.app.crowns.home.ui.components.StatCard
+import com.app.crowns.home.ui.dashboard.components.DashboardTopAppBaR
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -101,50 +99,7 @@ private fun DashboardContent(
     Scaffold(
         containerColor = Surface,
         topBar = {
-            CenterAlignedTopAppBar(
-                title = {
-                    Text(
-                        text = "Vently",
-                        fontSize = 18.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = Primary,
-                    )
-                },
-                actions = {
-                    IconButton(onClick = { }) {
-                        Icon(
-                            imageVector = Icons.Filled.Notifications,
-                            contentDescription = "Notificaciones",
-                            tint = OnSurfaceVariant,
-                        )
-                    }
-                    // Avatar con iniciales
-                    val initials = state.userName
-                        .split(" ")
-                        .take(2)
-                        .joinToString("") { it.firstOrNull()?.uppercase() ?: "" }
-                        .ifEmpty { "U" }
-
-                    androidx.compose.foundation.layout.Box(
-                        modifier = Modifier
-                            .padding(end = 8.dp)
-                            .size(32.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryContainer.copy(alpha = 0.15f)),
-                        contentAlignment = Alignment.Center,
-                    ) {
-                        Text(
-                            text = initials,
-                            fontSize = 12.sp,
-                            fontWeight = FontWeight.SemiBold,
-                            color = Primary,
-                        )
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Surface,
-                ),
-            )
+            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }
     ) { innerPadding ->
         Column(
@@ -320,5 +275,13 @@ private fun GreetingSection(userName: String) {
             fontSize = 14.sp,
             color = TextMuted,
         )
+    }
+}
+
+@ThemePreviews
+@Composable
+fun DashboardScreenPreview() {
+    VentlyTheme {
+        DashboardScreen()
     }
 }

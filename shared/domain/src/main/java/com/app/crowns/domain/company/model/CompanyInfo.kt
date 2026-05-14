@@ -11,4 +11,5 @@ data class CompanyInfo(
     val department: String,
     val isRetentionAgent: Boolean,
     val isGoodTaxpayer: Boolean,
+    val logoUrl: String? = null,
 )
