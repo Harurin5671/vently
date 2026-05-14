@@ -56,7 +56,7 @@ fun HomeScreen(
     stockContent: @Composable () -> Unit,
     historyContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
-    onFabClick: () -> Unit = {},
+    onFabClick: (tab: Int) -> Unit,
 ) {
     var selectedTab by rememberSaveable { mutableIntStateOf(0) }
 
@@ -102,7 +102,7 @@ fun HomeScreen(
 
             // FAB flotante sobre el bottom bar
             IconButton(
-                onClick = onFabClick,
+                onClick = { onFabClick(selectedTab) },
                 modifier = Modifier
                     .align(Alignment.BottomEnd)
                     .padding(bottom = 16.dp, end = 16.dp)

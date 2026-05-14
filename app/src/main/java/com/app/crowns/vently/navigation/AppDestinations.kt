@@ -17,6 +17,9 @@ sealed interface AppDestination : NavKey {
     @Serializable
     data object Home : AppDestination
 
+    @Serializable
+    data object AddProduct : AppDestination
+
 }
 
 @Serializable

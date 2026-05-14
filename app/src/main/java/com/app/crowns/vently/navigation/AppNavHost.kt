@@ -14,6 +14,7 @@ import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.stock.ui.StockScreen
+import com.app.crowns.stock.ui.addproduct.AddProductScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
 
 @Composable
@@ -75,11 +76,27 @@ fun AppNavHost(
                                 onNavigateToHistory = { /* cambiar tab */ },
                             )
                         },
-                        stockContent = { StockScreen() },
+                        stockContent = {
+                            StockScreen(
+                                onNavigateToAddProduct = {
+                                    backStack.add(AppDestination.AddProduct)
+                                }
+                            )
+                        },
                         historyContent = { Text("Historial") },
                         settingsContent = { Text("Ajustes") },
                         onFabClick = {
-                            // aquí después abres el BottomSheet de boleta/factura
+                            when(it) {
+                                1 -> backStack.add(AppDestination.AddProduct)// Stock tab
+                            }
+                        }
+                    )
+                }
+
+                is AppDestination.AddProduct -> NavEntry(destination) {
+                    AddProductScreen(
+                        onNavigateBack = {
+                            backStack.removeLastOrNull()
                         }
                     )
                 }

@@ -38,11 +38,13 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.designsystem.theme.VentlyTheme
+import com.app.crowns.designsystem.preview.ThemePreviews
 import androidx.compose.ui.platform.LocalLocale
 import androidx.core.graphics.toColorInt
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
 @Composable
 fun StockScreen(
@@ -349,5 +351,29 @@ private fun ProductItem(
                 color = OnSurfaceVariant,
             )
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun StockScreenPreview() {
+    val mockProducts = listOf(
+        Product("1", "Agua Mineral 500ml", "BEB-0012", "Bebidas", 5, 2.50, "#3B82F6"),
+        Product("2", "Polo Algodón M", "ROP-0941", "Ropa", 0, 45.00, "#10B981"),
+        Product("3", "Gaseosa Inka 1.5L", "BEB-0412", "Bebidas", 24, 7.50, "#3B82F6"),
+        Product("4", "Galletas Soda Pack", "SNA-0052", "Snacks", 48, 1.20, "#F59E0B"),
+        Product("5", "Jean Slim Fit 32", "ROP-0231", "Ropa", 12, 89.90, "#10B981"),
+    )
+    VentlyTheme {
+        StockContent(
+            state = StockUiState(
+                products = mockProducts,
+                filteredProducts = mockProducts,
+                totalProducts = mockProducts.size,
+                lowStockCount = mockProducts.count { it.stockStatus == StockStatus.LOW },
+                noStockCount = mockProducts.count { it.stockStatus == StockStatus.NONE },
+            ),
+            onEvent = {}
+        )
     }
 }
