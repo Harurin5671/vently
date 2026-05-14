@@ -85,9 +85,12 @@ fun AppNavHost(
                         },
                         historyContent = { Text("Historial") },
                         settingsContent = { Text("Ajustes") },
-                        onFabClick = {
-                            when(it) {
-                                1 -> backStack.add(AppDestination.AddProduct)// Stock tab
+                        onFabClick = { tabIndex ->
+                            when (tabIndex) {
+                                0 -> { /* Acción para Dashboard */ }
+                                1 -> backStack.add(AppDestination.AddProduct) // Stock tab
+                                2 -> { /* Acción para Historial */ }
+                                3 -> { /* Acción para Ajustes */ }
                             }
                         }
                     )

@@ -101,21 +101,23 @@ fun HomeScreen(
             }
 
             // FAB flotante sobre el bottom bar
-            IconButton(
-                onClick = { onFabClick(selectedTab) },
-                modifier = Modifier
-                    .align(Alignment.BottomEnd)
-                    .padding(bottom = 16.dp, end = 16.dp)
-                    .size(56.dp)
-                    .clip(CircleShape)
-                    .background(PrimaryContainer),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Nueva boleta o factura",
-                    tint = OnPrimary,
-                    modifier = Modifier.size(28.dp),
-                )
+            if (selectedTab == 1) { // Solo mostrar en Stock por ahora
+                IconButton(
+                    onClick = { onFabClick(selectedTab) },
+                    modifier = Modifier
+                        .align(Alignment.BottomEnd)
+                        .padding(bottom = 16.dp, end = 16.dp)
+                        .size(56.dp)
+                        .clip(CircleShape)
+                        .background(PrimaryContainer),
+                ) {
+                    Icon(
+                        imageVector = Icons.Filled.Add,
+                        contentDescription = "Nueva boleta o factura",
+                        tint = OnPrimary,
+                        modifier = Modifier.size(28.dp),
+                    )
+                }
             }
         }
     }
