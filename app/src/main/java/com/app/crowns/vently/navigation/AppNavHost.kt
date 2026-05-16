@@ -12,6 +12,7 @@ import com.app.crowns.auth.ui.login.LoginScreen
 import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.invoice.ui.create.CreateInvoiceScreen
+import com.app.crowns.invoice.ui.preview.InvoicePreviewScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.stock.ui.addproduct.AddProductScreen
@@ -115,7 +116,17 @@ fun AppNavHost(
                     CreateInvoiceScreen(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToPreview = {
-                            // próximamente
+                            backStack.add(AppDestination.InvoicePreview)
+                        }
+                    )
+                }
+
+                is AppDestination.InvoicePreview -> NavEntry(destination) {
+                    InvoicePreviewScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onInvoiceEmitted = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Home)
                         }
                     )
                 }

@@ -1,8 +1,10 @@
 package com.app.crowns.invoice.ui.create
 
+import com.app.crowns.invoice.domain.model.Invoice
+import com.app.crowns.invoice.domain.model.InvoiceItem
+import com.app.crowns.invoice.domain.store.InvoiceDraftStore
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.invoice.domain.model.InvoiceItem
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,7 +16,9 @@ import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
-class CreateInvoiceViewModel @Inject constructor() : ViewModel() {
+class CreateInvoiceViewModel @Inject constructor(
+    private val draftStore: InvoiceDraftStore
+) : ViewModel() {
     private val _state = MutableStateFlow(CreateInvoiceUiState())
     val state: StateFlow<CreateInvoiceUiState> = _state.asStateFlow()
 
@@ -62,9 +66,7 @@ class CreateInvoiceViewModel @Inject constructor() : ViewModel() {
                 it.copy(selectedCategoryFilter = event.category)
             }
 
-            is CreateInvoiceEvent.OnPreview -> viewModelScope.launch {
-                _navigationEvent.send(CreateInvoiceNavigationEvent.NavigateToPreview)
-            }
+            is CreateInvoiceEvent.OnPreview -> onPreview()
         }
     }
 
@@ -121,6 +123,21 @@ class CreateInvoiceViewModel @Inject constructor() : ViewModel() {
                     } else item
                 }
             )
+        }
+    }
+
+    private fun onPreview() {
+        val s = _state.value
+        val invoice = Invoice(
+            type = s.invoiceType,
+            clientName = s.clientName.ifBlank { null },
+            clientRuc = s.clientRuc.ifBlank { null },
+            clientBusinessName = s.clientBusinessName.ifBlank { null },
+            items = s.items,
+        )
+        draftStore.save(invoice)
+        viewModelScope.launch {
+            _navigationEvent.send(CreateInvoiceNavigationEvent.NavigateToPreview)
         }
     }
 }

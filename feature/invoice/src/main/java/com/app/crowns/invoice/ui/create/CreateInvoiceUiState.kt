@@ -1,5 +1,6 @@
 package com.app.crowns.invoice.ui.create
 
+import android.graphics.Bitmap
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.model.InvoiceType
 
@@ -29,3 +30,11 @@ val CreateInvoiceUiState.isFormValid: Boolean
         InvoiceType.BOLETA -> true
         InvoiceType.FACTURA -> clientRuc.length == 11 && clientBusinessName.isNotBlank()
     }
+
+data class InvoicePreviewUiState(
+    val isGeneratingPdf: Boolean = true,
+    val pdfPages: List<Bitmap> = emptyList(),
+    val showEmitDialog: Boolean = false,
+    val isEmitting: Boolean = false,
+    val error: String? = null,
+)
