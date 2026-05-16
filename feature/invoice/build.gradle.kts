@@ -54,6 +54,7 @@ dependencies {
     // Internos
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
+    implementation(project(":core:network"))
     implementation(project(":core:ui"))
     implementation(project(":shared:domain"))
 

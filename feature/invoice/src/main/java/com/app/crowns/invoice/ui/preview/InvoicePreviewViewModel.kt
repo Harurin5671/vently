@@ -47,8 +47,6 @@ class InvoicePreviewViewModel @Inject constructor(
     private val _navigationEvent = Channel<InvoicePreviewNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
-    val invoice: Invoice? get() = draftStore.draft.value
-
     init {
         generatePdfPreview()
     }
@@ -68,14 +66,23 @@ class InvoicePreviewViewModel @Inject constructor(
     }
 
     private fun generatePdfPreview() {
-        val draft = draftStore.draft.value ?: return
+        val draft = draftStore.draft.value
+        if (draft == null) {
+            _state.update { it.copy(isGeneratingPdf = false, error = "No hay datos para la vista previa") }
+            return
+        }
+
         viewModelScope.launch {
-            _state.update { it.copy(isGeneratingPdf = true) }
-            val pages = withContext(Dispatchers.IO) {
-                val pdfFile = generatePdf(draft)
-                renderPdfToPages(pdfFile)
+            _state.update { it.copy(isGeneratingPdf = true, error = null) }
+            try {
+                val pages = withContext(Dispatchers.IO) {
+                    val pdfFile = generatePdf(draft)
+                    renderPdfToPages(pdfFile)
+                }
+                _state.update { it.copy(isGeneratingPdf = false, pdfPages = pages) }
+            } catch (e: Exception) {
+                _state.update { it.copy(isGeneratingPdf = false, error = "Error al generar PDF: ${e.message}") }
             }
-            _state.update { it.copy(isGeneratingPdf = false, pdfPages = pages) }
         }
     }
 

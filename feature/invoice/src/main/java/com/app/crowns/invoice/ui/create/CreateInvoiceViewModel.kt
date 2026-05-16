@@ -1,8 +1,10 @@
 package com.app.crowns.invoice.ui.create
 
+import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
+import com.app.crowns.network.fold
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -17,7 +19,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateInvoiceViewModel @Inject constructor(
-    private val draftStore: InvoiceDraftStore
+    private val draftStore: InvoiceDraftStore,
+    private val searchCompanyUseCase: SearchCompanyUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateInvoiceUiState())
     val state: StateFlow<CreateInvoiceUiState> = _state.asStateFlow()
@@ -78,14 +81,32 @@ class CreateInvoiceViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _state.update { it.copy(isSearchingRuc = true, rucError = null) }
-            // mock — reemplazar con usecase real
-            kotlinx.coroutines.delay(1_500)
-            _state.update {
-                it.copy(
-                    isSearchingRuc = false,
-                    clientBusinessName = "Inversiones Ramos S.A.C.",
-                )
-            }
+            searchCompanyUseCase(ruc).fold(
+                onSuccess = { company ->
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            clientBusinessName = company.businessName,
+                        )
+                    }
+                },
+                onHttpError = { error ->
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            rucError = "No se encontró el RUC o hubo un error"
+                        )
+                    }
+                },
+                onNetworkError = {
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            rucError = "Sin conexión a internet"
+                        )
+                    }
+                }
+            )
         }
     }
 

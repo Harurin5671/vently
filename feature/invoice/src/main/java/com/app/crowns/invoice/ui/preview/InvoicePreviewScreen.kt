@@ -47,7 +47,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnPrimary
 import com.app.crowns.designsystem.color.OnSurface
@@ -56,6 +56,8 @@ import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.invoice.ui.create.InvoicePreviewUiState
 
 @Composable
@@ -264,10 +266,11 @@ private fun InvoicePreviewContent(
                     }
                     else -> {
                         Text(
-                            text = "No se pudo generar la vista previa",
+                            text = state.error ?: "No se pudo generar la vista previa",
                             fontSize = 14.sp,
-                            color = Outline,
+                            color = Color(0xFFEF4444),
                             modifier = Modifier.padding(48.dp),
+                            textAlign = TextAlign.Center,
                         )
                     }
                 }
