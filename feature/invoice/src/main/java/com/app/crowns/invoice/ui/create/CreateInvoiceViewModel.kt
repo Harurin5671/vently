@@ -1,0 +1,126 @@
+package com.app.crowns.invoice.ui.create
+
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.app.crowns.invoice.domain.model.InvoiceItem
+import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.channels.Channel
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.receiveAsFlow
+import kotlinx.coroutines.flow.update
+import kotlinx.coroutines.launch
+import javax.inject.Inject
+
+@HiltViewModel
+class CreateInvoiceViewModel @Inject constructor() : ViewModel() {
+    private val _state = MutableStateFlow(CreateInvoiceUiState())
+    val state: StateFlow<CreateInvoiceUiState> = _state.asStateFlow()
+
+    private val _navigationEvent = Channel<CreateInvoiceNavigationEvent>(Channel.BUFFERED)
+    val navigationEvent = _navigationEvent.receiveAsFlow()
+
+    fun onEvent(event: CreateInvoiceEvent) {
+        when (event) {
+            is CreateInvoiceEvent.OnInvoiceTypeChanged -> _state.update {
+                it.copy(
+                    invoiceType = event.type,
+                    clientName = "",
+                    clientRuc = "",
+                    clientBusinessName = "",
+                    rucError = null,
+                )
+            }
+
+            is CreateInvoiceEvent.OnClientNameChanged -> _state.update {
+                it.copy(clientName = event.value)
+            }
+
+            is CreateInvoiceEvent.OnClientRucChanged -> _state.update {
+                it.copy(clientRuc = event.value, rucError = null, clientBusinessName = "")
+            }
+
+            is CreateInvoiceEvent.OnSearchRuc -> searchRuc()
+            is CreateInvoiceEvent.OnAddItem -> addItem(event.item)
+            is CreateInvoiceEvent.OnRemoveItem -> removeItem(event.productId)
+            is CreateInvoiceEvent.OnIncreaseQuantity -> changeQuantity(event.productId, +1)
+            is CreateInvoiceEvent.OnDecreaseQuantity -> changeQuantity(event.productId, -1)
+            is CreateInvoiceEvent.OnShowAddProductSheet -> _state.update {
+                it.copy(showAddProductSheet = true)
+            }
+
+            is CreateInvoiceEvent.OnDismissAddProductSheet -> _state.update {
+                it.copy(showAddProductSheet = false, productSearchQuery = "")
+            }
+
+            is CreateInvoiceEvent.OnProductSearchChanged -> _state.update {
+                it.copy(productSearchQuery = event.query)
+            }
+
+            is CreateInvoiceEvent.OnCategoryFilterChanged -> _state.update {
+                it.copy(selectedCategoryFilter = event.category)
+            }
+
+            is CreateInvoiceEvent.OnPreview -> viewModelScope.launch {
+                _navigationEvent.send(CreateInvoiceNavigationEvent.NavigateToPreview)
+            }
+        }
+    }
+
+    private fun searchRuc() {
+        val ruc = _state.value.clientRuc
+        if (ruc.length != 11) {
+            _state.update { it.copy(rucError = "RUC must be 11 digits") }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(isSearchingRuc = true, rucError = null) }
+            // mock — reemplazar con usecase real
+            kotlinx.coroutines.delay(1_500)
+            _state.update {
+                it.copy(
+                    isSearchingRuc = false,
+                    clientBusinessName = "Inversiones Ramos S.A.C.",
+                )
+            }
+        }
+    }
+
+    private fun addItem(item: InvoiceItem) {
+        _state.update { state ->
+            val existing = state.items.find { it.productId == item.productId }
+            if (existing != null) {
+                state.copy(
+                    items = state.items.map {
+                        if (it.productId == item.productId) it.copy(quantity = it.quantity + 1)
+                        else it
+                    },
+                    showAddProductSheet = false,
+                )
+            } else {
+                state.copy(
+                    items = state.items + item,
+                    showAddProductSheet = false,
+                )
+            }
+        }
+    }
+
+    private fun removeItem(productId: String) {
+        _state.update { it.copy(items = it.items.filter { item -> item.productId != productId }) }
+    }
+
+    private fun changeQuantity(productId: String, delta: Int) {
+        _state.update { state ->
+            state.copy(
+                items = state.items.mapNotNull { item ->
+                    if (item.productId == productId) {
+                        val newQty = item.quantity + delta
+                        if (newQty <= 0) null else item.copy(quantity = newQty)
+                    } else item
+                }
+            )
+        }
+    }
+}

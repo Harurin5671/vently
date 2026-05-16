@@ -7,15 +7,16 @@ import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
-import com.app.crowns.vently.splash.SplashScreen
-import com.app.crowns.auth.ui.login.LoginScreen
 import androidx.navigation3.ui.NavDisplay
+import com.app.crowns.auth.ui.login.LoginScreen
 import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.home.ui.dashboard.DashboardScreen
+import com.app.crowns.invoice.ui.create.CreateInvoiceScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.stock.ui.addproduct.AddProductScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
+import com.app.crowns.vently.splash.SplashScreen
 
 @Composable
 fun AppNavHost(
@@ -27,8 +28,8 @@ fun AppNavHost(
         modifier = modifier,
         transitionSpec = { DefaultTransitions.enter togetherWith DefaultTransitions.exit },
         popTransitionSpec = { DefaultTransitions.popEnter togetherWith DefaultTransitions.popExit },
-        entryProvider = { destination ->
-            when (destination as AppDestination) {
+        entryProvider = { navKey ->
+            when (val destination = navKey as AppDestination) {
                 is AppDestination.Splash -> NavEntry(destination) {
                     SplashScreen(
                         onNavigateToAuth = {
@@ -72,6 +73,12 @@ fun AppNavHost(
                     HomeScreen(
                         dashboardContent = {
                             DashboardScreen(
+                                onNavigateToNewBoleta = {
+                                    backStack.add(AppDestination.CreateInvoice(isFactura = false))
+                                },
+                                onNavigateToNewFactura = {
+                                    backStack.add(AppDestination.CreateInvoice(isFactura = true))
+                                },
                                 onNavigateToStock = { /* cambiar tab */ },
                                 onNavigateToHistory = { /* cambiar tab */ },
                             )
@@ -100,6 +107,15 @@ fun AppNavHost(
                     AddProductScreen(
                         onNavigateBack = {
                             backStack.removeLastOrNull()
+                        }
+                    )
+                }
+
+                is AppDestination.CreateInvoice -> NavEntry(destination) {
+                    CreateInvoiceScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() },
+                        onNavigateToPreview = {
+                            // próximamente
                         }
                     )
                 }
