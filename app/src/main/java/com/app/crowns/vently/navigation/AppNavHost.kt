@@ -9,6 +9,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import com.app.crowns.auth.ui.login.LoginScreen
+import com.app.crowns.history.ui.HistoryScreen
 import com.app.crowns.home.ui.HomeScreen
 import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.invoice.ui.create.CreateInvoiceScreen
@@ -91,7 +92,7 @@ fun AppNavHost(
                                 }
                             )
                         },
-                        historyContent = { Text("Historial") },
+                        historyContent = { HistoryScreen() },
                         settingsContent = { Text("Ajustes") },
                         onFabClick = { tabIndex ->
                             when (tabIndex) {
