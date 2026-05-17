@@ -47,6 +47,8 @@ dependencies {
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
     implementation(project(":core:ui"))
+    implementation(project(":shared:domain"))
+    implementation(project(":shared:data"))
 
     // Hilt
     implementation(libs.google.dagger.hilt.android)

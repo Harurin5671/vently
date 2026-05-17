@@ -1,16 +1,15 @@
-package com.app.crowns.stock.data.datasourceimpl
+package com.app.crowns.data.product.datasource
 
-import com.app.crowns.stock.data.datasource.StockRemoteDataSource
-import com.app.crowns.stock.data.dto.CategoryEntity
-import com.app.crowns.stock.data.dto.ProductEntity
+import com.app.crowns.data.product.dto.CategoryEntity
+import com.app.crowns.data.product.dto.ProductEntity
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
 import javax.inject.Inject
 
-class StockSupabaseDataSourceImpl @Inject constructor(
+class ProductSupabaseDataSourceImpl @Inject constructor(
     private val supabase: SupabaseClient,
-) : StockRemoteDataSource {
+) : ProductRemoteDataSource {
 
     override suspend fun getProducts(): Result<List<ProductEntity>> = runCatching {
         val userId = supabase.auth.currentUserOrNull()?.id

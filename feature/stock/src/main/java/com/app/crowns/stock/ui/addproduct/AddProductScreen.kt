@@ -68,8 +68,8 @@ import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.SecondaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.IgvType
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.IgvType
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 

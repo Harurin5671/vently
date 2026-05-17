@@ -2,12 +2,12 @@ package com.app.crowns.stock.ui.addproduct
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.IgvType
-import com.app.crowns.stock.domain.model.Product
-import com.app.crowns.stock.domain.usecase.GetCategoriesUseCase
-import com.app.crowns.stock.domain.usecase.SaveProductUseCase
-import com.app.crowns.stock.domain.repository.StockRepository
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.model.Product
+import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
+import com.app.crowns.domain.product.usecase.SaveProductUseCase
+import com.app.crowns.domain.product.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,7 +22,7 @@ import javax.inject.Inject
 class AddProductViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
     private val saveProduct: SaveProductUseCase,
-    private val repository: StockRepository,
+    private val repository: ProductRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddProductUiState())

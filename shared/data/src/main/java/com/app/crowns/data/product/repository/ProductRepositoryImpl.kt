@@ -1,11 +1,11 @@
-package com.app.crowns.stock.data.repositoryimpl
+package com.app.crowns.data.product.repository
 
-import com.app.crowns.stock.data.datasource.StockRemoteDataSource
-import com.app.crowns.stock.data.mapper.toDomain
-import com.app.crowns.stock.data.mapper.toEntity
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.Product
-import com.app.crowns.stock.domain.repository.StockRepository
+import com.app.crowns.data.product.datasource.ProductRemoteDataSource
+import com.app.crowns.data.product.mapper.toDomain
+import com.app.crowns.data.product.mapper.toEntity
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.Product
+import com.app.crowns.domain.product.repository.ProductRepository
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -14,16 +14,16 @@ import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
-class StockRepositoryImpl @Inject constructor(
-    private val remoteDataSource: StockRemoteDataSource,
+class ProductRepositoryImpl @Inject constructor(
+    private val remoteDataSource: ProductRemoteDataSource,
     private val supabase: SupabaseClient,
-) : StockRepository {
+) : ProductRepository {
 
-    private val _stockChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
-    override val stockChanges = _stockChanges.asSharedFlow()
+    private val _productChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    override val productChanges = _productChanges.asSharedFlow()
 
-    override suspend fun notifyStockChanged() {
-        _stockChanges.emit(Unit)
+    override suspend fun notifyProductChanged() {
+        _productChanges.emit(Unit)
     }
 
     override suspend fun getProducts(): Result<List<Product>> = runCatching {
@@ -38,7 +38,7 @@ class StockRepositoryImpl @Inject constructor(
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: return Result.failure(Exception("User not authenticated"))
         return remoteDataSource.saveProduct(product.toEntity(userId)).onSuccess {
-            notifyStockChanged()
+            notifyProductChanged()
         }
     }
 
@@ -50,7 +50,7 @@ class StockRepositoryImpl @Inject constructor(
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: return Result.failure(Exception("User not authenticated"))
         return remoteDataSource.saveCategory(category.toEntity(userId)).onSuccess {
-            notifyStockChanged()
+            notifyProductChanged()
         }
     }
 }

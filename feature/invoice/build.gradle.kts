@@ -57,6 +57,7 @@ dependencies {
     implementation(project(":core:network"))
     implementation(project(":core:ui"))
     implementation(project(":shared:domain"))
+    implementation(project(":shared:data"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -1,4 +1,4 @@
-package com.app.crowns.stock.domain.model
+package com.app.crowns.domain.product.model
 
 data class Category(
     val id: String,

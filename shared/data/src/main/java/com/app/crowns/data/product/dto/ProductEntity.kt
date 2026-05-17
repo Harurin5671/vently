@@ -1,4 +1,4 @@
-package com.app.crowns.stock.data.dto
+package com.app.crowns.data.product.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

@@ -7,6 +7,8 @@ import com.app.crowns.invoice.domain.store.InvoiceDraftStore
 import com.app.crowns.network.fold
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
+import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -21,12 +23,34 @@ import javax.inject.Inject
 class CreateInvoiceViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
     private val searchCompanyUseCase: SearchCompanyUseCase,
+    private val getProductsUseCase: GetProductsUseCase,
+    private val getCategoriesUseCase: GetCategoriesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateInvoiceUiState())
     val state: StateFlow<CreateInvoiceUiState> = _state.asStateFlow()
 
     private val _navigationEvent = Channel<CreateInvoiceNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
+
+    init {
+        loadProducts()
+    }
+
+    private fun loadProducts() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoadingProducts = true) }
+            val productsResult = getProductsUseCase()
+            val categoriesResult = getCategoriesUseCase()
+
+            _state.update {
+                it.copy(
+                    isLoadingProducts = false,
+                    availableProducts = productsResult.getOrDefault(emptyList()),
+                    categories = categoriesResult.getOrDefault(emptyList())
+                )
+            }
+        }
+    }
 
     fun onEvent(event: CreateInvoiceEvent) {
         when (event) {

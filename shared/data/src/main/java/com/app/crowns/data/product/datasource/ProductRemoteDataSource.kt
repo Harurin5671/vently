@@ -1,9 +1,9 @@
-package com.app.crowns.stock.data.datasource
+package com.app.crowns.data.product.datasource
 
-import com.app.crowns.stock.data.dto.CategoryEntity
-import com.app.crowns.stock.data.dto.ProductEntity
+import com.app.crowns.data.product.dto.CategoryEntity
+import com.app.crowns.data.product.dto.ProductEntity
 
-interface StockRemoteDataSource {
+interface ProductRemoteDataSource {
     suspend fun getProducts(): Result<List<ProductEntity>>
     suspend fun saveProduct(product: ProductEntity): Result<Unit>
     suspend fun getCategories(): Result<List<CategoryEntity>>

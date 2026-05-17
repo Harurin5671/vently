@@ -1,7 +1,7 @@
 package com.app.crowns.stock.ui.addproduct
 
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.IgvType
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.IgvType
 
 sealed class AddProductEvent {
     data class OnNameChanged(val value: String) : AddProductEvent()

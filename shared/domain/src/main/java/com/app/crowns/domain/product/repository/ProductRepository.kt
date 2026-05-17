@@ -1,14 +1,14 @@
-package com.app.crowns.stock.domain.repository
+package com.app.crowns.domain.product.repository
 
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.Product
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.Product
 import kotlinx.coroutines.flow.Flow
 
-interface StockRepository {
-    val stockChanges: Flow<Unit>
+interface ProductRepository {
+    val productChanges: Flow<Unit>
     suspend fun getProducts(): Result<List<Product>>
     suspend fun saveProduct(product: Product): Result<Unit>
     suspend fun getCategories(): Result<List<Category>>
     suspend fun saveCategory(category: Category): Result<Unit>
-    suspend fun notifyStockChanged()
+    suspend fun notifyProductChanged()
 }

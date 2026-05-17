@@ -56,30 +56,15 @@ import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.Product
 import com.app.crowns.invoice.domain.model.InvoiceItem
-
-// Mock product para el front
-data class MockProduct(
-    val id: String,
-    val name: String,
-    val sku: String,
-    val price: Double,
-    val stock: Int,
-    val category: String,
-)
-
-private val mockProducts = listOf(
-    MockProduct("1", "Taladro Inalámbrico 18V", "TAL-001", 180.00, 10, "Herramientas"),
-    MockProduct("2", "Juego de Brocas (10 pcs)", "BRO-002", 70.00, 2, "Herramientas"),
-    MockProduct("3", "Cinta Métrica 5m", "CIN-003", 15.00, 0, "Herramientas"),
-    MockProduct("4", "Agua Mineral Premium 500ml", "BEB-001", 4.50, 50, "Bebidas"),
-    MockProduct("5", "Café Orgánico 250g", "BEB-088", 24.50, 15, "Bebidas"),
-    MockProduct("6", "Vaso Térmico Acero", "HOG-221", 35.00, 8, "Hogar"),
-)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddProductSheet(
+    products: List<Product>,
+    categories: List<Category>,
     searchQuery: String,
     selectedCategory: String?,
     onSearchChanged: (String) -> Unit,
@@ -91,12 +76,10 @@ fun AddProductSheet(
     var expandedProductId by remember { mutableStateOf<String?>(null) }
     var expandedQuantity by remember { mutableIntStateOf(1) }
 
-    val categories = mockProducts.map { it.category }.distinct()
-
-    val filtered = mockProducts.filter { product ->
+    val filtered = products.filter { product ->
         (searchQuery.isBlank() || product.name.contains(searchQuery, ignoreCase = true) ||
-                product.sku.contains(searchQuery, ignoreCase = true)) &&
-                (selectedCategory == null || product.category == selectedCategory)
+                (product.sku?.contains(searchQuery, ignoreCase = true) ?: false)) &&
+                (selectedCategory == null || product.category?.name == selectedCategory)
     }
 
     ModalBottomSheet(
@@ -165,9 +148,9 @@ fun AddProductSheet(
                 }
                 items(categories) { category ->
                     CategoryChip(
-                        label = category,
-                        isSelected = selectedCategory == category,
-                        onClick = { onCategoryChanged(category) },
+                        label = category.name,
+                        isSelected = selectedCategory == category.name,
+                        onClick = { onCategoryChanged(category.name) },
                     )
                 }
             }
@@ -179,9 +162,9 @@ fun AddProductSheet(
                 verticalArrangement = Arrangement.spacedBy(8.dp),
                 modifier = Modifier.height(400.dp),
             ) {
-                items(filtered, key = { it.id }) { product ->
+                items(filtered, key = { it.id ?: "" }) { product ->
                     val isExpanded = expandedProductId == product.id
-                    val isOutOfStock = product.stock == 0
+                    val isOutOfStock = product.currentStock == 0
 
                     Column(
                         modifier = Modifier
@@ -192,7 +175,7 @@ fun AddProductSheet(
                                 width = if (isExpanded) 2.dp else 1.dp,
                                 color = when {
                                     isExpanded -> Primary
-                                    product.stock in 1..3 -> Color(0xFFF59E0B)
+                                    product.currentStock in 1..3 -> Color(0xFFF59E0B)
                                     else -> OutlineVariant
                                 },
                                 shape = RoundedCornerShape(12.dp),
@@ -246,7 +229,7 @@ fun AddProductSheet(
                                     color = if (isOutOfStock) OnSurfaceVariant else OnSurface,
                                 )
                                 Text(
-                                    text = "SKU: ${product.sku}",
+                                    text = "SKU: ${product.sku ?: "S/SKU"}",
                                     fontSize = 12.sp,
                                     color = Outline,
                                 )
@@ -255,16 +238,16 @@ fun AddProductSheet(
                             Column(horizontalAlignment = Alignment.End) {
                                 val locale = LocalConfiguration.current.locales[0]
                                 Text(
-                                    text = "S/ ${String.format(locale, "%.2f", product.price)}",
+                                    text = "S/ ${String.format(locale, "%.2f", product.salePrice)}",
                                     fontSize = 14.sp,
                                     fontWeight = FontWeight.Medium,
                                     color = if (isOutOfStock) OnSurfaceVariant else Primary,
                                 )
                                 // Stock badge
                                 val (badgeText, badgeBg, badgeFg) = when {
-                                    product.stock == 0 -> Triple("SIN STOCK", Color(0xFFF1F5F9), Color(0xFF64748B))
-                                    product.stock <= 3 -> Triple("BAJO STOCK (${product.stock})", Color(0xFFFFFBEB), Color(0xFFF59E0B))
-                                    else -> Triple("STOCK (${product.stock})", Color(0xFFECFDF5), Color(0xFF10B981))
+                                    product.currentStock == 0 -> Triple("SIN STOCK", Color(0xFFF1F5F9), Color(0xFF64748B))
+                                    product.currentStock <= 3 -> Triple("BAJO STOCK (${product.currentStock})", Color(0xFFFFFBEB), Color(0xFFF59E0B))
+                                    else -> Triple("STOCK (${product.currentStock})", Color(0xFFECFDF5), Color(0xFF10B981))
                                 }
                                 Text(
                                     text = badgeText,
@@ -344,10 +327,10 @@ fun AddProductSheet(
                                     onClick = {
                                         onAddItem(
                                             InvoiceItem(
-                                                productId = product.id,
+                                                productId = product.id ?: "",
                                                 name = product.name,
                                                 sku = product.sku,
-                                                unitPrice = product.price,
+                                                unitPrice = product.salePrice,
                                                 quantity = expandedQuantity,
                                             )
                                         )

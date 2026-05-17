@@ -2,8 +2,8 @@ package com.app.crowns.stock.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.stock.domain.usecase.GetProductsUseCase
-import com.app.crowns.stock.domain.repository.StockRepository
+import com.app.crowns.domain.product.usecase.GetProductsUseCase
+import com.app.crowns.domain.product.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -19,7 +19,7 @@ import javax.inject.Inject
 @HiltViewModel
 class StockViewModel @Inject constructor(
     private val getProductsUseCase: GetProductsUseCase,
-    private val repository: StockRepository,
+    private val repository: ProductRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StockUiState())
@@ -31,7 +31,7 @@ class StockViewModel @Inject constructor(
     init {
         loadStock()
         
-        repository.stockChanges
+        repository.productChanges
             .onEach { 
                 // Al detectar un cambio (ej. producto guardado), limpiamos y recargamos
                 _state.update { it.copy(products = emptyList(), filteredProducts = emptyList()) }

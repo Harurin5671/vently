@@ -1,10 +1,10 @@
-package com.app.crowns.stock.data.mapper
+package com.app.crowns.data.product.mapper
 
-import com.app.crowns.stock.data.dto.CategoryEntity
-import com.app.crowns.stock.data.dto.ProductEntity
-import com.app.crowns.stock.domain.model.Category
-import com.app.crowns.stock.domain.model.IgvType
-import com.app.crowns.stock.domain.model.Product
+import com.app.crowns.data.product.dto.CategoryEntity
+import com.app.crowns.data.product.dto.ProductEntity
+import com.app.crowns.domain.product.model.Category
+import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.model.Product
 
 fun ProductEntity.toDomain(category: Category? = null): Product = Product(
     id = id,

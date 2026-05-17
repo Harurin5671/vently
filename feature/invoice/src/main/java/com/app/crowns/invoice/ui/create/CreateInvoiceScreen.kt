@@ -40,7 +40,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnPrimary
 import com.app.crowns.designsystem.color.OnSurface
@@ -50,6 +50,10 @@ import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
+import com.app.crowns.invoice.domain.model.InvoiceItem
+import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.ui.components.AddProductSheet
 import com.app.crowns.invoice.ui.components.ClientSection
 import com.app.crowns.invoice.ui.components.InvoiceItemRow
@@ -271,6 +275,8 @@ private fun CreateInvoiceContent(
     // Bottom sheet
     if (state.showAddProductSheet) {
         AddProductSheet(
+            products = state.availableProducts,
+            categories = state.categories,
             searchQuery = state.productSearchQuery,
             selectedCategory = state.selectedCategoryFilter,
             onSearchChanged = { onEvent(CreateInvoiceEvent.OnProductSearchChanged(it)) },
@@ -297,7 +303,7 @@ private fun SectionLabel(text: String) {
 }
 
 @Composable
-private fun SectionCard(content: @Composable () -> Unit) {
+ fun SectionCard(content: @Composable () -> Unit) {
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -308,5 +314,76 @@ private fun SectionCard(content: @Composable () -> Unit) {
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         content()
+    }
+}
+
+// ─────────────────────────────────────────────
+// Previews
+// ─────────────────────────────────────────────
+
+@ThemePreviews
+@Composable
+private fun CreateInvoiceEmptyPreview() {
+    VentlyTheme {
+        CreateInvoiceContent(
+            state = CreateInvoiceUiState(),
+            onEvent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun CreateInvoiceWithItemsPreview() {
+    VentlyTheme {
+        CreateInvoiceContent(
+            state = CreateInvoiceUiState(
+                items = listOf(
+                    InvoiceItem("1", "Agua Mineral 500ml", "BEB-001", 2.50, 2),
+                    InvoiceItem("2", "Galletas Soda Pack", "SNA-005", 1.20, 5),
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun CreateFacturaSearchingPreview() {
+    VentlyTheme {
+        CreateInvoiceContent(
+            state = CreateInvoiceUiState(
+                invoiceType = InvoiceType.FACTURA,
+                clientRuc = "20123456789",
+                isSearchingRuc = true,
+                items = listOf(
+                    InvoiceItem("1", "Laptop Pro 14", "TEC-092", 4500.0, 1),
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {},
+        )
+    }
+}
+
+@ThemePreviews
+@Composable
+private fun CreateFacturaValidPreview() {
+    VentlyTheme {
+        CreateInvoiceContent(
+            state = CreateInvoiceUiState(
+                invoiceType = InvoiceType.FACTURA,
+                clientRuc = "20601234567",
+                clientBusinessName = "SOLUCIONES TECH S.A.C.",
+                items = listOf(
+                    InvoiceItem("1", "Suscripción Anual Cloud", "SRV-001", 1200.0, 1),
+                )
+            ),
+            onEvent = {},
+            onNavigateBack = {},
+        )
     }
 }
