@@ -14,12 +14,11 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
 
 @Composable
 fun VentlyLoadingScreen(

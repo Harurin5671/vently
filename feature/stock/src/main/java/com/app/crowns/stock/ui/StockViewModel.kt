@@ -2,6 +2,7 @@ package com.app.crowns.stock.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import com.app.crowns.domain.product.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -19,7 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class StockViewModel @Inject constructor(
     private val getProductsUseCase: GetProductsUseCase,
-    private val repository: ProductRepository,
+    repository: ProductRepository,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(StockUiState())
@@ -30,12 +31,11 @@ class StockViewModel @Inject constructor(
 
     init {
         loadStock()
-        
+
         repository.productChanges
-            .onEach { 
-                // Al detectar un cambio (ej. producto guardado), limpiamos y recargamos
+            .onEach {
                 _state.update { it.copy(products = emptyList(), filteredProducts = emptyList()) }
-                loadStock() 
+                loadStock()
             }
             .launchIn(viewModelScope)
     }
@@ -53,28 +53,28 @@ class StockViewModel @Inject constructor(
     private fun loadStock() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
-            
+
             getProductsUseCase().onSuccess { domainProducts ->
-                val uiProducts = domainProducts.map { p ->
-                    Product(
-                        id = p.id ?: "",
-                        name = p.name,
-                        sku = p.sku ?: "S/SKU",
-                        category = p.category?.name ?: "Sin categoría",
-                        quantity = p.currentStock,
-                        price = p.salePrice,
-                        colorHex = "#3B82F6" // Opcional: podrías guardarlo en el modelo si quieres
-                    )
-                }
-                
-                _state.update {
-                    it.copy(
+//                val uiProducts = domainProducts.map { p ->
+//                    Product(
+//                        id = p.id ?: "",
+//                        name = p.name,
+//                        sku = p.sku ?: "S/SKU",
+//                        category = p.category?.name ?: "Sin categoría",
+//                        quantity = p.currentStock,
+//                        price = p.salePrice,
+//                        colorHex = "#3B82F6"
+//                    )
+//                }
+
+                _state.update { state ->
+                    state.copy(
                         isLoading = false,
-                        products = uiProducts,
-                        filteredProducts = uiProducts,
-                        totalProducts = uiProducts.size,
-                        lowStockCount = uiProducts.count { it.stockStatus == StockStatus.LOW },
-                        noStockCount = uiProducts.count { it.stockStatus == StockStatus.NONE },
+                        products = domainProducts,
+                        filteredProducts = domainProducts,
+                        totalProducts = domainProducts.size,
+                        lowStockCount = domainProducts.count { it.stockStatus == StockStatus.LOW },
+                        noStockCount = domainProducts.count { it.stockStatus == StockStatus.NONE },
                     )
                 }
                 filterAndSearch()
@@ -107,7 +107,7 @@ class StockViewModel @Inject constructor(
             } else {
                 filteredByStatus.filter {
                     it.name.contains(state.searchQuery, ignoreCase = true) ||
-                            it.sku.contains(state.searchQuery, ignoreCase = true)
+                            (it.sku ?: "").contains(state.searchQuery, ignoreCase = true)
                 }
             }
 

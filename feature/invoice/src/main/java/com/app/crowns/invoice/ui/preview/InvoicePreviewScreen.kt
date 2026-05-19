@@ -56,8 +56,6 @@ import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
-import com.app.crowns.designsystem.preview.ThemePreviews
-import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.invoice.ui.create.InvoicePreviewUiState
 
 @Composable

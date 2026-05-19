@@ -17,18 +17,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.Success
 import com.app.crowns.history.domain.model.HistoryInvoice
 import com.app.crowns.history.domain.model.HistoryInvoiceStatus
 import com.app.crowns.history.domain.model.HistoryInvoiceType
-import java.util.Locale
 
 @Composable
 fun HistoryInvoiceItem(
@@ -88,7 +86,7 @@ fun HistoryInvoiceItem(
         // Amount + status
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "S/ ${String.format(Locale.getDefault(), "%,.2f", invoice.amount)}",
+                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%,.2f", invoice.amount)}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,

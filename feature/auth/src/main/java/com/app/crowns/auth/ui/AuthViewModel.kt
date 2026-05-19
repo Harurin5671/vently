@@ -5,7 +5,6 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.common.Result
 import com.app.crowns.domain.auth.model.AuthError
-import com.app.crowns.domain.auth.model.User
 import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
 import com.app.crowns.domain.auth.usecase.IsSessionActiveUseCase
 import com.app.crowns.domain.auth.usecase.LogoutUseCase

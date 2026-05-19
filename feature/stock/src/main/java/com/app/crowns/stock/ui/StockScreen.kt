@@ -14,13 +14,18 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -35,22 +40,31 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.*
-import com.app.crowns.designsystem.theme.VentlyTheme
-import com.app.crowns.designsystem.preview.ThemePreviews
-import androidx.compose.ui.platform.LocalLocale
 import androidx.core.graphics.toColorInt
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-
-import androidx.compose.foundation.layout.width
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import coil3.compose.AsyncImage
+import com.app.crowns.designsystem.color.OnPrimary
+import com.app.crowns.designsystem.color.OnSurface
+import com.app.crowns.designsystem.color.OnSurfaceVariant
+import com.app.crowns.designsystem.color.Outline
+import com.app.crowns.designsystem.color.OutlineVariant
+import com.app.crowns.designsystem.color.Primary
+import com.app.crowns.designsystem.color.PrimaryContainer
+import com.app.crowns.designsystem.color.StockLow
+import com.app.crowns.designsystem.color.StockLowBg
+import com.app.crowns.designsystem.color.StockNone
+import com.app.crowns.designsystem.color.StockNoneBg
+import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.color.SurfaceContainerHigh
+import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
+import com.app.crowns.domain.product.model.Product
 import com.app.crowns.ui.components.shimmerEffect
 
 @Composable
@@ -180,10 +194,10 @@ private fun StockContent(
                         ProductItemSkeleton()
                     }
                 } else {
-                    items(state.filteredProducts, key = { it.id }) { product ->
+                    items(state.filteredProducts, key = { it.id ?: "" }) { product ->
                         ProductItem(
                             product = product,
-                            onClick = { onEvent(StockEvent.OnProductClick(product.id)) },
+                            onClick = { onEvent(StockEvent.OnProductClick(product.id ?: "")) },
                         )
                     }
                 }
@@ -406,6 +420,117 @@ private fun StockFiltersRow(
     }
 }
 
+//@Composable
+//private fun ProductItem(
+//    product: Product,
+//    onClick: () -> Unit,
+//    modifier: Modifier = Modifier,
+//) {
+//    val statusColor = when (product.stockStatus) {
+//        StockStatus.LOW -> StockLow
+//        StockStatus.NONE -> StockNone
+//        StockStatus.OK -> null
+//    }
+//    val statusLabel = when (product.stockStatus) {
+//        StockStatus.LOW -> "STOCK BAJO"
+//        StockStatus.NONE -> "SIN STOCK"
+//        StockStatus.OK -> null
+//    }
+//
+//    Row(
+//        modifier = modifier
+//            .fillMaxWidth()
+//            .clip(RoundedCornerShape(12.dp))
+//            .background(SurfaceContainerLowest)
+//            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
+//            .then(
+//                if (statusColor != null)
+//                    Modifier.border(
+//                        width = 1.dp,
+//                        color = OutlineVariant,
+//                        shape = RoundedCornerShape(12.dp),
+//                    )
+//                else Modifier
+//            )
+//            .clickable { onClick() }
+//            .padding(16.dp),
+//        horizontalArrangement = Arrangement.spacedBy(12.dp),
+//        verticalAlignment = Alignment.CenterVertically,
+//    ) {
+//        // Color dot
+//        Box(
+//            modifier = Modifier
+//                .size(12.dp)
+//                .clip(CircleShape)
+//                .background(
+//                    try {
+//                        Color(product.colorHex.toColorInt())
+//                    } catch (_: Exception) {
+//                        Primary
+//                    }
+//                ),
+//        )
+//
+//        // Info
+//        Column(modifier = Modifier.weight(1f)) {
+//            Row(
+//                verticalAlignment = Alignment.CenterVertically,
+//                horizontalArrangement = Arrangement.spacedBy(8.dp),
+//            ) {
+//                Text(
+//                    text = product.name,
+//                    fontSize = 15.sp,
+//                    fontWeight = FontWeight.SemiBold,
+//                    color = OnSurface,
+//                )
+//                if (statusLabel != null && statusColor != null) {
+//                    Text(
+//                        text = statusLabel,
+//                        fontSize = 10.sp,
+//                        fontWeight = FontWeight.Bold,
+//                        color = statusColor,
+//                        modifier = Modifier
+//                            .clip(RoundedCornerShape(999.dp))
+//                            .background(statusColor.copy(alpha = 0.12f))
+//                            .padding(horizontal = 8.dp, vertical = 2.dp),
+//                    )
+//                }
+//            }
+//            Text(
+//                text = "SKU: ${product.sku}",
+//                fontSize = 12.sp,
+//                color = Outline,
+//            )
+//            Spacer(Modifier.height(4.dp))
+//            Text(
+//                text = product.category,
+//                fontSize = 11.sp,
+//                color = OnSurfaceVariant,
+//                modifier = Modifier
+//                    .clip(RoundedCornerShape(6.dp))
+//                    .background(SurfaceContainerHigh)
+//                    .padding(horizontal = 8.dp, vertical = 2.dp),
+//            )
+//        }
+//
+//        // Quantity + price
+//        Column(horizontalAlignment = Alignment.End) {
+//            Text(
+//                text = "${product.quantity} uds",
+//                fontSize = 16.sp,
+//                fontWeight = FontWeight.Bold,
+//                color = if (product.stockStatus == StockStatus.NONE) StockNone else Primary,
+//            )
+//            Text(
+//                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", product.price)}",
+//                fontSize = 14.sp,
+//                fontWeight = FontWeight.Medium,
+//                color = OnSurfaceVariant,
+//            )
+//        }
+//    }
+//}
+
 @Composable
 private fun ProductItem(
     product: Product,
@@ -429,33 +554,35 @@ private fun ProductItem(
             .clip(RoundedCornerShape(12.dp))
             .background(SurfaceContainerLowest)
             .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-            .then(
-                if (statusColor != null)
-                    Modifier.border(
-                        width = 1.dp,
-                        color = OutlineVariant,
-                        shape = RoundedCornerShape(12.dp),
-                    )
-                else Modifier
-            )
             .clickable { onClick() }
             .padding(16.dp),
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Color dot
+        // Imagen o inicial
         Box(
             modifier = Modifier
-                .size(12.dp)
-                .clip(CircleShape)
-                .background(
-                    try {
-                        Color(product.colorHex.toColorInt())
-                    } catch (e: Exception) {
-                        Primary
-                    }
-                ),
-        )
+                .size(48.dp)
+                .clip(RoundedCornerShape(10.dp))
+                .background(PrimaryContainer.copy(alpha = 0.2f)),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (product.imageUrl != null) {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+//                    contentScale = ContentScale.Crop,
+                )
+            } else {
+                Text(
+                    text = product.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                    fontSize = 20.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                )
+            }
+        }
 
         // Info
         Column(modifier = Modifier.weight(1f)) {
@@ -483,13 +610,13 @@ private fun ProductItem(
                 }
             }
             Text(
-                text = "SKU: ${product.sku}",
+                text = "SKU: ${product.sku ?: "S/SKU"}",
                 fontSize = 12.sp,
                 color = Outline,
             )
             Spacer(Modifier.height(4.dp))
             Text(
-                text = product.category,
+                text = product.category?.name ?: "Sin categoría",
                 fontSize = 11.sp,
                 color = OnSurfaceVariant,
                 modifier = Modifier
@@ -499,16 +626,16 @@ private fun ProductItem(
             )
         }
 
-        // Quantity + price
+        // Stock + precio
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "${product.quantity} uds",
+                text = "${product.currentStock} uds",
                 fontSize = 16.sp,
                 fontWeight = FontWeight.Bold,
                 color = if (product.stockStatus == StockStatus.NONE) StockNone else Primary,
             )
             Text(
-                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", product.price)}",
+                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", product.salePrice)}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurfaceVariant,
@@ -517,26 +644,26 @@ private fun ProductItem(
     }
 }
 
-@ThemePreviews
-@Composable
-private fun StockScreenPreview() {
-    val mockProducts = listOf(
-        Product("1", "Agua Mineral 500ml", "BEB-0012", "Bebidas", 5, 2.50, "#3B82F6"),
-        Product("2", "Polo Algodón M", "ROP-0941", "Ropa", 0, 45.00, "#10B981"),
-        Product("3", "Gaseosa Inka 1.5L", "BEB-0412", "Bebidas", 24, 7.50, "#3B82F6"),
-        Product("4", "Galletas Soda Pack", "SNA-0052", "Snacks", 48, 1.20, "#F59E0B"),
-        Product("5", "Jean Slim Fit 32", "ROP-0231", "Ropa", 12, 89.90, "#10B981"),
-    )
-    VentlyTheme {
-        StockContent(
-            state = StockUiState(
-                products = mockProducts,
-                filteredProducts = mockProducts,
-                totalProducts = mockProducts.size,
-                lowStockCount = mockProducts.count { it.stockStatus == StockStatus.LOW },
-                noStockCount = mockProducts.count { it.stockStatus == StockStatus.NONE },
-            ),
-            onEvent = {}
-        )
-    }
-}
+//@ThemePreviews
+//@Composable
+//private fun StockScreenPreview() {
+//    val mockProducts = listOf(
+//        Product("1", "Agua Mineral 500ml", "BEB-0012", "Bebidas", 5, 2.50, "#3B82F6"),
+//        Product("2", "Polo Algodón M", "ROP-0941", "Ropa", 0, 45.00, "#10B981"),
+//        Product("3", "Gaseosa Inka 1.5L", "BEB-0412", "Bebidas", 24, 7.50, "#3B82F6"),
+//        Product("4", "Galletas Soda Pack", "SNA-0052", "Snacks", 48, 1.20, "#F59E0B"),
+//        Product("5", "Jean Slim Fit 32", "ROP-0231", "Ropa", 12, 89.90, "#10B981"),
+//    )
+//    VentlyTheme {
+//        StockContent(
+//            state = StockUiState(
+//                products = mockProducts,
+//                filteredProducts = mockProducts,
+//                totalProducts = mockProducts.size,
+//                lowStockCount = mockProducts.count { it.stockStatus == StockStatus.LOW },
+//                noStockCount = mockProducts.count { it.stockStatus == StockStatus.NONE },
+//            ),
+//            onEvent = {}
+//        )
+//    }
+//}

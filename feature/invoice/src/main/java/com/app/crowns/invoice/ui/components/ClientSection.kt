@@ -1,13 +1,11 @@
 package com.app.crowns.invoice.ui.components
 
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,7 +18,6 @@ import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
-import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -36,8 +33,6 @@ import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.OutlineVariant
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.Success
-import com.app.crowns.designsystem.preview.ThemePreviews
-import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.invoice.domain.model.InvoiceType
 
 @Composable

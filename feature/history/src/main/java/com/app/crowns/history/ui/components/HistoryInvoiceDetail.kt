@@ -6,9 +6,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,17 +22,16 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.OutlineVariant
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.history.domain.model.HistoryInvoice
-import java.util.Locale
 
 @Composable
 fun HistoryInvoiceDetail(
@@ -122,7 +119,7 @@ fun HistoryInvoiceDetail(
                         color = OnSurface,
                     )
                     Text(
-                        text = "S/ ${String.format(Locale.getDefault(), "%.2f", item.subtotal)}",
+                        text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", item.subtotal)}",
                         fontSize = 14.sp,
                         color = OnSurface,
                     )
@@ -157,7 +154,7 @@ fun HistoryInvoiceDetail(
                     color = OnSurface,
                 )
                 Text(
-                    text = "S/ ${String.format(Locale.getDefault(), "%.2f", invoice.amount)}",
+                    text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", invoice.amount)}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = OnSurface,
@@ -242,7 +239,7 @@ private fun BreakdownRow(label: String, amount: Double) {
     ) {
         Text(text = label, fontSize = 12.sp, color = Outline)
         Text(
-            text = "S/ ${String.format(Locale.getDefault(), "%.2f", amount)}",
+            text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", amount)}",
             fontSize = 12.sp,
             color = Outline,
         )
@@ -275,7 +272,7 @@ private fun formatDateTime(dateTime: String): String {
         val time = dateTime.substring(11, 16)
         val parts = date.split("-")
         "${parts[2]} ${monthName(parts[1].toInt())} ${parts[0]}, $time"
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         dateTime
     }
 }

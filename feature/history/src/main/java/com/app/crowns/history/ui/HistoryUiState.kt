@@ -38,8 +38,7 @@ val HistoryUiState.groupedInvoices: Map<String, List<HistoryInvoice>>
         val today = java.time.LocalDate.now()
         val yesterday = today.minusDays(1)
         return filteredInvoices.groupBy { invoice ->
-            val invoiceDate = invoice.dateTime.take(10)
-            when (invoiceDate) {
+            when (val invoiceDate = invoice.dateTime.take(10)) {
                 today.toString() -> "HOY"
                 yesterday.toString() -> "AYER"
                 else -> invoiceDate

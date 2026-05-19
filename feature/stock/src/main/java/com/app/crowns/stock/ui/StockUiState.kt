@@ -1,5 +1,7 @@
 package com.app.crowns.stock.ui
 
+import com.app.crowns.domain.product.model.Product
+
 data class StockUiState(
     val isLoading: Boolean = false,
     val totalProducts: Int = 0,
@@ -12,16 +14,6 @@ data class StockUiState(
     val error: String? = null,
 )
 
-data class Product(
-    val id: String,
-    val name: String,
-    val sku: String,
-    val category: String,
-    val quantity: Int,
-    val price: Double,
-    val colorHex: String = "#3B82F6",
-)
-
 enum class StockFilter(val label: String) {
     ALL("Todos"),
     LOW_STOCK("Stock bajo"),
@@ -29,10 +21,14 @@ enum class StockFilter(val label: String) {
 }
 
 val Product.stockStatus: StockStatus
-    get() = when {
-        quantity == 0 -> StockStatus.NONE
-        quantity <= 5 -> StockStatus.LOW
-        else -> StockStatus.OK
+    get() {
+        if (!trackStock) return StockStatus.OK
+        val threshold = minStockAlert ?: 5
+        return when {
+            currentStock == 0 -> StockStatus.NONE
+            currentStock <= threshold -> StockStatus.LOW
+            else -> StockStatus.OK
+        }
     }
 
 enum class StockStatus { OK, LOW, NONE }

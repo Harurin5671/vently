@@ -64,6 +64,10 @@ dependencies {
     implementation(libs.supabase.compose.auth)
     implementation(libs.supabase.compose.auth.ui)
 
+    // Coil
+    implementation(libs.coil.compose)
+    implementation(libs.coil.network.okhttp)
+
     //Serialization
     implementation(libs.kotlinx.serialization.json)
 }
