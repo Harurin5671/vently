@@ -1,9 +1,11 @@
 package com.app.crowns.stock.ui.addproduct
 
+import android.net.Uri
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.IgvType
 
 data class AddProductUiState(
+    val imageUri: Uri? = null,
     val name: String = "",
     val description: String = "",
     val sku: String = "",

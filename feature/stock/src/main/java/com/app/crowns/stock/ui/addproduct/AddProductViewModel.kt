@@ -1,5 +1,7 @@
 package com.app.crowns.stock.ui.addproduct
 
+import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.product.model.Category
@@ -9,6 +11,7 @@ import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
 import com.app.crowns.domain.product.usecase.SaveProductUseCase
 import com.app.crowns.domain.product.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -23,6 +26,7 @@ class AddProductViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
     private val saveProduct: SaveProductUseCase,
     private val repository: ProductRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(AddProductUiState())
@@ -37,6 +41,7 @@ class AddProductViewModel @Inject constructor(
 
     fun onEvent(event: AddProductEvent) {
         when (event) {
+            is AddProductEvent.OnImageSelected -> _state.update { it.copy(imageUri = event.uri) }
             is AddProductEvent.OnNameChanged -> _state.update { it.copy(name = event.value) }
             is AddProductEvent.OnDescriptionChanged -> _state.update { it.copy(description = event.value) }
             is AddProductEvent.OnSkuChanged -> _state.update { it.copy(sku = event.value) }
@@ -66,15 +71,22 @@ class AddProductViewModel @Inject constructor(
 
     private fun saveCategory() {
         val name = _state.value.newCategoryName.trim()
-        if (name.isBlank()) return
+        Log.d("AddProductViewModel", "saveCategory -> name: $name")
+        if (name.isBlank()) {
+            Log.w("AddProductViewModel", "saveCategory -> name is blank, returning")
+            return
+        }
         viewModelScope.launch {
+            _state.update { it.copy(isSaving = true, error = null) }
             repository.saveCategory(Category(id = "", name = name))
                 .onSuccess {
+                    Log.d("AddProductViewModel", "saveCategory -> Success")
                     loadCategories()
-                    _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "") }
+                    _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", isSaving = false) }
                 }
                 .onFailure { error ->
-                    _state.update { it.copy(error = error.message) }
+                    Log.e("AddProductViewModel", "saveCategory -> Error: ${error.message}", error)
+                    _state.update { it.copy(error = error.message, isSaving = false) }
                 }
         }
     }
@@ -84,6 +96,16 @@ class AddProductViewModel @Inject constructor(
         if (!s.isFormValid) return
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
+            
+            val imageBytes = s.imageUri?.let { uri ->
+                try {
+                    context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
+                } catch (e: Exception) {
+                    Log.e("AddProductViewModel", "Error reading image bytes", e)
+                    null
+                }
+            }
+
             val product = Product(
                 name = s.name,
                 description = s.description.ifBlank { null },
@@ -97,7 +119,8 @@ class AddProductViewModel @Inject constructor(
                 currentStock = s.currentStock,
                 minStockAlert = s.minStockAlert.toIntOrNull(),
             )
-            saveProduct(product)
+            Log.d("AddProductViewModel", "product -> name: $product")
+            saveProduct(product, imageBytes)
                 .onSuccess {
                     _state.update { it.copy(isSaving = false) }
                     _navigationEvent.send(AddProductNavigationEvent.NavigateBack)

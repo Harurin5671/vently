@@ -82,6 +82,7 @@ fun ClientSection(
                         OutlinedTextField(
                             value = clientRuc,
                             onValueChange = onClientRucChanged,
+                            enabled = !isSearchingRuc,
                             placeholder = { Text("20XXXXXXXXX", color = Outline) },
                             isError = rucError != null,
                             singleLine = true,

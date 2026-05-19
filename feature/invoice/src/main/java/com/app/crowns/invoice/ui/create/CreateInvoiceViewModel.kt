@@ -1,5 +1,6 @@
 package com.app.crowns.invoice.ui.create
 
+import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceItem
@@ -23,6 +24,7 @@ import javax.inject.Inject
 class CreateInvoiceViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
     private val searchCompanyUseCase: SearchCompanyUseCase,
+    private val getCompanyUseCase: GetCompanyUseCase,
     private val getProductsUseCase: GetProductsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
 ) : ViewModel() {
@@ -32,8 +34,19 @@ class CreateInvoiceViewModel @Inject constructor(
     private val _navigationEvent = Channel<CreateInvoiceNavigationEvent>(Channel.BUFFERED)
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
+    private var myCompanyRuc: String? = null
+
     init {
         loadProducts()
+        loadCompanyRuc()
+    }
+
+    private fun loadCompanyRuc() {
+        viewModelScope.launch {
+            getCompanyUseCase().onSuccess {
+                myCompanyRuc = it?.documentNumber
+            }
+        }
     }
 
     private fun loadProducts() {
@@ -68,8 +81,11 @@ class CreateInvoiceViewModel @Inject constructor(
                 it.copy(clientName = event.value)
             }
 
-            is CreateInvoiceEvent.OnClientRucChanged -> _state.update {
-                it.copy(clientRuc = event.value, rucError = null, clientBusinessName = "")
+            is CreateInvoiceEvent.OnClientRucChanged -> {
+                val newValue = event.value.filter { it.isDigit() }.take(11)
+                _state.update {
+                    it.copy(clientRuc = newValue, rucError = null, clientBusinessName = "")
+                }
             }
 
             is CreateInvoiceEvent.OnSearchRuc -> searchRuc()
@@ -100,9 +116,15 @@ class CreateInvoiceViewModel @Inject constructor(
     private fun searchRuc() {
         val ruc = _state.value.clientRuc
         if (ruc.length != 11) {
-            _state.update { it.copy(rucError = "RUC must be 11 digits") }
+            _state.update { it.copy(rucError = "El RUC debe tener 11 dígitos") }
             return
         }
+
+        if (ruc == myCompanyRuc) {
+            _state.update { it.copy(rucError = "No puedes emitir una factura a tu propio RUC") }
+            return
+        }
+
         viewModelScope.launch {
             _state.update { it.copy(isSearchingRuc = true, rucError = null) }
             searchCompanyUseCase(ruc).fold(

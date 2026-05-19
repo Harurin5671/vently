@@ -32,7 +32,10 @@ class OnboardingSupabaseDataSourceImpl @Inject constructor(
     ): Result<String> = runCatching {
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: error("User not authenticated")
-        val path = "$userId/logo.jpg"
+        
+        // Usar un timestamp en el nombre del archivo para forzar la actualización de la URL y evitar caché
+        val timestamp = System.currentTimeMillis()
+        val path = "$userId/logo_$timestamp.jpg"
 
         supabase.storage
             .from("business-logos")

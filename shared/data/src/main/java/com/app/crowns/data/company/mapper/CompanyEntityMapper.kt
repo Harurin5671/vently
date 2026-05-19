@@ -4,6 +4,7 @@ import com.app.crowns.data.company.entity.CompanyEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 
 fun CompanyEntity.toDomain(): CompanyInfo = CompanyInfo(
+    id = id ?: "",
     businessName = businessName,
     documentNumber = ruc,
     status = status.orEmpty(),
@@ -18,6 +19,7 @@ fun CompanyEntity.toDomain(): CompanyInfo = CompanyInfo(
 )
 
 fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity = CompanyEntity(
+    id = id.ifBlank { null },
     userId = userId,
     ruc = documentNumber,
     businessName = businessName,

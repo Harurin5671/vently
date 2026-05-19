@@ -70,6 +70,7 @@ import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.ui.components.VentlyImageSelector
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 
@@ -177,6 +178,19 @@ private fun AddProductContent(
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
             Spacer(Modifier.height(4.dp))
+
+            // Image Selector
+            Box(
+                modifier = Modifier.fillMaxWidth(),
+                contentAlignment = Alignment.Center
+            ) {
+                VentlyImageSelector(
+                    selectedImageUri = state.imageUri,
+                    onImageSelected = { onEvent(AddProductEvent.OnImageSelected(it)) },
+                    size = 100.dp,
+                    shape = RoundedCornerShape(16.dp)
+                )
+            }
 
             // Basic info
             SectionCard(title = "INFORMACIÓN BÁSICA") {

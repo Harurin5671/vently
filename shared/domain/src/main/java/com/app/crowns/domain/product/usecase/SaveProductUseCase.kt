@@ -7,6 +7,6 @@ import javax.inject.Inject
 class SaveProductUseCase @Inject constructor(
     private val repository: ProductRepository,
 ) {
-    suspend operator fun invoke(product: Product): Result<Unit> =
-        repository.saveProduct(product)
+    suspend operator fun invoke(product: Product, imageBytes: ByteArray? = null): Result<Unit> =
+        repository.saveProduct(product, imageBytes)
 }

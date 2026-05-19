@@ -1,6 +1,7 @@
 package com.app.crowns.domain.company.model
 
 data class CompanyInfo(
+    val id: String,
     val businessName: String,
     val documentNumber: String,
     val status: String,

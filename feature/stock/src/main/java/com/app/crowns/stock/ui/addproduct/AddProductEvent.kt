@@ -1,9 +1,11 @@
 package com.app.crowns.stock.ui.addproduct
 
+import android.net.Uri
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.IgvType
 
 sealed class AddProductEvent {
+    data class OnImageSelected(val uri: Uri) : AddProductEvent()
     data class OnNameChanged(val value: String) : AddProductEvent()
     data class OnDescriptionChanged(val value: String) : AddProductEvent()
     data class OnSkuChanged(val value: String) : AddProductEvent()

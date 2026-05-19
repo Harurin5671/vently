@@ -51,6 +51,7 @@ dependencies {
     // Internos
     implementation(project(":core:designsystem"))
     implementation(project(":core:common"))
+    implementation(project(":core:ui"))
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

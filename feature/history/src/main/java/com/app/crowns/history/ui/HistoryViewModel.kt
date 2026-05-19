@@ -7,6 +7,7 @@ import com.app.crowns.history.domain.model.HistoryInvoiceItem
 import com.app.crowns.history.domain.model.HistoryInvoiceStatus
 import com.app.crowns.history.domain.model.HistoryInvoiceType
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,10 +50,13 @@ class HistoryViewModel @Inject constructor() : ViewModel() {
 
     private fun loadMockData() {
         viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            delay(2000) // Retraso artificial para ver el Shimmer
             val today = java.time.LocalDate.now().toString()
             val yesterday = java.time.LocalDate.now().minusDays(1).toString()
             _state.update {
                 it.copy(
+                    isLoading = false,
                     invoices = listOf(
                         HistoryInvoice(
                             id = "1",

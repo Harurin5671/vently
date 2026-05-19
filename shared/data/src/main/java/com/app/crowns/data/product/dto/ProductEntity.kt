@@ -6,7 +6,7 @@ import kotlinx.serialization.Serializable
 @Serializable
 data class ProductEntity(
     @SerialName("id") val id: String? = null,
-    @SerialName("user_id") val userId: String? = null,
+    @SerialName("company_id") val companyId: String,
     @SerialName("name") val name: String,
     @SerialName("description") val description: String? = null,
     @SerialName("sku") val sku: String? = null,
@@ -18,13 +18,14 @@ data class ProductEntity(
     @SerialName("track_stock") val trackStock: Boolean,
     @SerialName("current_stock") val currentStock: Int,
     @SerialName("min_stock_alert") val minStockAlert: Int? = null,
+    @SerialName("image_url") val imageUrl: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
 )
 
 @Serializable
 data class CategoryEntity(
     @SerialName("id") val id: String? = null,
-    @SerialName("user_id") val userId: String? = null,
+    @SerialName("company_id") val companyId: String,
     @SerialName("name") val name: String,
     @SerialName("created_at") val createdAt: String? = null,
 )

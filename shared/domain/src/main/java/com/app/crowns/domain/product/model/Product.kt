@@ -13,6 +13,7 @@ data class Product(
     val trackStock: Boolean,
     val currentStock: Int,
     val minStockAlert: Int? = null,
+    val imageUrl: String? = null,
 )
 
 val Product.profitMargin: Double

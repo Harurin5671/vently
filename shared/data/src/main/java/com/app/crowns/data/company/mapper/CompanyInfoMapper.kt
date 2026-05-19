@@ -4,6 +4,7 @@ import com.app.crowns.data.company.dto.CompanyInfoDto
 import com.app.crowns.domain.company.model.CompanyInfo
 
 fun CompanyInfoDto.toDomain(): CompanyInfo = CompanyInfo(
+    id = "",
     businessName = businessName,
     documentNumber = documentNumber,
     status = status,

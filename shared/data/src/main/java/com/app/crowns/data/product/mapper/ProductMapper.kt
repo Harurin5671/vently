@@ -19,11 +19,12 @@ fun ProductEntity.toDomain(category: Category? = null): Product = Product(
     trackStock = trackStock,
     currentStock = currentStock,
     minStockAlert = minStockAlert,
+    imageUrl = imageUrl,
 )
 
-fun Product.toEntity(userId: String): ProductEntity = ProductEntity(
+fun Product.toEntity(companyId: String): ProductEntity = ProductEntity(
     id = id,
-    userId = userId,
+    companyId = companyId,
     name = name,
     description = description,
     sku = sku,
@@ -35,6 +36,7 @@ fun Product.toEntity(userId: String): ProductEntity = ProductEntity(
     trackStock = trackStock,
     currentStock = currentStock,
     minStockAlert = minStockAlert,
+    imageUrl = imageUrl,
 )
 
 fun CategoryEntity.toDomain(): Category = Category(
@@ -42,8 +44,8 @@ fun CategoryEntity.toDomain(): Category = Category(
     name = name,
 )
 
-fun Category.toEntity(userId: String): CategoryEntity = CategoryEntity(
+fun Category.toEntity(companyId: String): CategoryEntity = CategoryEntity(
     id = id.ifEmpty { null },
-    userId = userId,
+    companyId = companyId,
     name = name,
 )
