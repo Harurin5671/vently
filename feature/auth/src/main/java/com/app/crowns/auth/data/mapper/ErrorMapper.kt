@@ -1,6 +1,6 @@
 package com.app.crowns.auth.data.mapper
 
-import com.app.crowns.auth.domain.model.AuthError
+import com.app.crowns.domain.auth.model.AuthError
 import io.github.jan.supabase.exceptions.RestException
 
 fun Throwable.toAuthError(): AuthError = when (this) {

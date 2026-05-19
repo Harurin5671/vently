@@ -2,7 +2,7 @@ package com.app.crowns.vently.splash
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.auth.domain.repository.AuthRepository
+import com.app.crowns.domain.auth.repository.AuthRepository
 import com.app.crowns.domain.company.usecase.HasCompanyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async

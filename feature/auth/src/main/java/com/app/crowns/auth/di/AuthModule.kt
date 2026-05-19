@@ -1,7 +1,7 @@
 package com.app.crowns.auth.di
 
 import com.app.crowns.auth.data.repository.AuthRepositoryImpl
-import com.app.crowns.auth.domain.repository.AuthRepository
+import com.app.crowns.domain.auth.repository.AuthRepository
 import dagger.Binds
 import dagger.Module
 import dagger.hilt.InstallIn

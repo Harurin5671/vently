@@ -2,9 +2,9 @@ package com.app.crowns.auth.data.repository
 
 import com.app.crowns.auth.data.mapper.toAuthError
 import com.app.crowns.auth.data.mapper.toUser
-import com.app.crowns.auth.domain.model.AuthError
-import com.app.crowns.auth.domain.model.User
-import com.app.crowns.auth.domain.repository.AuthRepository
+import com.app.crowns.domain.auth.model.AuthError
+import com.app.crowns.domain.auth.model.User
+import com.app.crowns.domain.auth.repository.AuthRepository
 import com.app.crowns.common.Result
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth

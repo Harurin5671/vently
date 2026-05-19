@@ -3,12 +3,12 @@ package com.app.crowns.auth.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.auth.domain.model.AuthError
-import com.app.crowns.auth.domain.model.User
 import com.app.crowns.common.Result
-import com.app.crowns.auth.domain.usecase.GetCurrentUserUseCase
-import com.app.crowns.auth.domain.usecase.IsSessionActiveUseCase
-import com.app.crowns.auth.domain.usecase.LogoutUseCase
+import com.app.crowns.domain.auth.model.AuthError
+import com.app.crowns.domain.auth.model.User
+import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
+import com.app.crowns.domain.auth.usecase.IsSessionActiveUseCase
+import com.app.crowns.domain.auth.usecase.LogoutUseCase
 import com.app.crowns.domain.company.usecase.HasCompanyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import io.github.jan.supabase.compose.auth.composable.NativeSignInResult

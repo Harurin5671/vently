@@ -1,6 +1,6 @@
 package com.app.crowns.auth.data.mapper
 
-import com.app.crowns.auth.domain.model.User
+import com.app.crowns.domain.auth.model.User
 import io.github.jan.supabase.auth.user.UserSession
 
 fun UserSession.toUser(): User = User(

@@ -1,7 +1,7 @@
-package com.app.crowns.auth.domain.usecase
+package com.app.crowns.domain.auth.usecase
 
-import com.app.crowns.auth.domain.model.User
-import com.app.crowns.auth.domain.repository.AuthRepository
+import com.app.crowns.domain.auth.model.User
+import com.app.crowns.domain.auth.repository.AuthRepository
 import javax.inject.Inject
 
 class GetCurrentUserUseCase @Inject constructor(

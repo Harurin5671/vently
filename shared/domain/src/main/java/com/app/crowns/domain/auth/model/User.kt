@@ -1,4 +1,4 @@
-package com.app.crowns.auth.domain.model
+package com.app.crowns.domain.auth.model
 
 data class User (
     val id: String,

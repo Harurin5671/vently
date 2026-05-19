@@ -34,6 +34,7 @@ dependencies {
     implementation(libs.google.dagger.hilt.android)
     ksp(libs.google.dagger.hilt.compiler)
 
+    implementation(project(":core:common"))
     implementation(project(":core:network"))
 
     testImplementation(libs.junit)

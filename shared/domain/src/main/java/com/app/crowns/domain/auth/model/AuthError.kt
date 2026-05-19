@@ -1,4 +1,4 @@
-package com.app.crowns.auth.domain.model
+package com.app.crowns.domain.auth.model
 
 sealed class AuthError {
     data object InvalidCredentials: AuthError()
