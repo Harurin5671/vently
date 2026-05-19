@@ -65,10 +65,14 @@ fun CreateInvoiceScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPreview: () -> Unit,
     viewModel: CreateInvoiceViewModel = hiltViewModel(),
+    isFactura: Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
 
     LaunchedEffect(Unit) {
+        val initialType = if (isFactura) InvoiceType.FACTURA else InvoiceType.BOLETA
+        viewModel.onEvent(CreateInvoiceEvent.OnInvoiceTypeChanged(initialType))
+        
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is CreateInvoiceNavigationEvent.NavigateToPreview -> onNavigateToPreview()

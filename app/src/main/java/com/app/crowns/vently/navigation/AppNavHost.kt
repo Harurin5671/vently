@@ -3,6 +3,10 @@ package com.app.crowns.vently.navigation
 import androidx.compose.animation.togetherWith
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
@@ -25,6 +29,8 @@ fun AppNavHost(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier,
 ) {
+    var selectedHomeTab by rememberSaveable { mutableIntStateOf(0) }
+
     NavDisplay(
         backStack = backStack,
         modifier = modifier,
@@ -73,6 +79,8 @@ fun AppNavHost(
 
                 is AppDestination.Home -> NavEntry(destination) {
                     HomeScreen(
+                        selectedTab = selectedHomeTab,
+                        onTabSelected = { selectedHomeTab = it },
                         dashboardContent = {
                             DashboardScreen(
                                 onNavigateToNewBoleta = {
@@ -81,8 +89,8 @@ fun AppNavHost(
                                 onNavigateToNewFactura = {
                                     backStack.add(AppDestination.CreateInvoice(isFactura = true))
                                 },
-                                onNavigateToStock = { /* cambiar tab */ },
-                                onNavigateToHistory = { /* cambiar tab */ },
+                                onNavigateToStock = { selectedHomeTab = 1 },
+                                onNavigateToHistory = { selectedHomeTab = 2 },
                             )
                         },
                         stockContent = {
@@ -118,7 +126,8 @@ fun AppNavHost(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToPreview = {
                             backStack.add(AppDestination.InvoicePreview)
-                        }
+                        },
+                        isFactura = destination.isFactura,
                     )
                 }
 

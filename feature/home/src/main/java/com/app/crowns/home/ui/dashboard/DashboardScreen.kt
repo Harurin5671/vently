@@ -282,6 +282,34 @@ private fun GreetingSection(userName: String) {
 @Composable
 fun DashboardScreenPreview() {
     VentlyTheme {
-        DashboardScreen()
+        DashboardContent(
+            state = DashboardUiState(
+                userName = "Juan Pérez",
+                todaySales = 1250.50,
+                salesGrowthPercent = 15.0,
+                totalInvoices = 45,
+                acceptedInvoices = 42,
+                pendingInvoices = 3,
+                recentInvoices = listOf(
+                    RecentInvoice(
+                        id = "1",
+                        number = "B001-0001",
+                        clientName = "Juan Perez",
+                        amount = 120.0,
+                        type = InvoiceType.BOLETA,
+                        status = InvoiceStatus.ACCEPTED
+                    ),
+                    RecentInvoice(
+                        id = "2",
+                        number = "F001-0042",
+                        clientName = "Vently S.A.C.",
+                        amount = 540.0,
+                        type = InvoiceType.FACTURA,
+                        status = InvoiceStatus.PENDING
+                    )
+                )
+            ),
+            onEvent = {}
+        )
     }
 }

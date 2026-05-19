@@ -19,6 +19,7 @@ import androidx.compose.material.icons.outlined.Settings
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
@@ -31,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import com.app.crowns.designsystem.color.OnPrimary
 import com.app.crowns.designsystem.color.PrimaryContainer
 import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.preview.ThemePreviews
+import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.BottomNavItem
 import com.app.crowns.home.ui.components.HomeBottomBar
 
@@ -43,14 +46,14 @@ val bottomNavItems = listOf(
 
 @Composable
 fun HomeScreen(
+    selectedTab: Int,
+    onTabSelected: (Int) -> Unit,
     dashboardContent: @Composable () -> Unit,
     stockContent: @Composable () -> Unit,
     historyContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
     onFabClick: (tab: Int) -> Unit,
 ) {
-    var selectedTab by rememberSaveable { mutableIntStateOf(0) }
-
     Scaffold(
         containerColor = Surface,
         bottomBar = {
@@ -58,7 +61,7 @@ fun HomeScreen(
                 bottomNavItems = bottomNavItems,
                 selectedTab = selectedTab,
             ) {
-                selectedTab = it
+                onTabSelected(it)
             }
         }
     ) { innerPadding ->
@@ -94,5 +97,37 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@ThemePreviews
+@Composable
+fun HomeScreenPreview() {
+    VentlyTheme {
+        HomeScreen(
+            selectedTab = 0,
+            onTabSelected = {},
+            dashboardContent = {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Dashboard Content")
+                }
+            },
+            stockContent = {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Stock Content")
+                }
+            },
+            historyContent = {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "History Content")
+                }
+            },
+            settingsContent = {
+                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                    Text(text = "Settings Content")
+                }
+            },
+            onFabClick = {}
+        )
     }
 }
