@@ -19,6 +19,7 @@ import com.app.crowns.home.ui.dashboard.DashboardScreen
 import com.app.crowns.invoice.ui.create.CreateInvoiceScreen
 import com.app.crowns.invoice.ui.preview.InvoicePreviewScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
+import com.app.crowns.settings.ui.SettingsScreen
 import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.stock.ui.addproduct.AddProductScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
@@ -101,7 +102,7 @@ fun AppNavHost(
                             )
                         },
                         historyContent = { HistoryScreen() },
-                        settingsContent = { Text("Ajustes") },
+                        settingsContent = { SettingsScreen() },
                         onFabClick = { tabIndex ->
                             when (tabIndex) {
                                 0 -> { /* Acción para Dashboard */ }
