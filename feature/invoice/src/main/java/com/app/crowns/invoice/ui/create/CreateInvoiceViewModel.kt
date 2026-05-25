@@ -115,6 +115,7 @@ class CreateInvoiceViewModel @Inject constructor(
 
     private fun searchRuc() {
         val ruc = _state.value.clientRuc
+        android.util.Log.d("SEARCH_RUC_VM", "searchRuc called with: $ruc")
         if (ruc.length != 11) {
             _state.update { it.copy(rucError = "El RUC debe tener 11 dígitos") }
             return
@@ -129,6 +130,7 @@ class CreateInvoiceViewModel @Inject constructor(
             _state.update { it.copy(isSearchingRuc = true, rucError = null) }
             searchCompanyUseCase(ruc).fold(
                 onSuccess = { company ->
+                    android.util.Log.d("SEARCH_RUC_VM", "Success: $company")
                     _state.update {
                         it.copy(
                             isSearchingRuc = false,
@@ -137,6 +139,7 @@ class CreateInvoiceViewModel @Inject constructor(
                     }
                 },
                 onHttpError = { error ->
+                    android.util.Log.e("SEARCH_RUC_VM", "HTTP Error: $error")
                     _state.update {
                         it.copy(
                             isSearchingRuc = false,
@@ -145,6 +148,7 @@ class CreateInvoiceViewModel @Inject constructor(
                     }
                 },
                 onNetworkError = {
+                    android.util.Log.e("SEARCH_RUC_VM", "Network Error")
                     _state.update {
                         it.copy(
                             isSearchingRuc = false,

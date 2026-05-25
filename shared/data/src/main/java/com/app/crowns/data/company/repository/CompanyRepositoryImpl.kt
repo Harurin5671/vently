@@ -1,5 +1,6 @@
 package com.app.crowns.data.company.repository
 
+import android.util.Log
 import com.app.crowns.data.company.dto.CompanyInfoDto
 import com.app.crowns.data.company.entity.CompanyEntity
 import com.app.crowns.data.company.mapper.toDomain
@@ -32,10 +33,22 @@ class CompanyRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCompanyInfo(ruc: String): NetworkResult<CompanyInfo> {
-        return httpClient.get(
+        Log.d("COMPANY_REPO", "Iniciando getCompanyInfo para RUC: $ruc")
+        Log.d("COMPANY_REPO", "URL base: $baseUrl")
+        Log.d("COMPANY_REPO", "URL completa: ${baseUrl}get-ruc")
+
+        val result = httpClient.get(
             url = "${baseUrl}get-ruc",
             deserializer = CompanyInfoDto.serializer(),
             queryParams = mapOf("ruc" to ruc),
-        ).map { it.toDomain() }
+        )
+
+        Log.d("COMPANY_REPO", "Resultado de red crudo: $result")
+
+        return result.map { dto ->
+            val domain = dto.toDomain()
+            Log.d("COMPANY_REPO", "DTO mapeado exitosamente a dominio: $domain")
+            domain
+        }
     }
 }
