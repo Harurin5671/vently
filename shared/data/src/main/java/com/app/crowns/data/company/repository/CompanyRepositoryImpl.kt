@@ -67,4 +67,19 @@ class CompanyRepositoryImpl @Inject constructor(
             }
         }
     }
+
+    override suspend fun updateCertificatePassword(password: String): Result<Unit> = runCatching {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw Exception("Usuario no autenticado")
+
+        supabase.from("companies").update(
+            {
+                set("certificate_password", password)
+            }
+        ) {
+            filter {
+                eq("user_id", userId)
+            }
+        }
+    }
 }

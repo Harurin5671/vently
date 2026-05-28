@@ -69,6 +69,9 @@ fun SettingsScreen(
         onSelectCertificate = {
             launcher.launch("*/*")
         },
+        onUpdateCertificatePassword = { password ->
+            viewModel.onEvent(SettingsEvent.UpdateCertificatePassword(password))
+        },
         onNavigateToEmail = onNavigateToEmail,
         onNavigateToPassword = onNavigateToPassword,
         onNavigateToPlan = onNavigateToPlan,
@@ -90,6 +93,7 @@ private fun SettingsContent(
     onNavigateToEditBusiness: () -> Unit,
     onNavigateToSeries: () -> Unit,
     onSelectCertificate: () -> Unit,
+    onUpdateCertificatePassword: (String) -> Unit,
     onNavigateToEmail: () -> Unit,
     onNavigateToPassword: () -> Unit,
     onNavigateToPlan: () -> Unit,
@@ -100,6 +104,8 @@ private fun SettingsContent(
 ) {
     var pushNotifications by remember { mutableStateOf(true) }
     var lowStockAlert by remember { mutableStateOf(true) }
+    var showPasswordDialog by remember { mutableStateOf(false) }
+    var tempPassword by remember { mutableStateOf("") }
     val context = LocalContext.current
     val appVersion = remember {
         try {
@@ -157,7 +163,49 @@ private fun SettingsContent(
                     badgeGreen = companyInfo?.certificateBase64 != null,
                     trailingIcon = Icons.Default.ChevronRight,
                     onClick = onSelectCertificate,
+                    showDivider = true,
+                )
+                SettingsItemWithBadge(
+                    title = "Contraseña del certificado",
+                    badgeText = if (companyInfo?.certificatePassword != null) "ACTIVO" else "PENDIENTE",
+                    badgeGreen = companyInfo?.certificatePassword != null,
+                    trailingIcon = Icons.Default.ChevronRight,
+                    onClick = {
+                        tempPassword = companyInfo?.certificatePassword ?: ""
+                        showPasswordDialog = true
+                    },
                     showDivider = false,
+                )
+            }
+
+            if (showPasswordDialog) {
+                AlertDialog(
+                    onDismissRequest = { showPasswordDialog = false },
+                    title = { Text("Contraseña del certificado") },
+                    text = {
+                        OutlinedTextField(
+                            value = tempPassword,
+                            onValueChange = { tempPassword = it },
+                            label = { Text("Contraseña") },
+                            singleLine = true,
+                            modifier = Modifier.fillMaxWidth()
+                        )
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                onUpdateCertificatePassword(tempPassword)
+                                showPasswordDialog = false
+                            }
+                        ) {
+                            Text("Guardar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showPasswordDialog = false }) {
+                            Text("Cancelar")
+                        }
+                    }
                 )
             }
 

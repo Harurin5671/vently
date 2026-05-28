@@ -19,5 +19,6 @@ data class CompanyEntity(
     @SerialName("is_good_taxpayer") val isGoodTaxpayer: Boolean = false,
     @SerialName("logo_url") val logoUrl: String? = null,
     @SerialName("certificate_base64") val certificateBase64: String? = null,
+    @SerialName("certificate_password") val certificatePassword: String? = null,
     @SerialName("created_at") val createdAt: String? = null,
 )

@@ -14,4 +14,5 @@ data class CompanyInfo(
     val isGoodTaxpayer: Boolean,
     val logoUrl: String? = null,
     val certificateBase64: String? = null,
+    val certificatePassword: String? = null,
 )
