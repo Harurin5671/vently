@@ -48,7 +48,7 @@ class DashboardViewModel @Inject constructor(
             _state.update {
                 it.copy(
                     isLoading = false,
-                    userName = "Carlos",
+                    userName = companyInfo?.businessName ?: "unknow",
                     companyInfo = companyInfo,
                     todaySales = 1240.00,
                     salesGrowthPercent = 8.0,

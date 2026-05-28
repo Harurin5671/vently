@@ -39,14 +39,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Surface
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
-import com.app.crowns.designsystem.color.TextMuted
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.QuickActionCard
@@ -99,7 +92,7 @@ private fun DashboardContent(
     Scaffold(
         containerColor = Surface,
         topBar = {
-            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
+//            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }
     ) { innerPadding ->
         Column(

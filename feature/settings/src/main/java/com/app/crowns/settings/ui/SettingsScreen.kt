@@ -170,53 +170,53 @@ private fun SettingsContent(
                     onClick = onNavigateToEmail,
                     showDivider = true,
                 )
-                SettingsItem(
-                    title = "Cambiar contraseña",
-                    trailingIcon = Icons.Default.Lock,
-                    onClick = onNavigateToPassword,
-                    showDivider = true,
-                )
-                SettingsItemWithBadge(
-                    title = "Plan actual",
-                    badgeText = "GRATUITO",
-                    badgeGreen = false,
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = onNavigateToPlan,
-                    showDivider = false,
-                )
+//                SettingsItem(
+//                    title = "Cambiar contraseña",
+//                    trailingIcon = Icons.Default.Lock,
+//                    onClick = onNavigateToPassword,
+//                    showDivider = true,
+//                )
+//                SettingsItemWithBadge(
+//                    title = "Plan actual",
+//                    badgeText = "GRATUITO",
+//                    badgeGreen = false,
+//                    trailingIcon = Icons.Default.ChevronRight,
+//                    onClick = onNavigateToPlan,
+//                    showDivider = false,
+//                )
             }
 
             // ── Preferencias ──────────────────────────────────────────────
-            SettingsSection(title = "Preferencias") {
-                SettingsToggleItem(
-                    title = "Notificaciones push",
-                    checked = pushNotifications,
-                    onCheckedChange = { pushNotifications = it },
-                    showDivider = true,
-                )
-                SettingsToggleItem(
-                    title = "Alerta de stock bajo",
-                    checked = lowStockAlert,
-                    onCheckedChange = { lowStockAlert = it },
-                    showDivider = false,
-                )
-            }
+//            SettingsSection(title = "Preferencias") {
+//                SettingsToggleItem(
+//                    title = "Notificaciones push",
+//                    checked = pushNotifications,
+//                    onCheckedChange = { pushNotifications = it },
+//                    showDivider = true,
+//                )
+//                SettingsToggleItem(
+//                    title = "Alerta de stock bajo",
+//                    checked = lowStockAlert,
+//                    onCheckedChange = { lowStockAlert = it },
+//                    showDivider = false,
+//                )
+//            }
 
             // ── Soporte ───────────────────────────────────────────────────
-            SettingsSection(title = "Soporte") {
-                SettingsItem(
-                    title = "Centro de ayuda",
-                    trailingIcon = Icons.AutoMirrored.Filled.OpenInNew,
-                    onClick = onNavigateToHelp,
-                    showDivider = true,
-                )
-                SettingsItem(
-                    title = "Reportar un problema",
-                    trailingIcon = Icons.Default.Flag,
-                    onClick = onNavigateToReport,
-                    showDivider = false,
-                )
-            }
+//            SettingsSection(title = "Soporte") {
+//                SettingsItem(
+//                    title = "Centro de ayuda",
+//                    trailingIcon = Icons.AutoMirrored.Filled.OpenInNew,
+//                    onClick = onNavigateToHelp,
+//                    showDivider = true,
+//                )
+//                SettingsItem(
+//                    title = "Reportar un problema",
+//                    trailingIcon = Icons.Default.Flag,
+//                    onClick = onNavigateToReport,
+//                    showDivider = false,
+//                )
+//            }
 
             // ── Danger Zone ───────────────────────────────────────────────
             Column(
