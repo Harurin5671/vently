@@ -16,6 +16,7 @@ fun CompanyEntity.toDomain(): CompanyInfo = CompanyInfo(
     isRetentionAgent = isRetentionAgent,
     isGoodTaxpayer = isGoodTaxpayer,
     logoUrl = logoUrl,
+    certificateBase64 = certificateBase64,
 )
 
 fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity = CompanyEntity(
@@ -32,4 +33,5 @@ fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity
     isRetentionAgent = isRetentionAgent,
     isGoodTaxpayer = isGoodTaxpayer,
     logoUrl = logoUrl ?: this.logoUrl,
+    certificateBase64 = certificateBase64,
 )

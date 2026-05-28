@@ -13,4 +13,5 @@ data class CompanyInfo(
     val isRetentionAgent: Boolean,
     val isGoodTaxpayer: Boolean,
     val logoUrl: String? = null,
+    val certificateBase64: String? = null,
 )

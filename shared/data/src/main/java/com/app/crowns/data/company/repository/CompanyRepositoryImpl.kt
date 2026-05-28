@@ -13,6 +13,7 @@ import com.app.crowns.network.map
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
+import io.github.jan.supabase.postgrest.query.Columns
 import javax.inject.Inject
 
 class CompanyRepositoryImpl @Inject constructor(
@@ -49,6 +50,21 @@ class CompanyRepositoryImpl @Inject constructor(
             val domain = dto.toDomain()
             Log.d("COMPANY_REPO", "DTO mapeado exitosamente a dominio: $domain")
             domain
+        }
+    }
+
+    override suspend fun updateCertificate(base64: String): Result<Unit> = runCatching {
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw Exception("Usuario no autenticado")
+
+        supabase.from("companies").update(
+            {
+                set("certificate_base64", base64)
+            }
+        ) {
+            filter {
+                eq("user_id", userId)
+            }
         }
     }
 }

@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -20,7 +21,8 @@ data class SettingsUiState(
 
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
-    private val getCompanyUseCase: GetCompanyUseCase
+    private val getCompanyUseCase: GetCompanyUseCase,
+    private val updateCertificateUseCase: UpdateCertificateUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -28,6 +30,23 @@ class SettingsViewModel @Inject constructor(
 
     init {
         loadCompanyInfo()
+    }
+
+    fun onEvent(event: SettingsEvent) {
+        when (event) {
+            is SettingsEvent.UploadCertificate -> uploadCertificate(event.base64)
+        }
+    }
+
+    private fun uploadCertificate(base64: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            updateCertificateUseCase(base64).onSuccess {
+                loadCompanyInfo()
+            }.onFailure { e ->
+                _state.update { it.copy(error = e.message, isLoading = false) }
+            }
+        }
     }
 
     private fun loadCompanyInfo() {
