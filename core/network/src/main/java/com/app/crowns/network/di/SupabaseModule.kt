@@ -8,6 +8,7 @@ import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.Auth
 import io.github.jan.supabase.createSupabaseClient
 import io.github.jan.supabase.postgrest.Postgrest
+import io.github.jan.supabase.functions.Functions
 import javax.inject.Qualifier
 import javax.inject.Singleton
 import com.app.crowns.network.BuildConfig
@@ -76,6 +77,7 @@ object SupabaseModule {
         }
         install(Postgrest)
         install(Storage)
+        install(Functions)
         install(ComposeAuth) {
             googleNativeLogin(serverClientId = BuildConfig.GOOGLE_CLIENT_ID)
         }

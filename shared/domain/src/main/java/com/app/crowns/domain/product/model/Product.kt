@@ -1,5 +1,7 @@
 package com.app.crowns.domain.product.model
 
+import com.app.crowns.domain.product.entities.IgvTypeEntity
+
 data class Product(
     val id: String? = null,
     val name: String,
@@ -8,7 +10,7 @@ data class Product(
     val category: Category? = null,
     val salePrice: Double,
     val costPrice: Double? = null,
-    val igvType: IgvType,
+    val igvType: IgvTypeEntity,
     val unitOfMeasure: String,
     val trackStock: Boolean,
     val currentStock: Int,

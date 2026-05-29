@@ -2,7 +2,7 @@ package com.app.crowns.stock.ui.addproduct
 
 import android.net.Uri
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.entities.IgvTypeEntity
 
 data class AddProductUiState(
     val imageUri: Uri? = null,
@@ -13,7 +13,8 @@ data class AddProductUiState(
     val categories: List<Category> = emptyList(),
     val salePrice: String = "",
     val costPrice: String = "",
-    val igvType: IgvType = IgvType.GRAVADO,
+    val igvType: IgvTypeEntity? = null,
+    val igvTypes: List<IgvTypeEntity> = emptyList(),
     val unitOfMeasure: String = "NIU",
     val trackStock: Boolean = true,
     val currentStock: Int = 0,

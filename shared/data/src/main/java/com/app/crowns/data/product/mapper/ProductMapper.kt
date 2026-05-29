@@ -3,7 +3,7 @@ package com.app.crowns.data.product.mapper
 import com.app.crowns.data.product.dto.CategoryEntity
 import com.app.crowns.data.product.dto.ProductEntity
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.entities.IgvTypeEntity
 import com.app.crowns.domain.product.model.Product
 
 fun ProductEntity.toDomain(category: Category? = null): Product = Product(
@@ -14,7 +14,13 @@ fun ProductEntity.toDomain(category: Category? = null): Product = Product(
     category = category,
     salePrice = salePrice,
     costPrice = costPrice,
-    igvType = IgvType.entries.find { it.code == igvType } ?: IgvType.GRAVADO,
+    igvType = IgvTypeEntity(
+        code = igvType,
+        name = "", // We don't have the name here, it should be resolved or handled by UI
+        taxCode = "",
+        percentage = 0,
+        factor = 0.0
+    ),
     unitOfMeasure = unitOfMeasure,
     trackStock = trackStock,
     currentStock = currentStock,

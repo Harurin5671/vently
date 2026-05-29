@@ -2,7 +2,7 @@ package com.app.crowns.stock.ui.addproduct
 
 import android.net.Uri
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.entities.IgvTypeEntity
 
 sealed class AddProductEvent {
     data class OnImageSelected(val uri: Uri) : AddProductEvent()
@@ -12,7 +12,7 @@ sealed class AddProductEvent {
     data class OnCategorySelected(val category: Category?) : AddProductEvent()
     data class OnSalePriceChanged(val value: String) : AddProductEvent()
     data class OnCostPriceChanged(val value: String) : AddProductEvent()
-    data class OnIgvTypeSelected(val igvType: IgvType) : AddProductEvent()
+    data class OnIgvTypeSelected(val igvType: IgvTypeEntity) : AddProductEvent()
     data class OnUnitOfMeasureSelected(val unit: String) : AddProductEvent()
     data class OnTrackStockChanged(val value: Boolean) : AddProductEvent()
     data class OnCurrentStockChanged(val value: Int) : AddProductEvent()

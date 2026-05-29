@@ -69,7 +69,7 @@ import com.app.crowns.designsystem.color.SecondaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.model.IgvType
+import com.app.crowns.domain.product.entities.IgvTypeEntity
 import com.app.crowns.ui.components.VentlyImageSelector
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -297,6 +297,7 @@ private fun AddProductContent(
 
                 IgvTypeSelector(
                     selected = state.igvType,
+                    types = state.igvTypes,
                     onSelect = { onEvent(AddProductEvent.OnIgvTypeSelected(it)) },
                 )
             }
@@ -647,11 +648,15 @@ private fun UnitOfMeasureDropdown(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun IgvTypeSelector(
-    selected: IgvType,
-    onSelect: (IgvType) -> Unit,
+    selected: IgvTypeEntity?,
+    types: List<IgvTypeEntity>,
+    onSelect: (IgvTypeEntity) -> Unit,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column {
         Text(
             text = "Tipo de IGV",
@@ -659,31 +664,49 @@ private fun IgvTypeSelector(
             fontWeight = FontWeight.Medium,
             color = OnSurfaceVariant,
         )
-        Spacer(Modifier.height(8.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(OutlineVariant.copy(alpha = 0.2f))
-                .padding(4.dp),
-            horizontalArrangement = Arrangement.spacedBy(4.dp),
+        Spacer(Modifier.height(4.dp))
+        ExposedDropdownMenuBox(
+            expanded = expanded,
+            onExpandedChange = { expanded = it },
         ) {
-            IgvType.entries.forEach { igvType ->
-                val isSelected = selected == igvType
-                Box(
-                    modifier = Modifier
-                        .weight(1f)
-                        .clip(RoundedCornerShape(8.dp))
-                        .background(if (isSelected) Primary else Color.Transparent)
-                        .clickable { onSelect(igvType) }
-                        .padding(vertical = 8.dp),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = igvType.label,
-                        fontSize = 11.sp,
-                        fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                        color = if (isSelected) Color.White else OnSurfaceVariant,
+            OutlinedTextField(
+                value = selected?.name ?: "Seleccionar tipo",
+                onValueChange = {},
+                readOnly = true,
+                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .menuAnchor(),
+                shape = RoundedCornerShape(12.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = Primary,
+                    unfocusedBorderColor = OutlineVariant,
+                ),
+            )
+            ExposedDropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false },
+            ) {
+                types.forEach { type ->
+                    DropdownMenuItem(
+                        text = {
+                            Column {
+                                Text(
+                                    text = type.name,
+                                    fontSize = 14.sp,
+                                    fontWeight = FontWeight.Medium
+                                )
+                                Text(
+                                    text = "Código: ${type.code} - ${type.percentage}%",
+                                    fontSize = 12.sp,
+                                    color = OnSurfaceVariant
+                                )
+                            }
+                        },
+                        onClick = {
+                            onSelect(type)
+                            expanded = false
+                        },
                     )
                 }
             }
