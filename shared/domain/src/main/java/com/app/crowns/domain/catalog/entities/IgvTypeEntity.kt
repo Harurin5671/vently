@@ -1,4 +1,4 @@
-package com.app.crowns.domain.product.entities
+package com.app.crowns.domain.catalog.entities
 
 import kotlinx.serialization.Serializable
 

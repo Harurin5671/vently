@@ -2,7 +2,8 @@ package com.app.crowns.stock.ui.addproduct
 
 import android.net.Uri
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
 
 data class AddProductUiState(
     val imageUri: Uri? = null,
@@ -16,6 +17,7 @@ data class AddProductUiState(
     val igvType: IgvTypeEntity? = null,
     val igvTypes: List<IgvTypeEntity> = emptyList(),
     val unitOfMeasure: String = "NIU",
+    val unitsOfMeasure: List<UnitOfMeasureEntity> = emptyList(),
     val trackStock: Boolean = true,
     val currentStock: Int = 0,
     val minStockAlert: String = "",
@@ -36,11 +38,3 @@ val AddProductUiState.profitMargin: Double
 
 val AddProductUiState.isFormValid: Boolean
     get() = name.isNotBlank() && salePrice.toDoubleOrNull() != null
-
-val unitOfMeasureOptions = listOf(
-    "NIU" to "NIU - Unidades",
-    "KGM" to "KGM - Kilogramos",
-    "MTR" to "MTR - Metros",
-    "LTR" to "LTR - Litros",
-    "GLL" to "GLL - Galones",
-)

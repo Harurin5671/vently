@@ -1,6 +1,6 @@
 package com.app.crowns.domain.product.model
 
-import com.app.crowns.domain.product.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.IgvTypeEntity
 
 data class Product(
     val id: String? = null,

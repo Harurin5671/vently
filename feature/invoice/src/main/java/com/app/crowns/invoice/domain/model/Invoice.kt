@@ -3,6 +3,7 @@ package com.app.crowns.invoice.domain.model
 data class Invoice(
     val id: String? = null,
     val type: InvoiceType,
+    val clientDocumentType: String? = null, // SUNAT code (1 for DNI, 6 for RUC, etc.)
     val clientName: String?,
     val clientRuc: String?,
     val clientBusinessName: String?,

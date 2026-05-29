@@ -2,8 +2,10 @@ package com.app.crowns.invoice.ui.create
 
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
+import com.app.crowns.domain.catalog.usecase.GetIdentityDocumentTypesUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceItem
+import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
 import com.app.crowns.network.fold
 import androidx.lifecycle.ViewModel
@@ -27,6 +29,7 @@ class CreateInvoiceViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
     private val getProductsUseCase: GetProductsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
+    private val getIdentityDocumentTypes: GetIdentityDocumentTypesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(CreateInvoiceUiState())
     val state: StateFlow<CreateInvoiceUiState> = _state.asStateFlow()
@@ -39,6 +42,20 @@ class CreateInvoiceViewModel @Inject constructor(
     init {
         loadProducts()
         loadCompanyRuc()
+        loadDocumentTypes()
+    }
+
+    private fun loadDocumentTypes() {
+        viewModelScope.launch {
+            getIdentityDocumentTypes().onSuccess { types ->
+                _state.update { 
+                    it.copy(
+                        documentTypes = types,
+                        selectedDocumentType = it.selectedDocumentType ?: types.find { t -> t.code == "1" } ?: types.firstOrNull()
+                    )
+                }
+            }
+        }
     }
 
     private fun loadCompanyRuc() {
@@ -68,8 +85,14 @@ class CreateInvoiceViewModel @Inject constructor(
     fun onEvent(event: CreateInvoiceEvent) {
         when (event) {
             is CreateInvoiceEvent.OnInvoiceTypeChanged -> _state.update {
+                val newDocType = if (event.type == InvoiceType.FACTURA) {
+                    it.documentTypes.find { t -> t.code == "6" }
+                } else {
+                    it.documentTypes.find { t -> t.code == "1" } ?: it.documentTypes.firstOrNull()
+                }
                 it.copy(
                     invoiceType = event.type,
+                    selectedDocumentType = newDocType,
                     clientName = "",
                     clientRuc = "",
                     clientBusinessName = "",
@@ -77,14 +100,38 @@ class CreateInvoiceViewModel @Inject constructor(
                 )
             }
 
+            is CreateInvoiceEvent.OnDocumentTypeChanged -> _state.update {
+                it.copy(
+                    selectedDocumentType = event.type,
+                    clientRuc = "", // Clear number when type changes to avoid length conflicts
+                    rucError = null
+                )
+            }
+
             is CreateInvoiceEvent.OnClientNameChanged -> _state.update {
-                it.copy(clientName = event.value)
+                if (it.selectedDocumentType?.code == "6") {
+                    it.copy(clientBusinessName = event.value)
+                } else {
+                    it.copy(clientName = event.value)
+                }
             }
 
             is CreateInvoiceEvent.OnClientRucChanged -> {
-                val newValue = event.value.filter { it.isDigit() }.take(11)
+                val state = _state.value
+                val maxLength = if (state.invoiceType == InvoiceType.FACTURA) 11 
+                                else state.selectedDocumentType?.maxLength?.toInt() ?: 15
+                
+                val newValue = event.value.filter { it.isDigit() }.take(maxLength)
+                
+                var error: String? = null
+                if (state.invoiceType == InvoiceType.FACTURA && newValue.length == 11) {
+                    if (!newValue.startsWith("10") && !newValue.startsWith("20")) {
+                        error = "El RUC debe empezar con 10 o 20"
+                    }
+                }
+
                 _state.update {
-                    it.copy(clientRuc = newValue, rucError = null, clientBusinessName = "")
+                    it.copy(clientRuc = newValue, rucError = error, clientBusinessName = "")
                 }
             }
 
@@ -201,6 +248,7 @@ class CreateInvoiceViewModel @Inject constructor(
         val s = _state.value
         val invoice = Invoice(
             type = s.invoiceType,
+            clientDocumentType = s.selectedDocumentType?.code,
             clientName = s.clientName.ifBlank { null },
             clientRuc = s.clientRuc.ifBlank { null },
             clientBusinessName = s.clientBusinessName.ifBlank { null },

@@ -69,7 +69,8 @@ import com.app.crowns.designsystem.color.SecondaryContainer
 import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.product.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
 import com.app.crowns.ui.components.VentlyImageSelector
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -292,6 +293,7 @@ private fun AddProductContent(
 
                 UnitOfMeasureDropdown(
                     selected = state.unitOfMeasure,
+                    units = state.unitsOfMeasure,
                     onSelect = { onEvent(AddProductEvent.OnUnitOfMeasureSelected(it)) },
                 )
 
@@ -599,10 +601,11 @@ private fun CategoryDropdown(
 @Composable
 private fun UnitOfMeasureDropdown(
     selected: String,
+    units: List<UnitOfMeasureEntity>,
     onSelect: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = unitOfMeasureOptions.find { it.first == selected }?.second ?: selected
+    val selectedLabel = units.find { it.code == selected }?.name ?: selected
 
     Column {
         Text(
@@ -634,11 +637,13 @@ private fun UnitOfMeasureDropdown(
                 expanded = expanded,
                 onDismissRequest = { expanded = false },
             ) {
-                unitOfMeasureOptions.forEach { (code, label) ->
+                units.forEach { unit ->
                     DropdownMenuItem(
-                        text = { Text(label) },
+                        text = {
+                            Text(text = "${unit.code} - ${unit.name}")
+                        },
                         onClick = {
-                            onSelect(code)
+                            onSelect(unit.code)
                             expanded = false
                         },
                     )

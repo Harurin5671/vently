@@ -1,4 +1,4 @@
-package com.app.crowns.data.product.model
+package com.app.crowns.data.catalog.model
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable

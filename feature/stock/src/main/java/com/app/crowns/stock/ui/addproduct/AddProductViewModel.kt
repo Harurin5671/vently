@@ -8,7 +8,8 @@ import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.repository.ProductRepository
 import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
-import com.app.crowns.domain.product.usecase.GetIgvTypesUseCase
+import com.app.crowns.domain.catalog.usecase.GetIgvTypesUseCase
+import com.app.crowns.domain.catalog.usecase.GetUnitsOfMeasureUseCase
 import com.app.crowns.domain.product.usecase.SaveProductUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -25,6 +26,7 @@ import javax.inject.Inject
 class AddProductViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
     private val getIgvTypes: GetIgvTypesUseCase,
+    private val getUnitsOfMeasure: GetUnitsOfMeasureUseCase,
     private val saveProduct: SaveProductUseCase,
     private val repository: ProductRepository,
     @param:ApplicationContext private val context: Context,
@@ -44,6 +46,7 @@ class AddProductViewModel @Inject constructor(
         viewModelScope.launch {
             loadCategories()
             loadIgvTypes()
+            loadUnitsOfMeasure()
         }
     }
 
@@ -83,6 +86,12 @@ class AddProductViewModel @Inject constructor(
                     igvType = it.igvType ?: types.find { t -> t.code == "10" } ?: types.firstOrNull()
                 )
             }
+        }
+    }
+
+    private suspend fun loadUnitsOfMeasure() {
+        getUnitsOfMeasure().onSuccess { units ->
+            _state.update { it.copy(unitsOfMeasure = units) }
         }
     }
 

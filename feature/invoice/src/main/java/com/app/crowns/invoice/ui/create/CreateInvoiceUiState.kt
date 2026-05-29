@@ -3,11 +3,14 @@ package com.app.crowns.invoice.ui.create
 import android.graphics.Bitmap
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
+import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.model.InvoiceType
 
 data class CreateInvoiceUiState(
     val invoiceType: InvoiceType = InvoiceType.BOLETA,
+    val selectedDocumentType: IdentityDocumentTypeEntity? = null,
+    val documentTypes: List<IdentityDocumentTypeEntity> = emptyList(),
     val clientName: String = "",
     val clientRuc: String = "",
     val clientBusinessName: String = "",
@@ -32,8 +35,21 @@ val CreateInvoiceUiState.total: Double
     get() = items.sumOf { it.subtotal }
 val CreateInvoiceUiState.isFormValid: Boolean
     get() = items.isNotEmpty() && when (invoiceType) {
-        InvoiceType.BOLETA -> true
-        InvoiceType.FACTURA -> clientRuc.length == 11 && clientBusinessName.isNotBlank()
+        InvoiceType.BOLETA -> {
+            if (clientRuc.isNotBlank()) {
+                val expectedLength = selectedDocumentType?.maxLength?.toInt() ?: 0
+                when (selectedDocumentType?.code) {
+                    "6" -> clientRuc.length == 11 && clientBusinessName.isNotBlank() // RUC
+                    "1" -> clientRuc.length == 8 // DNI
+                    else -> clientRuc.length <= (if (expectedLength > 0) expectedLength else 15)
+                }
+            } else true
+        }
+        InvoiceType.FACTURA -> {
+            clientRuc.length == 11 && 
+            (clientRuc.startsWith("10") || clientRuc.startsWith("20")) &&
+            clientBusinessName.isNotBlank()
+        }
     }
 
 data class InvoicePreviewUiState(

@@ -15,11 +15,19 @@ import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -33,8 +41,10 @@ import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.OutlineVariant
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.Success
+import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.InvoiceType
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ClientSection(
     invoiceType: InvoiceType,
@@ -43,21 +53,150 @@ fun ClientSection(
     clientBusinessName: String,
     isSearchingRuc: Boolean,
     rucError: String?,
+    documentTypes: List<IdentityDocumentTypeEntity> = emptyList(),
+    selectedDocumentType: IdentityDocumentTypeEntity? = null,
+    onDocumentTypeChanged: (IdentityDocumentTypeEntity) -> Unit = {},
     onClientNameChanged: (String) -> Unit,
     onClientRucChanged: (String) -> Unit,
     onSearchRuc: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
+    var expanded by remember { mutableStateOf(false) }
+
     Column(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
         when (invoiceType) {
             InvoiceType.BOLETA -> {
+                // Document Type Dropdown
+                ExposedDropdownMenuBox(
+                    expanded = expanded,
+                    onExpandedChange = { expanded = it },
+                ) {
+                    OutlinedTextField(
+                        value = selectedDocumentType?.name ?: "DNI",
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Tipo de documento") },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = OutlineVariant,
+                        ),
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expanded,
+                        onDismissRequest = { expanded = false },
+                    ) {
+                        documentTypes.filter { it.code != "0" }.forEach { type -> // Filter out "Sin Documento" (code 0)
+                            DropdownMenuItem(
+                                text = { Text(type.name) },
+                                onClick = {
+                                    onDocumentTypeChanged(type)
+                                    expanded = false
+                                },
+                            )
+                        }
+                    }
+                }
+
+                // Document Number + Search (if RUC is selected)
+                if (selectedDocumentType?.code == "6") {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalAlignment = Alignment.Top,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            OutlinedTextField(
+                                value = clientRuc,
+                                onValueChange = onClientRucChanged,
+                                enabled = !isSearchingRuc,
+                                label = { Text("RUC") },
+                                placeholder = { Text("20XXXXXXXXX", color = Outline) },
+                                isError = rucError != null,
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                trailingIcon = {
+                                    if (clientBusinessName.isNotBlank()) {
+                                        Icon(
+                                            imageVector = Icons.Filled.CheckCircle,
+                                            contentDescription = null,
+                                            tint = Success,
+                                            modifier = Modifier.size(20.dp),
+                                        )
+                                    }
+                                },
+                                modifier = Modifier.fillMaxWidth(),
+                                shape = RoundedCornerShape(12.dp),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = if (clientBusinessName.isNotBlank()) Success else Primary,
+                                    unfocusedBorderColor = if (clientBusinessName.isNotBlank()) Success else OutlineVariant,
+                                    errorBorderColor = Color(0xFFEF4444),
+                                ),
+                            )
+                            rucError?.let {
+                                Text(
+                                    text = it,
+                                    fontSize = 11.sp,
+                                    color = Color(0xFFEF4444),
+                                )
+                            }
+                        }
+
+                        Button(
+                            onClick = onSearchRuc,
+                            enabled = clientRuc.length == 11 && !isSearchingRuc,
+                            modifier = Modifier
+                                .height(56.dp)
+                                .width(100.dp),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = ButtonDefaults.buttonColors(
+                                containerColor = Primary,
+                                contentColor = OnPrimary,
+                            ),
+                        ) {
+                            if (isSearchingRuc) {
+                                CircularProgressIndicator(
+                                    modifier = Modifier.size(16.dp),
+                                    color = OnPrimary,
+                                    strokeWidth = 2.dp,
+                                )
+                            } else {
+                                Text("Buscar", fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                            }
+                        }
+                    }
+                } else {
+                    OutlinedTextField(
+                        value = clientRuc,
+                        onValueChange = onClientRucChanged,
+                        label = { Text("Número de documento") },
+                        placeholder = { Text("Opcional", color = Outline) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = OutlineVariant,
+                        ),
+                    )
+                }
+
+                // Business Name / Name
+                val label = if (selectedDocumentType?.code == "6") "Razón Social" else "Nombre / Razón Social"
+                val placeholder = if (selectedDocumentType?.code == "6") "Autocompletado" else "Cliente general (opcional)"
+                
                 OutlinedTextField(
-                    value = clientName,
+                    value = if (selectedDocumentType?.code == "6") clientBusinessName else clientName,
                     onValueChange = onClientNameChanged,
-                    placeholder = { Text("Cliente general (opcional)", color = Outline) },
+                    readOnly = selectedDocumentType?.code == "6" && clientBusinessName.isNotBlank(),
+                    label = { Text(label) },
+                    placeholder = { Text(placeholder, color = Outline) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(

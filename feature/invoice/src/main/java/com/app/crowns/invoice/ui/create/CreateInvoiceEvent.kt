@@ -1,10 +1,12 @@
 package com.app.crowns.invoice.ui.create
 
+import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.model.InvoiceType
 
 sealed class CreateInvoiceEvent {
     data class OnInvoiceTypeChanged(val type: InvoiceType) : CreateInvoiceEvent()
+    data class OnDocumentTypeChanged(val type: IdentityDocumentTypeEntity) : CreateInvoiceEvent()
     data class OnClientNameChanged(val value: String) : CreateInvoiceEvent()
     data class OnClientRucChanged(val value: String) : CreateInvoiceEvent()
     data object OnSearchRuc : CreateInvoiceEvent()
