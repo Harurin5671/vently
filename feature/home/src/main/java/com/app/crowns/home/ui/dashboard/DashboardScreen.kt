@@ -3,6 +3,7 @@ package com.app.crowns.home.ui.dashboard
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -227,16 +228,32 @@ private fun DashboardContent(
                     .background(SurfaceContainerLowest)
                     .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
             ) {
-                state.recentInvoices.forEachIndexed { index, invoice ->
-                    RecentInvoiceItem(
-                        invoice = invoice,
-                        onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
-                    )
-                    if (index < state.recentInvoices.lastIndex) {
-                        HorizontalDivider(
-                            color = OutlineVariant.copy(alpha = 0.5f),
-                            thickness = 0.5.dp,
+                if (state.recentInvoices.isEmpty()) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(24.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text(
+                            text = "No hay comprobantes recientes",
+                            fontSize = 14.sp,
+                            color = Outline,
+                            fontWeight = FontWeight.Normal
                         )
+                    }
+                } else {
+                    state.recentInvoices.forEachIndexed { index, invoice ->
+                        RecentInvoiceItem(
+                            invoice = invoice,
+                            onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
+                        )
+                        if (index < state.recentInvoices.lastIndex) {
+                            HorizontalDivider(
+                                color = OutlineVariant.copy(alpha = 0.5f),
+                                thickness = 0.5.dp,
+                            )
+                        }
                     }
                 }
             }
@@ -283,24 +300,7 @@ fun DashboardScreenPreview() {
                 totalInvoices = 45,
                 acceptedInvoices = 42,
                 pendingInvoices = 3,
-                recentInvoices = listOf(
-                    RecentInvoice(
-                        id = "1",
-                        number = "B001-0001",
-                        clientName = "Juan Perez",
-                        amount = 120.0,
-                        type = InvoiceType.BOLETA,
-                        status = InvoiceStatus.ACCEPTED
-                    ),
-                    RecentInvoice(
-                        id = "2",
-                        number = "F001-0042",
-                        clientName = "Vently S.A.C.",
-                        amount = 540.0,
-                        type = InvoiceType.FACTURA,
-                        status = InvoiceStatus.PENDING
-                    )
-                )
+                recentInvoices = emptyList() // Updated to match entity list
             ),
             onEvent = {}
         )

@@ -23,14 +23,12 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.history.domain.model.HistoryInvoice
-import com.app.crowns.history.domain.model.HistoryInvoiceStatus
-import com.app.crowns.history.domain.model.HistoryInvoiceType
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
+import com.app.crowns.domain.invoice.entities.InvoiceEntity
 
 @Composable
 fun HistoryInvoiceItem(
-    invoice: HistoryInvoice,
+    invoice: InvoiceEntity,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -42,16 +40,15 @@ fun HistoryInvoiceItem(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Avatar
-        val isBoleta = invoice.type == HistoryInvoiceType.BOLETA
-        val avatarBg = when (invoice.status) {
-            HistoryInvoiceStatus.CANCELLED -> Color(0xFFF1F5F9)
-            else -> if (isBoleta) Color(0xFFF0EDFF) else Color(0xFFE0FAFB)
-        }
-        val avatarTextColor = when (invoice.status) {
-            HistoryInvoiceStatus.CANCELLED -> Outline
-            else -> if (isBoleta) Primary else Color(0xFF00C2CB)
-        }
+        // Info del estado desde la BD
+        val statusColor = invoice.statusInfo?.color?.let {
+            try { Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
+        } ?: Color(0xFF64748B)
+
+        // Avatar: Usamos el color de la BD con transparencia para el fondo
+        val isBoleta = invoice.documentType == "03"
+        val avatarBg = statusColor.copy(alpha = 0.1f)
+        val avatarTextColor = statusColor
 
         Box(
             modifier = Modifier
@@ -61,7 +58,7 @@ fun HistoryInvoiceItem(
             contentAlignment = Alignment.Center,
         ) {
             Text(
-                text = invoice.type.prefix,
+                text = if (isBoleta) "B" else "F",
                 fontSize = 18.sp,
                 fontWeight = FontWeight.SemiBold,
                 color = avatarTextColor,
@@ -71,13 +68,13 @@ fun HistoryInvoiceItem(
         // Info
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = invoice.number,
+                text = "${invoice.serie}-${invoice.correlative.toString().padStart(8, '0')}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
             )
             Text(
-                text = invoice.clientName,
+                text = "Cliente", // En InvoiceEntity no veo campo clientName directo, se puede extender luego
                 fontSize = 12.sp,
                 color = Outline,
             )
@@ -86,17 +83,14 @@ fun HistoryInvoiceItem(
         // Amount + status
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%,.2f", invoice.amount)}",
+                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%,.2f", invoice.total.toDoubleOrNull() ?: 0.0)}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
             )
-            val (statusLabel, statusBg, statusColor) = when (invoice.status) {
-                HistoryInvoiceStatus.ACCEPTED -> Triple("ACEPTADO", Color(0xFFECFDF5), Color(0xFF10B981))
-                HistoryInvoiceStatus.PENDING -> Triple("PENDIENTE", Color(0xFFFFFBEB), Color(0xFFF59E0B))
-                HistoryInvoiceStatus.CANCELLED -> Triple("ANULADO", Color(0xFFF1F5F9), Color(0xFF64748B))
-                HistoryInvoiceStatus.REJECTED -> Triple("RECHAZADO", Color(0xFFFEF2F2), Color(0xFFEF4444))
-            }
+            
+            val statusLabel = invoice.statusInfo?.name ?: invoice.status.uppercase()
+
             Text(
                 text = statusLabel,
                 fontSize = 10.sp,
@@ -104,7 +98,7 @@ fun HistoryInvoiceItem(
                 color = statusColor,
                 modifier = Modifier
                     .clip(RoundedCornerShape(999.dp))
-                    .background(statusBg)
+                    .background(statusColor.copy(alpha = 0.12f))
                     .padding(horizontal = 8.dp, vertical = 2.dp),
             )
         }

@@ -2,6 +2,7 @@ package com.app.crowns.data.catalog.datasource
 
 import com.app.crowns.data.catalog.model.IdentityDocumentTypeSupabaseModel
 import com.app.crowns.data.catalog.model.IgvTypeSupabaseModel
+import com.app.crowns.data.catalog.model.InvoiceStatusSupabaseModel
 import com.app.crowns.data.catalog.model.UnitOfMeasureSupabaseModel
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.postgrest.from
@@ -29,5 +30,12 @@ class CatalogSupabaseDataSourceImpl @Inject constructor(
             .from("cat_identity_doc_types")
             .select()
             .decodeList<IdentityDocumentTypeSupabaseModel>()
+    }
+
+    override suspend fun getInvoiceStatuses(): Result<List<InvoiceStatusSupabaseModel>> = runCatching {
+        supabase
+            .from("cat_invoice_statuses")
+            .select()
+            .decodeList<InvoiceStatusSupabaseModel>()
     }
 }

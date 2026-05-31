@@ -48,10 +48,8 @@ import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
-import com.app.crowns.history.domain.model.HistoryInvoice
-import com.app.crowns.history.domain.model.HistoryInvoiceItem
-import com.app.crowns.history.domain.model.HistoryInvoiceStatus
-import com.app.crowns.history.domain.model.HistoryInvoiceType
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
+import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.history.ui.components.HistoryDateSelector
 import com.app.crowns.history.ui.components.HistoryFilterChips
 import com.app.crowns.history.ui.components.HistoryInvoiceDetail
@@ -193,7 +191,7 @@ private fun HistoryContent(
 
 @Composable
 private fun InvoiceCard(
-    invoice: HistoryInvoice,
+    invoice: InvoiceEntity,
     isExpanded: Boolean,
     onEvent: (HistoryEvent) -> Unit,
 ) {
@@ -321,33 +319,47 @@ private fun HistoryEmptyPreview() {
 @Composable
 private fun HistoryWithItemsPreview() {
     val mockInvoices = listOf(
-        HistoryInvoice(
+        InvoiceEntity(
             id = "1",
-            number = "B001-000001",
-            clientName = "Juan Pérez",
-            clientRuc = null,
-            amount = 50.0,
-            subtotal = 42.37,
-            igv = 7.63,
-            type = HistoryInvoiceType.BOLETA,
-            status = HistoryInvoiceStatus.ACCEPTED,
-            dateTime = java.time.LocalDateTime.now().toString(),
-            items = listOf(HistoryInvoiceItem("Producto 1", 2, 25.0)),
-            hash = "xyz123"
+            companyId = "comp1",
+            documentType = "03",
+            serie = "B001",
+            correlative = 1,
+            total = "50.0",
+            status = InvoiceStatusEntity.ACCEPTED,
+            issueDate = java.time.LocalDateTime.now().toString(),
+            operationType = "01",
+            currency = "PEN",
+            paymentType = "01",
+            totalDiscount = "0.0",
+            totalExportacion = "0.0",
+            totalExonerada = "0.0",
+            totalInafecta = "0.0",
+            totalGravada = "42.37",
+            totalIgv = "7.63",
+            xmlDocument = "",
+            items = emptyList()
         ),
-        HistoryInvoice(
+        InvoiceEntity(
             id = "2",
-            number = "F001-000001",
-            clientName = "Empresa S.A.C.",
-            clientRuc = "20601234567",
-            amount = 118.0,
-            subtotal = 100.0,
-            igv = 18.0,
-            type = HistoryInvoiceType.FACTURA,
-            status = HistoryInvoiceStatus.PENDING,
-            dateTime = java.time.LocalDateTime.now().minusDays(1).toString(),
-            items = listOf(HistoryInvoiceItem("Servicio 1", 1, 100.0)),
-            hash = "abc456"
+            companyId = "comp1",
+            documentType = "01",
+            serie = "F001",
+            correlative = 1,
+            total = "118.0",
+            status = InvoiceStatusEntity.PENDING,
+            issueDate = java.time.LocalDateTime.now().minusDays(1).toString(),
+            operationType = "01",
+            currency = "PEN",
+            paymentType = "01",
+            totalDiscount = "0.0",
+            totalExportacion = "0.0",
+            totalExonerada = "0.0",
+            totalInafecta = "0.0",
+            totalGravada = "100.0",
+            totalIgv = "18.0",
+            xmlDocument = "",
+            items = emptyList()
         )
     )
 
@@ -365,19 +377,26 @@ private fun HistoryWithItemsPreview() {
 @Composable
 private fun HistoryExpandedPreview() {
     val mockInvoices = listOf(
-        HistoryInvoice(
+        InvoiceEntity(
             id = "1",
-            number = "B001-000001",
-            clientName = "Juan Pérez",
-            clientRuc = null,
-            amount = 50.0,
-            subtotal = 42.37,
-            igv = 7.63,
-            type = HistoryInvoiceType.BOLETA,
-            status = HistoryInvoiceStatus.ACCEPTED,
-            dateTime = java.time.LocalDateTime.now().toString(),
-            items = listOf(HistoryInvoiceItem("Producto 1", 2, 25.0)),
-            hash = "xyz123"
+            companyId = "comp1",
+            documentType = "03",
+            serie = "B001",
+            correlative = 1,
+            total = "50.0",
+            status = InvoiceStatusEntity.ACCEPTED,
+            issueDate = java.time.LocalDateTime.now().toString(),
+            operationType = "01",
+            currency = "PEN",
+            paymentType = "01",
+            totalDiscount = "0.0",
+            totalExportacion = "0.0",
+            totalExonerada = "0.0",
+            totalInafecta = "0.0",
+            totalGravada = "42.37",
+            totalIgv = "7.63",
+            xmlDocument = "",
+            items = emptyList()
         )
     )
 

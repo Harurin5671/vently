@@ -1,6 +1,7 @@
 package com.app.crowns.home.ui.dashboard
 
 import com.app.crowns.domain.company.model.CompanyInfo
+import com.app.crowns.domain.invoice.entities.InvoiceEntity
 
 data class DashboardUiState(
     val isLoading: Boolean = false,
@@ -11,19 +12,10 @@ data class DashboardUiState(
     val totalInvoices: Int = 0,
     val acceptedInvoices: Int = 0,
     val pendingInvoices: Int = 0,
-    val recentInvoices: List<RecentInvoice> = emptyList(),
+    val recentInvoices: List<InvoiceEntity> = emptyList(),
     val error: String? = null,
 )
 
-data class RecentInvoice(
-    val id: String,
-    val number: String,
-    val clientName: String,
-    val amount: Double,
-    val type: InvoiceType,
-    val status: InvoiceStatus,
-)
-
+// UI specific enums for status/type mapping if needed by the screen
+enum class InvoiceStatus { ACCEPTED, PENDING, REJECTED, CANCELLED, DRAFT }
 enum class InvoiceType { BOLETA, FACTURA }
-
-enum class InvoiceStatus { ACCEPTED, PENDING, REJECTED, CANCELLED }

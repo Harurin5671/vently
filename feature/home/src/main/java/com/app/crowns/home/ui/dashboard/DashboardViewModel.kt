@@ -2,7 +2,10 @@ package com.app.crowns.home.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
+import com.app.crowns.domain.catalog.usecase.GetInvoiceStatusesUseCase
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,6 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class DashboardViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
+    private val getInvoicesHistory: GetInvoicesHistoryUseCase,
+    private val getInvoiceStatusesUseCase: GetInvoiceStatusesUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
@@ -40,49 +45,41 @@ class DashboardViewModel @Inject constructor(
 
     private fun loadDashboard() {
         viewModelScope.launch {
+            android.util.Log.d("DASHBOARD_VM", "Cargando datos del Dashboard...")
             _state.update { it.copy(isLoading = true) }
 
             val companyResult = getCompanyUseCase()
             val companyInfo = companyResult.getOrNull()
+            android.util.Log.d("DASHBOARD_VM", "Empresa: ${companyInfo?.businessName}")
+
+            val invoicesResult = getInvoicesHistory()
+            val rawInvoices = invoicesResult.getOrDefault(emptyList())
+            android.util.Log.d("DASHBOARD_VM", "Facturas obtenidas: ${rawInvoices.size}")
+
+            val statusesResult = getInvoiceStatusesUseCase()
+            val statuses = statusesResult.getOrDefault(emptyList())
+
+            val invoices = rawInvoices.map { inv ->
+                inv.copy(statusInfo = statuses.find { it.code == inv.status })
+            }
 
             _state.update {
                 it.copy(
                     isLoading = false,
-                    userName = companyInfo?.businessName ?: "unknow",
+                    userName = companyInfo?.businessName ?: "Usuario",
                     companyInfo = companyInfo,
-                    todaySales = 1240.00,
-                    salesGrowthPercent = 8.0,
-                    totalInvoices = 8,
-                    acceptedInvoices = 6,
-                    pendingInvoices = 2,
-                    recentInvoices = listOf(
-                        RecentInvoice(
-                            id = "1",
-                            number = "B001-00045",
-                            clientName = "Ferretería López",
-                            amount = 85.00,
-                            type = InvoiceType.BOLETA,
-                            status = InvoiceStatus.ACCEPTED,
-                        ),
-                        RecentInvoice(
-                            id = "2",
-                            number = "F001-00122",
-                            clientName = "Inversiones Ramos SAC",
-                            amount = 420.50,
-                            type = InvoiceType.FACTURA,
-                            status = InvoiceStatus.PENDING,
-                        ),
-                        RecentInvoice(
-                            id = "3",
-                            number = "B001-00044",
-                            clientName = "Juan Pérez Quispe",
-                            amount = 12.00,
-                            type = InvoiceType.BOLETA,
-                            status = InvoiceStatus.ACCEPTED,
-                        ),
-                    ),
+                    todaySales = invoices.sumOf { inv -> inv.total.toDoubleOrNull() ?: 0.0 },
+                    salesGrowthPercent = 0.0,
+                    totalInvoices = invoices.size,
+                    acceptedInvoices = invoices.count { inv -> inv.status == InvoiceStatusEntity.ACCEPTED },
+                    pendingInvoices = invoices.count { inv -> 
+                        inv.status == InvoiceStatusEntity.PENDING || 
+                        inv.status == InvoiceStatusEntity.DRAFT
+                    },
+                    recentInvoices = invoices.take(5),
                 )
             }
+            android.util.Log.d("DASHBOARD_VM", "Estado actualizado. Recientes en state: ${_state.value.recentInvoices.size}")
         }
     }
 

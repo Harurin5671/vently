@@ -30,13 +30,13 @@ import com.app.crowns.designsystem.color.Secondary
 import com.app.crowns.designsystem.color.SecondaryContainer
 import com.app.crowns.designsystem.color.Success
 import com.app.crowns.designsystem.color.TextMuted
+import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.home.ui.dashboard.InvoiceStatus
 import com.app.crowns.home.ui.dashboard.InvoiceType
-import com.app.crowns.home.ui.dashboard.RecentInvoice
 
 @Composable
 fun RecentInvoiceItem(
-    invoice: RecentInvoice,
+    invoice: InvoiceEntity,
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
@@ -50,36 +50,37 @@ fun RecentInvoiceItem(
         horizontalArrangement = Arrangement.spacedBy(12.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        // Avatar con letra del tipo
-        val isBoleta = invoice.type == InvoiceType.BOLETA
+        // Avatar con letra del tipo y color del estado
+        val isBoleta = invoice.documentType == "03"
+        val statusColor = invoice.statusInfo?.color?.let {
+            try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
+        } ?: androidx.compose.ui.graphics.Color(0xFF64748B)
+
         Box(
             modifier = Modifier
                 .size(40.dp)
                 .clip(CircleShape)
-                .background(
-                    if (isBoleta) SecondaryContainer.copy(alpha = 0.2f)
-                    else PrimaryContainer.copy(alpha = 0.2f)
-                ),
+                .background(statusColor.copy(alpha = 0.1f)),
             contentAlignment = Alignment.Center,
         ) {
             Text(
                 text = if (isBoleta) "B" else "F",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                color = if (isBoleta) Secondary else Primary,
+                color = statusColor,
             )
         }
 
         // Info
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = invoice.number,
+                text = "${invoice.serie}-${invoice.correlative.toString().padStart(8, '0')}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
             )
             Text(
-                text = invoice.clientName,
+                text = "Cliente", // Placeholder
                 fontSize = 12.sp,
                 color = TextMuted,
             )
@@ -88,7 +89,7 @@ fun RecentInvoiceItem(
         // Amount + status
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "S/ ${String.format(locale, "%.2f", invoice.amount)}",
+                text = "S/ ${String.format(locale, "%,.2f", invoice.total.toDoubleOrNull() ?: 0.0)}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
@@ -97,18 +98,15 @@ fun RecentInvoiceItem(
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.spacedBy(4.dp),
             ) {
-                val (statusLabel, statusColor) = when (invoice.status) {
-                    InvoiceStatus.ACCEPTED -> "ACEPTADO" to Success
-                    InvoiceStatus.PENDING -> "PENDIENTE" to androidx.compose.ui.graphics.Color(
-                        0xFFF59E0B
-                    )
+                val statusLabel = invoice.statusInfo?.name ?: invoice.status.uppercase()
+                val statusColor = invoice.statusInfo?.color?.let {
+                    try {
+                        androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it))
+                    } catch (e: Exception) {
+                        null
+                    }
+                } ?: OutlineVariant
 
-                    InvoiceStatus.REJECTED -> "RECHAZADO" to androidx.compose.ui.graphics.Color(
-                        0xFFEF4444
-                    )
-
-                    InvoiceStatus.CANCELLED -> "ANULADO" to OutlineVariant
-                }
                 StatusBadge(label = statusLabel, color = statusColor)
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,

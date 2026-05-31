@@ -31,11 +31,11 @@ import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.OutlineVariant
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
-import com.app.crowns.history.domain.model.HistoryInvoice
+import com.app.crowns.domain.invoice.entities.InvoiceEntity
 
 @Composable
 fun HistoryInvoiceDetail(
-    invoice: HistoryInvoice,
+    invoice: InvoiceEntity,
     onDownloadPdf: () -> Unit,
     onSend: () -> Unit,
     onCancel: () -> Unit,
@@ -68,12 +68,13 @@ fun HistoryInvoiceDetail(
                     letterSpacing = 0.5.sp,
                 )
                 Text(
-                    text = formatDateTime(invoice.dateTime),
+                    text = formatDateTime(invoice.issueDate),
                     fontSize = 14.sp,
                     color = OnSurface,
                 )
             }
-            if (!invoice.clientRuc.isNullOrBlank()) {
+            // Temporalmente deshabilitado hasta tener cliente en Entity o similar
+            if (false) {
                 Column(horizontalAlignment = Alignment.End) {
                     Text(
                         text = "RUC / DNI",
@@ -83,7 +84,7 @@ fun HistoryInvoiceDetail(
                         letterSpacing = 0.5.sp,
                     )
                     Text(
-                        text = invoice.clientRuc,
+                        text = "---",
                         fontSize = 14.sp,
                         color = OnSurface,
                     )
@@ -114,12 +115,12 @@ fun HistoryInvoiceDetail(
                     horizontalArrangement = Arrangement.SpaceBetween,
                 ) {
                     Text(
-                        text = "${item.quantity}x ${item.name}",
+                        text = "${item.quantity}x ${item.description}",
                         fontSize = 14.sp,
                         color = OnSurface,
                     )
                     Text(
-                        text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", item.subtotal)}",
+                        text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", item.total.toDoubleOrNull() ?: 0.0)}",
                         fontSize = 14.sp,
                         color = OnSurface,
                     )
@@ -136,8 +137,8 @@ fun HistoryInvoiceDetail(
                 .padding(12.dp),
             verticalArrangement = Arrangement.spacedBy(4.dp),
         ) {
-            BreakdownRow("Subtotal", invoice.subtotal)
-            BreakdownRow("IGV (18%)", invoice.igv)
+            BreakdownRow("Subtotal", invoice.totalGravada.toDoubleOrNull() ?: 0.0)
+            BreakdownRow("IGV (18%)", invoice.totalIgv.toDoubleOrNull() ?: 0.0)
             HorizontalDivider(
                 color = OutlineVariant.copy(alpha = 0.3f),
                 thickness = 0.5.dp,
@@ -154,7 +155,7 @@ fun HistoryInvoiceDetail(
                     color = OnSurface,
                 )
                 Text(
-                    text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", invoice.amount)}",
+                    text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", invoice.total.toDoubleOrNull() ?: 0.0)}",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = OnSurface,
@@ -162,8 +163,9 @@ fun HistoryInvoiceDetail(
             }
         }
 
-        // Hash CDR
-        invoice.hash?.let { hash ->
+        // Hash CDR (Usando xmlDocument como placeholder de hash si no hay campo hash explícito en Entity)
+        val hashValue = if (invoice.xmlDocument.length > 20) "..." else null
+        hashValue?.let { hash ->
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
