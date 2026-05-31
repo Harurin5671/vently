@@ -156,6 +156,8 @@ class CreateInvoiceViewModel @Inject constructor(
                 it.copy(selectedCategoryFilter = event.category)
             }
 
+            is CreateInvoiceEvent.RefreshProducts -> loadProducts()
+
             is CreateInvoiceEvent.OnPreview -> onPreview()
         }
     }

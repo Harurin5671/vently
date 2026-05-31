@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -22,18 +23,21 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.app.crowns.designsystem.color.Error
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.OnSurfaceVariant
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import java.util.Locale
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun InvoiceItemRow(
     item: InvoiceItem,
     onIncrease: () -> Unit,
     onDecrease: () -> Unit,
+    onDelete: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Row(
@@ -49,7 +53,7 @@ fun InvoiceItemRow(
                 color = OnSurface,
             )
             Text(
-                text = "Precio unit. S/ ${String.format(Locale.getDefault(), "%.2f", item.unitPrice)}",
+                text = "Precio unit. S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", item.unitPrice)}",
                 fontSize = 12.sp,
                 color = OnSurfaceVariant,
             )
@@ -57,7 +61,7 @@ fun InvoiceItemRow(
 
         Column(horizontalAlignment = Alignment.End) {
             Text(
-                text = "S/ ${String.format(Locale.getDefault(), "%.2f", item.subtotal)}",
+                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", item.subtotal)}",
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,
@@ -101,6 +105,18 @@ fun InvoiceItemRow(
                     )
                 }
             }
+        }
+
+        IconButton(
+            onClick = onDelete,
+            modifier = Modifier.size(32.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Delete,
+                contentDescription = "Delete",
+                tint = Error,
+                modifier = Modifier.size(20.dp),
+            )
         }
     }
 }

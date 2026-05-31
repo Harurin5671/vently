@@ -18,10 +18,10 @@ sealed interface AppDestination : NavKey {
     data object Home : AppDestination
 
     @Serializable
-    data object AddProduct : AppDestination
+    data class AddProduct(val id: String) : AppDestination
 
     @Serializable
-    data class CreateInvoice(val isFactura: Boolean) : AppDestination
+    data class CreateInvoice(val isFactura: Boolean, val id: String) : AppDestination
 
     @Serializable
     data object InvoicePreview : AppDestination

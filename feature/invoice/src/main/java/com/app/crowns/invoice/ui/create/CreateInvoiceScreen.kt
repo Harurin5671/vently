@@ -32,6 +32,7 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
@@ -41,6 +42,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnPrimary
 import com.app.crowns.designsystem.color.OnSurface
@@ -64,10 +68,24 @@ import com.app.crowns.invoice.ui.components.InvoiceTypeSelector
 fun CreateInvoiceScreen(
     onNavigateBack: () -> Unit,
     onNavigateToPreview: () -> Unit,
+    onNavigateToAddProduct: () -> Unit,
     viewModel: CreateInvoiceViewModel = hiltViewModel(),
     isFactura: Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(CreateInvoiceEvent.RefreshProducts)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose {
+            lifecycleOwner.lifecycle.removeObserver(observer)
+        }
+    }
 
     LaunchedEffect(Unit) {
         val initialType = if (isFactura) InvoiceType.FACTURA else InvoiceType.BOLETA
@@ -85,6 +103,7 @@ fun CreateInvoiceScreen(
         state = state,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
+        onNavigateToAddProduct = onNavigateToAddProduct,
     )
 }
 
@@ -94,6 +113,7 @@ private fun CreateInvoiceContent(
     state: CreateInvoiceUiState,
     onEvent: (CreateInvoiceEvent) -> Unit,
     onNavigateBack: () -> Unit,
+    onNavigateToAddProduct: () -> Unit,
 ) {
     Scaffold(
         containerColor = Surface,
@@ -218,6 +238,7 @@ private fun CreateInvoiceContent(
                                 item = item,
                                 onIncrease = { onEvent(CreateInvoiceEvent.OnIncreaseQuantity(item.productId)) },
                                 onDecrease = { onEvent(CreateInvoiceEvent.OnDecreaseQuantity(item.productId)) },
+                                onDelete = { onEvent(CreateInvoiceEvent.OnRemoveItem(item.productId)) },
                             )
                             if (index < state.items.lastIndex) {
                                 HorizontalDivider(
@@ -286,9 +307,11 @@ private fun CreateInvoiceContent(
             categories = state.categories,
             searchQuery = state.productSearchQuery,
             selectedCategory = state.selectedCategoryFilter,
+            isLoading = state.isLoadingProducts,
             onSearchChanged = { onEvent(CreateInvoiceEvent.OnProductSearchChanged(it)) },
             onCategoryChanged = { onEvent(CreateInvoiceEvent.OnCategoryFilterChanged(it)) },
             onAddItem = { onEvent(CreateInvoiceEvent.OnAddItem(it)) },
+            onNavigateToAddProduct = onNavigateToAddProduct,
             onDismiss = { onEvent(CreateInvoiceEvent.OnDismissAddProductSheet) },
         )
     }
@@ -336,6 +359,7 @@ private fun CreateInvoiceEmptyPreview() {
             state = CreateInvoiceUiState(),
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToAddProduct = {},
         )
     }
 }
@@ -353,6 +377,7 @@ private fun CreateInvoiceWithItemsPreview() {
             ),
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToAddProduct = {},
         )
     }
 }
@@ -372,6 +397,7 @@ private fun CreateFacturaSearchingPreview() {
             ),
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToAddProduct = {},
         )
     }
 }
@@ -391,6 +417,7 @@ private fun CreateFacturaValidPreview() {
             ),
             onEvent = {},
             onNavigateBack = {},
+            onNavigateToAddProduct = {},
         )
     }
 }

@@ -59,6 +59,8 @@ import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.invoice.domain.model.InvoiceItem
+import com.app.crowns.ui.components.VentlyStockEmptyState
+import androidx.compose.material.icons.filled.Inventory
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -67,9 +69,11 @@ fun AddProductSheet(
     categories: List<Category>,
     searchQuery: String,
     selectedCategory: String?,
+    isLoading: Boolean,
     onSearchChanged: (String) -> Unit,
     onCategoryChanged: (String?) -> Unit,
     onAddItem: (InvoiceItem) -> Unit,
+    onNavigateToAddProduct: () -> Unit,
     onDismiss: () -> Unit,
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -157,206 +161,263 @@ fun AddProductSheet(
 
             Spacer(Modifier.height(12.dp))
 
-            // Product list
-            LazyColumn(
-                verticalArrangement = Arrangement.spacedBy(8.dp),
-                modifier = Modifier.height(400.dp),
-            ) {
-                items(filtered, key = { it.id ?: "" }) { product ->
-                    val isExpanded = expandedProductId == product.id
-                    val isOutOfStock = product.currentStock == 0
-
-                    Column(
+            // Product list or Empty state
+            when {
+                isLoading && products.isEmpty() -> {
+                    Box(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .clip(RoundedCornerShape(12.dp))
-                            .background(SurfaceContainerLowest)
-                            .border(
-                                width = if (isExpanded) 2.dp else 1.dp,
-                                color = when {
-                                    isExpanded -> Primary
-                                    product.currentStock in 1..3 -> Color(0xFFF59E0B)
-                                    else -> OutlineVariant
-                                },
-                                shape = RoundedCornerShape(12.dp),
-                            )
-                            .then(
-                                if (!isOutOfStock)
-                                    Modifier.clickable {
-                                        if (isExpanded) {
-                                            expandedProductId = null
-                                            expandedQuantity = 1
-                                        } else {
-                                            expandedProductId = product.id
-                                            expandedQuantity = 1
-                                        }
-                                    }
-                                else Modifier
-                            ),
+                            .height(400.dp),
+                        contentAlignment = Alignment.Center
                     ) {
-                        // Product row
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(12.dp),
-                            horizontalArrangement = Arrangement.spacedBy(12.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            // Icon placeholder
-                            Box(
+                        androidx.compose.material3.CircularProgressIndicator(color = Primary)
+                    }
+                }
+                products.isEmpty() -> {
+                    Box(modifier = Modifier.height(400.dp)) {
+                        VentlyStockEmptyState(
+                            title = "No tienes productos",
+                            description = "Crea tu primer producto para poder agregarlo a tus comprobantes.",
+                            icon = Icons.Filled.Inventory,
+                            buttonText = "Crear producto",
+                            onButtonClick = onNavigateToAddProduct,
+                        )
+                    }
+                }
+                else -> {
+                    LazyColumn(
+                        verticalArrangement = Arrangement.spacedBy(8.dp),
+                        modifier = Modifier.height(400.dp),
+                    ) {
+                        item {
+                            Row(
                                 modifier = Modifier
-                                    .size(48.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(
-                                        if (isOutOfStock) SurfaceContainerHigh
-                                        else PrimaryContainer.copy(alpha = 0.12f)
-                                    ),
-                                contentAlignment = Alignment.Center,
+                                    .fillMaxWidth()
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(PrimaryContainer.copy(alpha = 0.05f))
+                                    .border(
+                                        width = 1.dp,
+                                        color = PrimaryContainer.copy(alpha = 0.2f),
+                                        shape = RoundedCornerShape(12.dp),
+                                    )
+                                    .clickable { onNavigateToAddProduct() }
+                                    .padding(12.dp),
+                                horizontalArrangement = Arrangement.Center,
+                                verticalAlignment = Alignment.CenterVertically,
                             ) {
-                                Text(
-                                    text = product.name.first().uppercase(),
-                                    fontSize = 20.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = if (isOutOfStock) Outline else Primary,
+                                Icon(
+                                    imageVector = Icons.Default.Add,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(20.dp),
                                 )
-                            }
-
-                            Column(modifier = Modifier.weight(1f)) {
+                                Spacer(Modifier.width(8.dp))
                                 Text(
-                                    text = product.name,
+                                    text = "Crear nuevo producto",
                                     fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isOutOfStock) OnSurfaceVariant else OnSurface,
-                                )
-                                Text(
-                                    text = "SKU: ${product.sku ?: "S/SKU"}",
-                                    fontSize = 12.sp,
-                                    color = Outline,
-                                )
-                            }
-
-                            Column(horizontalAlignment = Alignment.End) {
-                                val locale = LocalConfiguration.current.locales[0]
-                                Text(
-                                    text = "S/ ${String.format(locale, "%.2f", product.salePrice)}",
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isOutOfStock) OnSurfaceVariant else Primary,
-                                )
-                                // Stock badge
-                                val (badgeText, badgeBg, badgeFg) = when {
-                                    product.currentStock == 0 -> Triple("SIN STOCK", Color(0xFFF1F5F9), Color(0xFF64748B))
-                                    product.currentStock <= 3 -> Triple("BAJO STOCK (${product.currentStock})", Color(0xFFFFFBEB), Color(0xFFF59E0B))
-                                    else -> Triple("STOCK (${product.currentStock})", Color(0xFFECFDF5), Color(0xFF10B981))
-                                }
-                                Text(
-                                    text = badgeText,
-                                    fontSize = 10.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = badgeFg,
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(999.dp))
-                                        .background(badgeBg)
-                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                    fontWeight = FontWeight.SemiBold,
+                                    color = Primary,
                                 )
                             }
                         }
 
-                        // Expanded area
-                        if (isExpanded) {
+                        items(filtered, key = { it.id ?: "" }) { product ->
+                            val isExpanded = expandedProductId == product.id
+                            val isOutOfStock = product.currentStock == 0
+
                             Column(
                                 modifier = Modifier
                                     .fillMaxWidth()
-                                    .background(PrimaryContainer.copy(alpha = 0.05f))
-                                    .padding(12.dp),
-                                verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    .clip(RoundedCornerShape(12.dp))
+                                    .background(SurfaceContainerLowest)
+                                    .border(
+                                        width = if (isExpanded) 2.dp else 1.dp,
+                                        color = when {
+                                            isExpanded -> Primary
+                                            product.currentStock in 1..3 -> Color(0xFFF59E0B)
+                                            else -> OutlineVariant
+                                        },
+                                        shape = RoundedCornerShape(12.dp),
+                                    )
+                                    .then(
+                                        if (!isOutOfStock)
+                                            Modifier.clickable {
+                                                if (isExpanded) {
+                                                    expandedProductId = null
+                                                    expandedQuantity = 1
+                                                } else {
+                                                    expandedProductId = product.id
+                                                    expandedQuantity = 1
+                                                }
+                                            }
+                                        else Modifier
+                                    ),
                             ) {
+                                // Product row
                                 Row(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    horizontalArrangement = Arrangement.SpaceBetween,
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(12.dp),
+                                    horizontalArrangement = Arrangement.spacedBy(12.dp),
                                     verticalAlignment = Alignment.CenterVertically,
                                 ) {
-                                    Text(
-                                        text = "Cantidad",
-                                        fontSize = 14.sp,
-                                        color = OnSurfaceVariant,
-                                    )
-                                    Row(
+                                    // Icon placeholder
+                                    Box(
                                         modifier = Modifier
+                                            .size(48.dp)
                                             .clip(RoundedCornerShape(8.dp))
-                                            .background(SurfaceContainerHigh)
-                                            .padding(4.dp),
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            .background(
+                                                if (isOutOfStock) SurfaceContainerHigh
+                                                else PrimaryContainer.copy(alpha = 0.12f)
+                                            ),
+                                        contentAlignment = Alignment.Center,
                                     ) {
-                                        IconButton(
-                                            onClick = { if (expandedQuantity > 1) expandedQuantity-- },
-                                            modifier = Modifier.size(32.dp),
-                                        ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Remove,
-                                                contentDescription = null,
-                                                tint = Primary,
-                                            )
+                                        Text(
+                                            text = product.name.first().uppercase(),
+                                            fontSize = 20.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = if (isOutOfStock) Outline else Primary,
+                                        )
+                                    }
+
+                                    Column(modifier = Modifier.weight(1f)) {
+                                        Text(
+                                            text = product.name,
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (isOutOfStock) OnSurfaceVariant else OnSurface,
+                                        )
+                                        Text(
+                                            text = "SKU: ${product.sku ?: "S/SKU"}",
+                                            fontSize = 12.sp,
+                                            color = Outline,
+                                        )
+                                    }
+
+                                    Column(horizontalAlignment = Alignment.End) {
+                                        val locale = LocalConfiguration.current.locales[0]
+                                        Text(
+                                            text = "S/ ${String.format(locale, "%.2f", product.salePrice)}",
+                                            fontSize = 14.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            color = if (isOutOfStock) OnSurfaceVariant else Primary,
+                                        )
+                                        // Stock badge
+                                        val (badgeText, badgeBg, badgeFg) = when {
+                                            product.currentStock == 0 -> Triple("SIN STOCK", Color(0xFFF1F5F9), Color(0xFF64748B))
+                                            product.currentStock <= 3 -> Triple("BAJO STOCK (${product.currentStock})", Color(0xFFFFFBEB), Color(0xFFF59E0B))
+                                            else -> Triple("STOCK (${product.currentStock})", Color(0xFFECFDF5), Color(0xFF10B981))
                                         }
                                         Text(
-                                            text = "$expandedQuantity",
-                                            fontSize = 18.sp,
-                                            fontWeight = FontWeight.SemiBold,
-                                            color = OnSurface,
-                                            textAlign = TextAlign.Center,
-                                            modifier = Modifier.width(24.dp),
+                                            text = badgeText,
+                                            fontSize = 10.sp,
+                                            fontWeight = FontWeight.Bold,
+                                            color = badgeFg,
+                                            modifier = Modifier
+                                                .clip(RoundedCornerShape(999.dp))
+                                                .background(badgeBg)
+                                                .padding(horizontal = 6.dp, vertical = 2.dp),
                                         )
-                                        IconButton(
-                                            onClick = { expandedQuantity++ },
-                                            modifier = Modifier.size(32.dp),
+                                    }
+                                }
+
+                                // Expanded area
+                                if (isExpanded) {
+                                    Column(
+                                        modifier = Modifier
+                                            .fillMaxWidth()
+                                            .background(PrimaryContainer.copy(alpha = 0.05f))
+                                            .padding(12.dp),
+                                        verticalArrangement = Arrangement.spacedBy(12.dp),
+                                    ) {
+                                        Row(
+                                            modifier = Modifier.fillMaxWidth(),
+                                            horizontalArrangement = Arrangement.SpaceBetween,
+                                            verticalAlignment = Alignment.CenterVertically,
                                         ) {
-                                            Icon(
-                                                imageVector = Icons.Filled.Add,
-                                                contentDescription = null,
-                                                tint = OnPrimary,
+                                            Text(
+                                                text = "Cantidad",
+                                                fontSize = 14.sp,
+                                                color = OnSurfaceVariant,
+                                            )
+                                            Row(
                                                 modifier = Modifier
-                                                    .background(Primary, RoundedCornerShape(4.dp))
+                                                    .clip(RoundedCornerShape(8.dp))
+                                                    .background(SurfaceContainerHigh)
                                                     .padding(4.dp),
+                                                verticalAlignment = Alignment.CenterVertically,
+                                                horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            ) {
+                                                IconButton(
+                                                    onClick = { if (expandedQuantity > 1) expandedQuantity-- },
+                                                    modifier = Modifier.size(32.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Remove,
+                                                        contentDescription = null,
+                                                        tint = Primary,
+                                                    )
+                                                }
+                                                Text(
+                                                    text = "$expandedQuantity",
+                                                    fontSize = 18.sp,
+                                                    fontWeight = FontWeight.SemiBold,
+                                                    color = OnSurface,
+                                                    textAlign = TextAlign.Center,
+                                                    modifier = Modifier.width(24.dp),
+                                                )
+                                                IconButton(
+                                                    onClick = { expandedQuantity++ },
+                                                    modifier = Modifier.size(32.dp),
+                                                ) {
+                                                    Icon(
+                                                        imageVector = Icons.Filled.Add,
+                                                        contentDescription = null,
+                                                        tint = OnPrimary,
+                                                        modifier = Modifier
+                                                            .background(Primary, RoundedCornerShape(4.dp))
+                                                            .padding(4.dp),
+                                                    )
+                                                }
+                                            }
+                                        }
+
+                                        Button(
+                                            onClick = {
+                                                onAddItem(
+                                                    InvoiceItem(
+                                                        productId = product.id ?: "",
+                                                        name = product.name,
+                                                        sku = product.sku,
+                                                        unitPrice = product.salePrice,
+                                                        quantity = expandedQuantity,
+                                                    )
+                                                )
+                                                expandedProductId = null
+                                                expandedQuantity = 1
+                                            },
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .height(48.dp),
+                                            shape = RoundedCornerShape(12.dp),
+                                            colors = ButtonDefaults.buttonColors(
+                                                containerColor = Primary,
+                                                contentColor = OnPrimary,
+                                            ),
+                                        ) {
+                                            Text(
+                                                text = "Agregar al comprobante",
+                                                fontWeight = FontWeight.SemiBold,
                                             )
                                         }
                                     }
                                 }
-
-                                Button(
-                                    onClick = {
-                                        onAddItem(
-                                            InvoiceItem(
-                                                productId = product.id ?: "",
-                                                name = product.name,
-                                                sku = product.sku,
-                                                unitPrice = product.salePrice,
-                                                quantity = expandedQuantity,
-                                            )
-                                        )
-                                        expandedProductId = null
-                                        expandedQuantity = 1
-                                    },
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .height(48.dp),
-                                    shape = RoundedCornerShape(12.dp),
-                                    colors = ButtonDefaults.buttonColors(
-                                        containerColor = Primary,
-                                        contentColor = OnPrimary,
-                                    ),
-                                ) {
-                                    Text(
-                                        text = "Agregar al comprobante",
-                                        fontWeight = FontWeight.SemiBold,
-                                    )
-                                }
                             }
                         }
+
+                        item { Spacer(Modifier.height(16.dp)) }
                     }
                 }
-
-                item { Spacer(Modifier.height(16.dp)) }
             }
         }
     }

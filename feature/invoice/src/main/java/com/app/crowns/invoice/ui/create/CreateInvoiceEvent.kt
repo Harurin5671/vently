@@ -19,6 +19,7 @@ sealed class CreateInvoiceEvent {
     data class OnProductSearchChanged(val query: String) : CreateInvoiceEvent()
     data class OnCategoryFilterChanged(val category: String?) : CreateInvoiceEvent()
     data object OnPreview : CreateInvoiceEvent()
+    data object RefreshProducts : CreateInvoiceEvent()
 }
 
 sealed class CreateInvoiceNavigationEvent {

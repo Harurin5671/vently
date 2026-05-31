@@ -65,6 +65,7 @@ import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.domain.product.model.Product
+import com.app.crowns.ui.components.VentlyStockEmptyState
 import com.app.crowns.ui.components.shimmerEffect
 
 @Composable
@@ -128,8 +129,12 @@ private fun StockContent(
         }
     ) { innerPadding ->
         if (state.products.isEmpty() && !state.isLoading) {
-            EmptyStockState(
-                onAddProduct = { onEvent(StockEvent.OnAddProduct) },
+            VentlyStockEmptyState(
+                title = "Tu inventario está vacío",
+                description = "Comienza agregando tu primer producto para llevar el control de tu stock.",
+                icon = Icons.Filled.Inventory,
+                buttonText = "Agregar producto",
+                onButtonClick = { onEvent(StockEvent.OnAddProduct) },
                 modifier = Modifier.padding(innerPadding)
             )
         } else {
@@ -270,51 +275,6 @@ private fun ProductItemSkeleton() {
                     .clip(RoundedCornerShape(4.dp))
                     .shimmerEffect()
             )
-        }
-    }
-}
-
-@Composable
-private fun EmptyStockState(
-    onAddProduct: () -> Unit,
-    modifier: Modifier = Modifier
-) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(32.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        Icon(
-            imageVector = Icons.Filled.Inventory,
-            contentDescription = null,
-            modifier = Modifier.size(64.dp),
-            tint = OutlineVariant
-        )
-        Spacer(Modifier.height(16.dp))
-        Text(
-            text = "Tu inventario está vacío",
-            fontSize = 18.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = OnSurface
-        )
-        Spacer(Modifier.height(8.dp))
-        Text(
-            text = "Comienza agregando tu primer producto para llevar el control de tu stock.",
-            fontSize = 14.sp,
-            color = OnSurfaceVariant,
-            textAlign = androidx.compose.ui.text.style.TextAlign.Center
-        )
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onAddProduct,
-            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = RoundedCornerShape(12.dp)
-        ) {
-            Icon(Icons.Filled.Add, contentDescription = null)
-            Spacer(Modifier.width(8.dp))
-            Text("Agregar producto")
         }
     }
 }

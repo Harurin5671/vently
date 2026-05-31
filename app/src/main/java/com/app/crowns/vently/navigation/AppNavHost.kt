@@ -12,6 +12,7 @@ import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.app.crowns.auth.ui.login.LoginScreen
 import com.app.crowns.history.ui.HistoryScreen
 import com.app.crowns.home.ui.HomeScreen
@@ -24,6 +25,7 @@ import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.stock.ui.addproduct.AddProductScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
 import com.app.crowns.vently.splash.SplashScreen
+import java.util.UUID
 
 @Composable
 fun AppNavHost(
@@ -85,10 +87,10 @@ fun AppNavHost(
                         dashboardContent = {
                             DashboardScreen(
                                 onNavigateToNewBoleta = {
-                                    backStack.add(AppDestination.CreateInvoice(isFactura = false))
+                                    backStack.add(AppDestination.CreateInvoice(isFactura = false, id = UUID.randomUUID().toString()))
                                 },
                                 onNavigateToNewFactura = {
-                                    backStack.add(AppDestination.CreateInvoice(isFactura = true))
+                                    backStack.add(AppDestination.CreateInvoice(isFactura = true, id = UUID.randomUUID().toString()))
                                 },
                                 onNavigateToStock = { selectedHomeTab = 1 },
                                 onNavigateToHistory = { selectedHomeTab = 2 },
@@ -97,7 +99,7 @@ fun AppNavHost(
                         stockContent = {
                             StockScreen(
                                 onNavigateToAddProduct = {
-                                    backStack.add(AppDestination.AddProduct)
+                                    backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
                                 }
                             )
                         },
@@ -106,7 +108,7 @@ fun AppNavHost(
                         onFabClick = { tabIndex ->
                             when (tabIndex) {
                                 0 -> { /* Acción para Dashboard */ }
-                                1 -> backStack.add(AppDestination.AddProduct) // Stock tab
+                                1 -> backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString())) // Stock tab
                                 2 -> { /* Acción para Historial */ }
                                 3 -> { /* Acción para Ajustes */ }
                             }
@@ -118,7 +120,8 @@ fun AppNavHost(
                     AddProductScreen(
                         onNavigateBack = {
                             backStack.removeLastOrNull()
-                        }
+                        },
+                        viewModel = hiltViewModel(key = destination.id)
                     )
                 }
 
@@ -128,7 +131,11 @@ fun AppNavHost(
                         onNavigateToPreview = {
                             backStack.add(AppDestination.InvoicePreview)
                         },
+                        onNavigateToAddProduct = {
+                            backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
+                        },
                         isFactura = destination.isFactura,
+                        viewModel = hiltViewModel(key = destination.id)
                     )
                 }
 
