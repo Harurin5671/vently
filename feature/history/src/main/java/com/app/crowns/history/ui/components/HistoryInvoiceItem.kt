@@ -74,7 +74,7 @@ fun HistoryInvoiceItem(
                 color = OnSurface,
             )
             Text(
-                text = "Cliente", // En InvoiceEntity no veo campo clientName directo, se puede extender luego
+                text = invoice.customerLegalName,
                 fontSize = 12.sp,
                 color = Outline,
             )

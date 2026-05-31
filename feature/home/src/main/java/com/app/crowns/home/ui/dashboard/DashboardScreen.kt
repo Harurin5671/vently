@@ -46,7 +46,7 @@ import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.QuickActionCard
 import com.app.crowns.home.ui.components.RecentInvoiceItem
 import com.app.crowns.home.ui.components.StatCard
-import com.app.crowns.home.ui.dashboard.components.DashboardTopAppBaR
+import com.app.crowns.ui.components.shimmerEffect
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
 import java.util.Locale
@@ -96,169 +96,173 @@ private fun DashboardContent(
 //            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }
     ) { innerPadding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(innerPadding)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp),
-        ) {
-            Spacer(Modifier.height(16.dp))
-
-            // Greeting
-            GreetingSection(userName = state.userName)
-
-            Spacer(Modifier.height(16.dp))
-
-            // Stats row
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
+        if (state.isLoading) {
+            DashboardSkeleton(modifier = Modifier.padding(innerPadding))
+        } else {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(innerPadding)
+                    .verticalScroll(rememberScrollState())
+                    .padding(horizontal = 16.dp),
             ) {
-                StatCard(
-                    label = "Ventas hoy",
-                    value = "S/ ${String.format(locale, "%,.2f", state.todaySales)}",
-                    badge = "+${state.salesGrowthPercent.toInt()}%",
-                    badgeColor = com.app.crowns.designsystem.color.Success,
-                    modifier = Modifier.weight(1f),
-                )
-                StatCard(
-                    label = "Comprobantes",
-                    value = "${state.totalInvoices}",
-                    subtitle = "${state.acceptedInvoices} aceptados · ${state.pendingInvoices} pendientes",
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                Spacer(Modifier.height(16.dp))
 
-            Spacer(Modifier.height(24.dp))
+                // Greeting
+                GreetingSection(userName = state.userName)
 
-            // Quick actions
-            Text(
-                text = "Acciones rápidas",
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Medium,
-                color = OnSurface,
-            )
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(16.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                QuickActionCard(
-                    label = "Nueva boleta",
-                    icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                    iconTint = Primary,
-                    iconBackground = PrimaryContainer.copy(alpha = 0.12f),
-                    onClick = { onEvent(DashboardEvent.OnNewBoleta) },
-                    modifier = Modifier.weight(1f),
-                )
-                QuickActionCard(
-                    label = "Nueva factura",
-                    icon = Icons.Filled.Business,
-                    iconTint = Primary,
-                    iconBackground = PrimaryContainer.copy(alpha = 0.12f),
-                    onClick = { onEvent(DashboardEvent.OnNewFactura) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
+                // Stats row
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    StatCard(
+                        label = "Ventas hoy",
+                        value = "S/ ${String.format(locale, "%,.2f", state.todaySales)}",
+                        badge = "+${state.salesGrowthPercent.toInt()}%",
+                        badgeColor = com.app.crowns.designsystem.color.Success,
+                        modifier = Modifier.weight(1f),
+                    )
+                    StatCard(
+                        label = "Comprobantes",
+                        value = "${state.totalInvoices}",
+                        subtitle = "${state.acceptedInvoices} aceptados · ${state.pendingInvoices} pendientes",
+                        modifier = Modifier.weight(1f),
+                    )
+                }
 
-            Spacer(Modifier.height(12.dp))
+                Spacer(Modifier.height(24.dp))
 
-            Row(
-                horizontalArrangement = Arrangement.spacedBy(12.dp),
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                QuickActionCard(
-                    label = "Mi stock",
-                    icon = Icons.Filled.Inventory2,
-                    iconTint = androidx.compose.ui.graphics.Color(0xFF00C2CB),
-                    iconBackground = androidx.compose.ui.graphics.Color(0xFF00C2CB)
-                        .copy(alpha = 0.12f),
-                    onClick = { onEvent(DashboardEvent.OnStockClick) },
-                    modifier = Modifier.weight(1f),
-                )
-                QuickActionCard(
-                    label = "Historial",
-                    icon = Icons.Filled.History,
-                    iconTint = OnSurfaceVariant,
-                    iconBackground = OutlineVariant.copy(alpha = 0.2f),
-                    onClick = { onEvent(DashboardEvent.OnHistoryClick) },
-                    modifier = Modifier.weight(1f),
-                )
-            }
-
-            Spacer(Modifier.height(24.dp))
-
-            // Recent invoices
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
+                // Quick actions
                 Text(
-                    text = "Recientes",
+                    text = "Acciones rápidas",
                     fontSize = 14.sp,
                     fontWeight = FontWeight.Medium,
                     color = OnSurface,
                 )
-                TextButton(onClick = { onEvent(DashboardEvent.OnHistoryClick) }) {
-                    Text(
-                        text = "Ver todos",
-                        fontSize = 12.sp,
-                        color = Primary,
+                Spacer(Modifier.height(12.dp))
+
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    QuickActionCard(
+                        label = "Nueva boleta",
+                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                        iconTint = Primary,
+                        iconBackground = PrimaryContainer.copy(alpha = 0.12f),
+                        onClick = { onEvent(DashboardEvent.OnNewBoleta) },
+                        modifier = Modifier.weight(1f),
                     )
-                    Spacer(Modifier.width(4.dp))
-                    Icon(
-                        imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                        contentDescription = null,
-                        tint = Primary,
-                        modifier = Modifier.size(16.dp),
+                    QuickActionCard(
+                        label = "Nueva factura",
+                        icon = Icons.Filled.Business,
+                        iconTint = Primary,
+                        iconBackground = PrimaryContainer.copy(alpha = 0.12f),
+                        onClick = { onEvent(DashboardEvent.OnNewFactura) },
+                        modifier = Modifier.weight(1f),
                     )
                 }
-            }
 
-            Spacer(Modifier.height(8.dp))
+                Spacer(Modifier.height(12.dp))
 
-            // Invoice list card
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(SurfaceContainerLowest)
-                    .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
-            ) {
-                if (state.recentInvoices.isEmpty()) {
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(24.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
+                Row(
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    QuickActionCard(
+                        label = "Mi stock",
+                        icon = Icons.Filled.Inventory2,
+                        iconTint = androidx.compose.ui.graphics.Color(0xFF00C2CB),
+                        iconBackground = androidx.compose.ui.graphics.Color(0xFF00C2CB)
+                            .copy(alpha = 0.12f),
+                        onClick = { onEvent(DashboardEvent.OnStockClick) },
+                        modifier = Modifier.weight(1f),
+                    )
+                    QuickActionCard(
+                        label = "Historial",
+                        icon = Icons.Filled.History,
+                        iconTint = OnSurfaceVariant,
+                        iconBackground = OutlineVariant.copy(alpha = 0.2f),
+                        onClick = { onEvent(DashboardEvent.OnHistoryClick) },
+                        modifier = Modifier.weight(1f),
+                    )
+                }
+
+                Spacer(Modifier.height(24.dp))
+
+                // Recent invoices
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text(
+                        text = "Recientes",
+                        fontSize = 14.sp,
+                        fontWeight = FontWeight.Medium,
+                        color = OnSurface,
+                    )
+                    TextButton(onClick = { onEvent(DashboardEvent.OnHistoryClick) }) {
                         Text(
-                            text = "No hay comprobantes recientes",
-                            fontSize = 14.sp,
-                            color = Outline,
-                            fontWeight = FontWeight.Normal
+                            text = "Ver todos",
+                            fontSize = 12.sp,
+                            color = Primary,
+                        )
+                        Spacer(Modifier.width(4.dp))
+                        Icon(
+                            imageVector = Icons.AutoMirrored.Filled.ArrowForward,
+                            contentDescription = null,
+                            tint = Primary,
+                            modifier = Modifier.size(16.dp),
                         )
                     }
-                } else {
-                    state.recentInvoices.forEachIndexed { index, invoice ->
-                        RecentInvoiceItem(
-                            invoice = invoice,
-                            onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
-                        )
-                        if (index < state.recentInvoices.lastIndex) {
-                            HorizontalDivider(
-                                color = OutlineVariant.copy(alpha = 0.5f),
-                                thickness = 0.5.dp,
+                }
+
+                Spacer(Modifier.height(8.dp))
+
+                // Invoice list card
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .background(SurfaceContainerLowest)
+                        .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
+                ) {
+                    if (state.recentInvoices.isEmpty()) {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(24.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                text = "No hay comprobantes recientes",
+                                fontSize = 14.sp,
+                                color = Outline,
+                                fontWeight = FontWeight.Normal
                             )
+                        }
+                    } else {
+                        state.recentInvoices.forEachIndexed { index, invoice ->
+                            RecentInvoiceItem(
+                                invoice = invoice,
+                                onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
+                            )
+                            if (index < state.recentInvoices.lastIndex) {
+                                HorizontalDivider(
+                                    color = OutlineVariant.copy(alpha = 0.5f),
+                                    thickness = 0.5.dp,
+                                )
+                            }
                         }
                     }
                 }
-            }
 
-            Spacer(Modifier.height(80.dp)) // espacio para el FAB
+                Spacer(Modifier.height(80.dp)) // espacio para el FAB
+            }
         }
     }
 }
@@ -284,6 +288,63 @@ private fun GreetingSection(userName: String) {
             text = now.format(dayFormat).replaceFirstChar { it.uppercase() },
             fontSize = 14.sp,
             color = TextMuted,
+        )
+    }
+}
+
+@Composable
+private fun DashboardSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(horizontal = 16.dp),
+    ) {
+        Spacer(Modifier.height(16.dp))
+        
+        // Greeting Skeleton
+        Column {
+            Box(modifier = Modifier.width(200.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+            Spacer(Modifier.height(8.dp))
+            Box(modifier = Modifier.width(150.dp).height(16.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+        }
+
+        Spacer(Modifier.height(16.dp))
+
+        // Stats Skeleton
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Box(modifier = Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+            Box(modifier = Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Quick Actions Skeleton
+        Box(modifier = Modifier.width(120.dp).height(20.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+        }
+        Spacer(Modifier.height(12.dp))
+        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
+            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+        }
+
+        Spacer(Modifier.height(24.dp))
+
+        // Recent Invoices Skeleton
+        Box(modifier = Modifier.width(100.dp).height(20.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+        Spacer(Modifier.height(12.dp))
+        Box(
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(200.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .shimmerEffect()
         )
     }
 }

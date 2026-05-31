@@ -46,6 +46,7 @@ dependencies {
     implementation(libs.androidx.hilt.navigation.compose)
     // Design system
     implementation(project(":core:designsystem"))
+    implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":shared:domain"))
 

@@ -80,7 +80,7 @@ fun RecentInvoiceItem(
                 color = OnSurface,
             )
             Text(
-                text = "Cliente", // Placeholder
+                text = invoice.customerLegalName,
                 fontSize = 12.sp,
                 color = TextMuted,
             )

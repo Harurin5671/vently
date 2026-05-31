@@ -338,7 +338,9 @@ private fun HistoryWithItemsPreview() {
             totalGravada = "42.37",
             totalIgv = "7.63",
             xmlDocument = "",
-            items = emptyList()
+            items = emptyList(),
+            customerDocNumber = "12345678",
+            customerLegalName = "Juan Pérez"
         ),
         InvoiceEntity(
             id = "2",
@@ -359,7 +361,9 @@ private fun HistoryWithItemsPreview() {
             totalGravada = "100.0",
             totalIgv = "18.0",
             xmlDocument = "",
-            items = emptyList()
+            items = emptyList(),
+            customerDocNumber = "20601234567",
+            customerLegalName = "Empresa S.A.C."
         )
     )
 
@@ -396,7 +400,9 @@ private fun HistoryExpandedPreview() {
             totalGravada = "42.37",
             totalIgv = "7.63",
             xmlDocument = "",
-            items = emptyList()
+            items = emptyList(),
+            customerDocNumber = "12345678",
+            customerLegalName = "Juan Pérez"
         )
     )
 

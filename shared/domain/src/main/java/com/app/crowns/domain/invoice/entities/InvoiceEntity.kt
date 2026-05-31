@@ -25,5 +25,9 @@ data class InvoiceEntity(
     val totalGravada: String,
     val totalIgv: String,
     val xmlDocument: String,
-    val items: List<InvoiceItemEntity>
+    val items: List<InvoiceItemEntity>,
+    val customerDocNumber: String,
+    val customerLegalName: String,
+    val customerAddress: String? = null,
+    val customerEmail: String? = null
 )

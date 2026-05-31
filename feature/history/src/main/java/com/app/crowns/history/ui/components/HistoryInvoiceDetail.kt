@@ -73,24 +73,29 @@ fun HistoryInvoiceDetail(
                     color = OnSurface,
                 )
             }
-            // Temporalmente deshabilitado hasta tener cliente en Entity o similar
-            if (false) {
-                Column(horizontalAlignment = Alignment.End) {
-                    Text(
-                        text = "RUC / DNI",
-                        fontSize = 11.sp,
-                        fontWeight = FontWeight.Medium,
-                        color = Outline,
-                        letterSpacing = 0.5.sp,
-                    )
-                    Text(
-                        text = "---",
-                        fontSize = 14.sp,
-                        color = OnSurface,
-                    )
-                }
+            Column(horizontalAlignment = Alignment.End) {
+                Text(
+                    text = "CLIENTE",
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = Outline,
+                    letterSpacing = 0.5.sp,
+                )
+                Text(
+                    text = invoice.customerDocNumber,
+                    fontSize = 14.sp,
+                    color = OnSurface,
+                )
             }
         }
+        
+        Text(
+            text = invoice.customerLegalName,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = OnSurface,
+            modifier = Modifier.fillMaxWidth()
+        )
 
         // Items
         Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {

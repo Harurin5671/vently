@@ -41,5 +41,9 @@ fun InvoiceSupabaseModel.toDomain(): InvoiceEntity = InvoiceEntity(
     totalGravada = totalGravada.toString(),
     totalIgv = totalIgv.toString(),
     xmlDocument = xmlDocument,
-    items = items.map { it.toDomain() }
+    items = items.map { it.toDomain() },
+    customerDocNumber = customerDocNumber,
+    customerLegalName = customerLegalName,
+    customerAddress = customerAddress,
+    customerEmail = customerEmail
 )

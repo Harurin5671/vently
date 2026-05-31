@@ -35,5 +35,11 @@ data class InvoiceSupabaseModel(
     val notes: JsonElement? = null,
     @SerialName("created_at") val createdAt: String,
     @SerialName("updated_at") val updatedAt: String,
-    @SerialName("invoice_items") val items: List<InvoiceItemSupabaseModel> = emptyList()
+    @SerialName("invoice_items") val items: List<InvoiceItemSupabaseModel> = emptyList(),
+    @SerialName("customer_doc_type") val customerDocType: String,
+    @SerialName("customer_doc_number") val customerDocNumber: String,
+    @SerialName("customer_legal_name") val customerLegalName: String,
+    @SerialName("customer_address") val customerAddress: String? = null,
+    @SerialName("customer_email") val customerEmail: String? = null,
+
 )
