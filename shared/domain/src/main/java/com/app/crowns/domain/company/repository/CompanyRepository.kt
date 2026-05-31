@@ -1,6 +1,7 @@
 package com.app.crowns.domain.company.repository
 
 import com.app.crowns.domain.company.model.CompanyInfo
+import com.app.crowns.domain.company.model.DocumentSeries
 import com.app.crowns.network.NetworkResult
 
 interface CompanyRepository {
@@ -8,4 +9,6 @@ interface CompanyRepository {
     suspend fun getCompanyInfo(ruc: String): NetworkResult<CompanyInfo>
     suspend fun updateCertificate(base64: String): Result<Unit>
     suspend fun updateCertificatePassword(password: String): Result<Unit>
+    suspend fun getDocumentSeries(companyId: String): Result<List<DocumentSeries>>
+    suspend fun updateDocumentSeries(series: DocumentSeries): Result<Unit>
 }

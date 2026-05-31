@@ -3,8 +3,11 @@ package com.app.crowns.data.company.repository
 import android.util.Log
 import com.app.crowns.data.company.dto.CompanyInfoDto
 import com.app.crowns.data.company.entity.CompanyEntity
+import com.app.crowns.data.company.entity.DocumentSeriesEntity
 import com.app.crowns.data.company.mapper.toDomain
+import com.app.crowns.data.company.mapper.toEntity
 import com.app.crowns.domain.company.model.CompanyInfo
+import com.app.crowns.domain.company.model.DocumentSeries
 import com.app.crowns.domain.company.repository.CompanyRepository
 import com.app.crowns.network.KtorHttpClient
 import com.app.crowns.network.NetworkResult
@@ -80,6 +83,33 @@ class CompanyRepositoryImpl @Inject constructor(
             filter {
                 eq("user_id", userId)
             }
+        }
+    }
+
+    override suspend fun getDocumentSeries(companyId: String): Result<List<DocumentSeries>> = runCatching {
+        supabase.from("document_series")
+            .select {
+                filter { eq("company_id", companyId) }
+            }
+            .decodeList<DocumentSeriesEntity>()
+            .map { it.toDomain() }
+    }
+
+    override suspend fun updateDocumentSeries(series: DocumentSeries): Result<Unit> = runCatching {
+        val entity = series.toEntity()
+        
+        if (entity.id != null) {
+            // Si tenemos el ID, actualizamos directamente por ID para mayor seguridad
+            supabase.from("document_series")
+                .update(entity) {
+                    filter { eq("id", entity.id) }
+                }
+        } else {
+            // Si no hay ID, usamos upsert basado en la restricción única de compañía y tipo de documento
+            supabase.from("document_series")
+                .upsert(entity) {
+                    onConflict = "company_id,document_type"
+                }
         }
     }
 }

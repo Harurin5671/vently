@@ -2,10 +2,14 @@ package com.app.crowns.settings.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
+import com.app.crowns.domain.company.model.DocumentSeries
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.company.usecase.GetDocumentSeriesUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificatePasswordUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
+import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,6 +20,7 @@ import javax.inject.Inject
 
 data class SettingsUiState(
     val companyInfo: CompanyInfo? = null,
+    val documentSeries: List<DocumentSeries> = emptyList(),
     val isLoading: Boolean = false,
     val error: String? = null
 )
@@ -25,6 +30,8 @@ class SettingsViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
     private val updateCertificateUseCase: UpdateCertificateUseCase,
     private val updateCertificatePasswordUseCase: UpdateCertificatePasswordUseCase,
+    private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
+    private val updateDocumentSeriesUseCase: UpdateDocumentSeriesUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -38,6 +45,66 @@ class SettingsViewModel @Inject constructor(
         when (event) {
             is SettingsEvent.UploadCertificate -> uploadCertificate(event.base64)
             is SettingsEvent.UpdateCertificatePassword -> updateCertificatePassword(event.password)
+            is SettingsEvent.UpdateDocumentSeries -> updateDocumentSeries(
+                event.boletaSerie,
+                event.boletaCorrelative,
+                event.facturaSerie,
+                event.facturaCorrelative
+            )
+        }
+    }
+
+    private fun updateDocumentSeries(
+        boletaSerie: String,
+        boletaCorrelative: Int,
+        facturaSerie: String,
+        facturaCorrelative: Int
+    ) {
+        viewModelScope.launch {
+            val currentState = _state.value
+            val companyId = currentState.companyInfo?.id ?: return@launch
+
+            val currentBoleta = currentState.documentSeries
+                .find { it.documentType == ElectronicDocumentTypeEntity.BOLETA }
+            val currentFactura = currentState.documentSeries
+                .find { it.documentType == ElectronicDocumentTypeEntity.FACTURA }
+
+            val boletaHasChanged = currentBoleta?.lastCorrelative != boletaCorrelative || currentBoleta?.serie != boletaSerie
+            val facturaHasChanged = currentFactura?.lastCorrelative != facturaCorrelative || currentFactura?.serie != facturaSerie
+
+            if (!boletaHasChanged && !facturaHasChanged) return@launch
+
+            _state.update { it.copy(isLoading = true) }
+
+            var success = true
+            
+            if (boletaHasChanged) {
+                val boleta = currentBoleta?.copy(serie = boletaSerie, lastCorrelative = boletaCorrelative)
+                    ?: DocumentSeries(
+                        companyId = companyId,
+                        documentType = ElectronicDocumentTypeEntity.BOLETA,
+                        serie = boletaSerie,
+                        lastCorrelative = boletaCorrelative
+                    )
+                if (updateDocumentSeriesUseCase(boleta).isFailure) success = false
+            }
+
+            if (facturaHasChanged) {
+                val factura = currentFactura?.copy(serie = facturaSerie, lastCorrelative = facturaCorrelative)
+                    ?: DocumentSeries(
+                        companyId = companyId,
+                        documentType = ElectronicDocumentTypeEntity.FACTURA,
+                        serie = facturaSerie,
+                        lastCorrelative = facturaCorrelative
+                    )
+                if (updateDocumentSeriesUseCase(factura).isFailure) success = false
+            }
+
+            if (success) {
+                loadCompanyInfo()
+            } else {
+                _state.update { it.copy(error = "Error al actualizar las series", isLoading = false) }
+            }
         }
     }
 
@@ -67,7 +134,18 @@ class SettingsViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
             getCompanyUseCase().onSuccess { company ->
-                _state.update { it.copy(companyInfo = company, isLoading = false) }
+                if (company != null) {
+                    val seriesResult = getDocumentSeriesUseCase(company.id)
+                    _state.update { 
+                        it.copy(
+                            companyInfo = company,
+                            documentSeries = seriesResult.getOrDefault(emptyList()),
+                            isLoading = false 
+                        ) 
+                    }
+                } else {
+                    _state.update { it.copy(companyInfo = null, isLoading = false) }
+                }
             }.onFailure { e ->
                 _state.update { it.copy(error = e.message, isLoading = false) }
             }

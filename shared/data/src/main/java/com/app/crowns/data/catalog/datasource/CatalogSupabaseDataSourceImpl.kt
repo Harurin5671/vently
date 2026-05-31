@@ -1,5 +1,6 @@
 package com.app.crowns.data.catalog.datasource
 
+import com.app.crowns.data.catalog.model.ElectronicDocumentTypeSupabaseModel
 import com.app.crowns.data.catalog.model.IdentityDocumentTypeSupabaseModel
 import com.app.crowns.data.catalog.model.IgvTypeSupabaseModel
 import com.app.crowns.data.catalog.model.InvoiceStatusSupabaseModel
@@ -37,5 +38,12 @@ class CatalogSupabaseDataSourceImpl @Inject constructor(
             .from("cat_invoice_statuses")
             .select()
             .decodeList<InvoiceStatusSupabaseModel>()
+    }
+
+    override suspend fun getElectronicDocumentTypes(): Result<List<ElectronicDocumentTypeSupabaseModel>> = runCatching {
+        supabase
+            .from("cat_document_types")
+            .select()
+            .decodeList<ElectronicDocumentTypeSupabaseModel>()
     }
 }

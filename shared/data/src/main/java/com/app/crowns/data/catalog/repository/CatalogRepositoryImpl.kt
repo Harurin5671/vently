@@ -2,6 +2,7 @@ package com.app.crowns.data.catalog.repository
 
 import com.app.crowns.data.catalog.datasource.CatalogDataSource
 import com.app.crowns.data.catalog.mapper.toDomain
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.domain.catalog.entities.IgvTypeEntity
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
@@ -34,6 +35,12 @@ class CatalogRepositoryImpl @Inject constructor(
 
     override suspend fun getInvoiceStatuses(): Result<List<InvoiceStatusEntity>> = runCatching {
         catalogDataSource.getInvoiceStatuses().getOrThrow().map { model ->
+            model.toDomain()
+        }
+    }
+
+    override suspend fun getElectronicDocumentTypes(): Result<List<ElectronicDocumentTypeEntity>> = runCatching {
+        catalogDataSource.getElectronicDocumentTypes().getOrThrow().map { model ->
             model.toDomain()
         }
     }

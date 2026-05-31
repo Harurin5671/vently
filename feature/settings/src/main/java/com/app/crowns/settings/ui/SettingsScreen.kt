@@ -7,6 +7,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.*
@@ -18,10 +19,13 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
+import com.app.crowns.domain.company.model.DocumentSeries
 import com.app.crowns.settings.ui.components.*
 
 // ---------------------------------------------------------------------------
@@ -31,7 +35,6 @@ import com.app.crowns.settings.ui.components.*
 @Composable
 fun SettingsScreen(
     onNavigateToEditBusiness: () -> Unit = {},
-    onNavigateToSeries: () -> Unit = {},
     onNavigateToEmail: () -> Unit = {},
     onNavigateToPassword: () -> Unit = {},
     onNavigateToPlan: () -> Unit = {},
@@ -64,13 +67,16 @@ fun SettingsScreen(
 
     SettingsContent(
         companyInfo = state.companyInfo,
+        documentSeries = state.documentSeries,
         onNavigateToEditBusiness = onNavigateToEditBusiness,
-        onNavigateToSeries = onNavigateToSeries,
         onSelectCertificate = {
             launcher.launch("*/*")
         },
         onUpdateCertificatePassword = { password ->
             viewModel.onEvent(SettingsEvent.UpdateCertificatePassword(password))
+        },
+        onUpdateDocumentSeries = { boletaS, boletaC, facturaS, facturaC ->
+            viewModel.onEvent(SettingsEvent.UpdateDocumentSeries(boletaS, boletaC, facturaS, facturaC))
         },
         onNavigateToEmail = onNavigateToEmail,
         onNavigateToPassword = onNavigateToPassword,
@@ -90,10 +96,11 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     companyInfo: CompanyInfo?,
+    documentSeries: List<DocumentSeries>,
     onNavigateToEditBusiness: () -> Unit,
-    onNavigateToSeries: () -> Unit,
     onSelectCertificate: () -> Unit,
     onUpdateCertificatePassword: (String) -> Unit,
+    onUpdateDocumentSeries: (String, Int, String, Int) -> Unit,
     onNavigateToEmail: () -> Unit,
     onNavigateToPassword: () -> Unit,
     onNavigateToPlan: () -> Unit,
@@ -105,7 +112,32 @@ private fun SettingsContent(
     var pushNotifications by remember { mutableStateOf(true) }
     var lowStockAlert by remember { mutableStateOf(true) }
     var showPasswordDialog by remember { mutableStateOf(false) }
+    var showSeriesDialog by remember { mutableStateOf(false) }
     var tempPassword by remember { mutableStateOf("") }
+    var tempBoletaSeries by remember { mutableStateOf("") }
+    var tempBoletaCorrelative by remember { mutableStateOf("") }
+    var tempFacturaSeries by remember { mutableStateOf("") }
+    var tempFacturaCorrelative by remember { mutableStateOf("") }
+
+    val boletaData = remember(documentSeries) { documentSeries.find { it.documentType == ElectronicDocumentTypeEntity.BOLETA } }
+    val facturaData = remember(documentSeries) { documentSeries.find { it.documentType == ElectronicDocumentTypeEntity.FACTURA } }
+
+    val currentBoleta = boletaData?.serie ?: "B001"
+    val currentFactura = facturaData?.serie ?: "F001"
+    val currentBoletaC = boletaData?.lastCorrelative ?: 0
+    val currentFacturaC = facturaData?.lastCorrelative ?: 0
+    
+    val boletaSubtitle = "${boletaData?.serie ?: "B001"}-${(boletaData?.lastCorrelative ?: 0).toString().padStart(8, '0')}"
+    val facturaSubtitle = "${facturaData?.serie ?: "F001"}-${(facturaData?.lastCorrelative ?: 0).toString().padStart(8, '0')}"
+
+    LaunchedEffect(showSeriesDialog) {
+        if (showSeriesDialog) {
+            tempBoletaSeries = currentBoleta
+            tempBoletaCorrelative = currentBoletaC.toString()
+            tempFacturaSeries = currentFactura
+            tempFacturaCorrelative = currentFacturaC.toString()
+        }
+    }
     val context = LocalContext.current
     val appVersion = remember {
         try {
@@ -152,9 +184,9 @@ private fun SettingsContent(
             SettingsSection(title = "Facturación") {
                 SettingsItem(
                     title = "Series y correlativos",
-                    subtitle = "B001 · F001",
+                    subtitle = "$boletaSubtitle · $facturaSubtitle",
                     trailingIcon = Icons.Default.ChevronRight,
-                    onClick = onNavigateToSeries,
+                    onClick = { showSeriesDialog = true },
                     showDivider = true,
                 )
                 SettingsItemWithBadge(
@@ -175,6 +207,101 @@ private fun SettingsContent(
                         showPasswordDialog = true
                     },
                     showDivider = false,
+                )
+            }
+
+            if (showSeriesDialog) {
+                AlertDialog(
+                    onDismissRequest = { showSeriesDialog = false },
+                    title = { 
+                        Text(
+                            text = "Series y correlativos",
+                            fontSize = 18.sp,
+                            fontWeight = FontWeight.Bold
+                        ) 
+                    },
+                    text = {
+                        Column(
+                            verticalArrangement = Arrangement.spacedBy(20.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            // Section Boleta
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "BOLETAS",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Outline
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(
+                                        value = tempBoletaSeries,
+                                        onValueChange = { },
+                                        label = { Text("Serie") },
+                                        readOnly = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    OutlinedTextField(
+                                        value = tempBoletaCorrelative,
+                                        onValueChange = { if (it.all { char -> char.isDigit() }) tempBoletaCorrelative = it },
+                                        label = { Text("Correlativo") },
+                                        placeholder = { Text("0") },
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1.5f)
+                                    )
+                                }
+                            }
+
+                            // Section Factura
+                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                                Text(
+                                    text = "FACTURAS",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Bold,
+                                    color = Outline
+                                )
+                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                                    OutlinedTextField(
+                                        value = tempFacturaSeries,
+                                        onValueChange = { },
+                                        label = { Text("Serie") },
+                                        readOnly = true,
+                                        modifier = Modifier.weight(1f)
+                                    )
+                                    OutlinedTextField(
+                                        value = tempFacturaCorrelative,
+                                        onValueChange = { if (it.all { char -> char.isDigit() }) tempFacturaCorrelative = it },
+                                        label = { Text("Correlativo") },
+                                        placeholder = { Text("0") },
+                                        singleLine = true,
+                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                        modifier = Modifier.weight(1.5f)
+                                    )
+                                }
+                            }
+                        }
+                    },
+                    confirmButton = {
+                        TextButton(
+                            onClick = {
+                                onUpdateDocumentSeries(
+                                    tempBoletaSeries,
+                                    tempBoletaCorrelative.toIntOrNull() ?: 0,
+                                    tempFacturaSeries,
+                                    tempFacturaCorrelative.toIntOrNull() ?: 0
+                                )
+                                showSeriesDialog = false
+                            }
+                        ) {
+                            Text("Guardar")
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showSeriesDialog = false }) {
+                            Text("Cancelar")
+                        }
+                    }
                 )
             }
 

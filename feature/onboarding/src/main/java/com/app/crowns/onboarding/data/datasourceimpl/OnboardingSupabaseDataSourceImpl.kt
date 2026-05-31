@@ -1,8 +1,10 @@
 package com.app.crowns.onboarding.data.datasourceimpl
 
 import com.app.crowns.data.company.entity.CompanyEntity
+import com.app.crowns.data.company.entity.DocumentSeriesEntity
 import com.app.crowns.data.company.mapper.toDomain
 import com.app.crowns.data.company.mapper.toEntity
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.onboarding.data.datasource.OnboardingSupabaseDataSource
 import javax.inject.Inject
@@ -24,7 +26,32 @@ class OnboardingSupabaseDataSourceImpl @Inject constructor(
             logoUrl = logoUrl,
         )
 
-        supabase.from("companies").insert(entity)
+        // Insertar la compañía y obtener el ID generado
+        val insertedCompany = supabase.from("companies").insert(entity) {
+            select()
+        }.decodeSingle<CompanyEntity>()
+
+        val companyId = insertedCompany.id ?: error("Error: No se pudo obtener el ID de la compañía")
+
+        // Crear las series por defecto para Facturas (01) y Boletas (03)
+        val series = listOf(
+            DocumentSeriesEntity(
+                companyId = companyId,
+                documentType = ElectronicDocumentTypeEntity.FACTURA,
+                serie = "F001",
+                lastCorrelative = 0,
+                isActive = true
+            ),
+            DocumentSeriesEntity(
+                companyId = companyId,
+                documentType = ElectronicDocumentTypeEntity.BOLETA,
+                serie = "B001",
+                lastCorrelative = 0,
+                isActive = true
+            )
+        )
+
+        supabase.from("document_series").insert(series)
     }
 
     override suspend fun uploadLogo(
