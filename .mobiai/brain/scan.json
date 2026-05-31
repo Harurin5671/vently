@@ -1,0 +1,37 @@
+{
+  "version": 1,
+  "project_name": "vently",
+  "project_type": "android",
+  "platforms": [
+    "android"
+  ],
+  "build_systems": [
+    "gradle"
+  ],
+  "ui": [
+    "coil",
+    "compose"
+  ],
+  "di": [
+    "hilt"
+  ],
+  "network": [
+    "ktor"
+  ],
+  "persistence": [],
+  "serialization": [
+    "kotlinx.serialization"
+  ],
+  "testing": [
+    "espresso"
+  ],
+  "integrations": [],
+  "ci_cd": [],
+  "detected_files": {
+    "android_manifest": "feature/home/src/main/AndroidManifest.xml",
+    "settings_gradle": "settings.gradle.kts"
+  },
+  "warnings": [],
+  "created_at": "2026-05-31T22:32:51Z",
+  "updated_at": "2026-05-31T22:32:51Z"
+}
