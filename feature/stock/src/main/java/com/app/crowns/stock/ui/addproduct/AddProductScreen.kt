@@ -16,6 +16,7 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
@@ -53,11 +54,20 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.OffsetMapping
+import androidx.compose.ui.text.input.TransformedText
+import androidx.compose.ui.text.input.VisualTransformation
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.input.key.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.OnSurfaceVariant
@@ -208,14 +218,131 @@ private fun AddProductContent(
                     placeholder = "Describe brevemente el producto...",
                     minLines = 3,
                 )
-                Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                    VentlyTextField(
-                        label = "SKU",
-                        value = state.sku,
-                        onValueChange = { onEvent(AddProductEvent.OnSkuChanged(it)) },
-                        placeholder = "SKU-001",
-                        modifier = Modifier.weight(1f),
-                    )
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    verticalAlignment = Alignment.Top
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "SKU",
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                            color = OnSurfaceVariant,
+                        )
+                        Spacer(Modifier.height(4.dp))
+                        
+                        val skuParts = remember(state.sku) {
+                            val letters = state.sku.filter { it.isLetter() }.take(3)
+                            val numbers = state.sku.filter { it.isDigit() }.take(3)
+                            letters to numbers
+                        }
+                        
+                        val focusRequesterLetters = remember { FocusRequester() }
+                        val focusRequesterNumbers = remember { FocusRequester() }
+
+                        val isSkuFieldActive = state.sku.isNotEmpty()
+                        val isSkuCorrect = state.sku.length == 6
+                        
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .height(56.dp)
+                                .clip(RoundedCornerShape(12.dp))
+                                .border(
+                                    width = 1.dp,
+                                    color = when {
+                                        isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
+                                        isSkuCorrect -> Color(0xFF10B981)
+                                        else -> OutlineVariant
+                                    },
+                                    shape = RoundedCornerShape(12.dp)
+                                )
+                                .padding(horizontal = 8.dp)
+                        ) {
+                            BasicTextField(
+                                value = skuParts.first,
+                                onValueChange = { input ->
+                                    if (input.length <= 3 && input.all { it.isLetter() }) {
+                                        val currentNumbers = state.sku.filter { it.isDigit() }
+                                        val newSku = input.uppercase() + currentNumbers
+                                        onEvent(AddProductEvent.OnSkuChanged(newSku))
+                                        if (input.length == 3) focusRequesterNumbers.requestFocus()
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequesterLetters),
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    textAlign = TextAlign.End,
+                                    fontSize = 16.sp,
+                                    color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else OnSurface
+                                ),
+                                decorationBox = { innerTextField ->
+                                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
+                                        if (skuParts.first.isEmpty()) {
+                                            Text("AAA", color = Outline, fontSize = 16.sp)
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                            
+                            Text(
+                                text = "-",
+                                fontWeight = FontWeight.Bold,
+                                color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else Outline,
+                                modifier = Modifier.padding(horizontal = 2.dp)
+                            )
+                            
+                            BasicTextField(
+                                value = skuParts.second,
+                                onValueChange = { input ->
+                                    if (input.length <= 3 && input.all { it.isDigit() }) {
+                                        val currentLetters = state.sku.filter { it.isLetter() }
+                                        val newSku = currentLetters + input
+                                        onEvent(AddProductEvent.OnSkuChanged(newSku))
+                                    }
+                                },
+                                modifier = Modifier
+                                    .weight(1f)
+                                    .focusRequester(focusRequesterNumbers)
+                                    .onKeyEvent {
+                                        if (it.key == Key.Backspace && it.type == KeyEventType.KeyUp && skuParts.second.isEmpty()) {
+                                            focusRequesterLetters.requestFocus()
+                                            true
+                                        } else false
+                                    },
+                                singleLine = true,
+                                textStyle = TextStyle(
+                                    textAlign = TextAlign.Start,
+                                    fontSize = 16.sp,
+                                    color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else OnSurface
+                                ),
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                decorationBox = { innerTextField ->
+                                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                                        if (skuParts.second.isEmpty()) {
+                                            Text("000", color = Outline, fontSize = 16.sp)
+                                        }
+                                        innerTextField()
+                                    }
+                                }
+                            )
+                        }
+                        if (isSkuFieldActive && !isSkuCorrect) {
+                            Text(
+                                text = "Formato: 3 letras y 3 números (Ej. ABC-123)",
+                                fontSize = 11.sp,
+                                color = Color(0xFFEF4444),
+                                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
+                            )
+                        }
+                    }
+                    
                     CategoryDropdown(
                         categories = state.categories,
                         selected = state.selectedCategory,
@@ -236,7 +363,7 @@ private fun AddProductContent(
                         modifier = Modifier.weight(1f),
                     )
                     PriceTextField(
-                        label = "Precio de costo",
+                        label = "Precio de costo *",
                         value = state.costPrice,
                         onValueChange = { onEvent(AddProductEvent.OnCostPriceChanged(it)) },
                         modifier = Modifier.weight(1f),
@@ -355,6 +482,7 @@ private fun AddProductContent(
                         StockStepper(
                             label = "Stock actual",
                             value = state.currentStock,
+                            onValueChange = { onEvent(AddProductEvent.OnCurrentStockChanged(it)) },
                             onDecrement = {
                                 if (state.currentStock > 0)
                                     onEvent(AddProductEvent.OnCurrentStockChanged(state.currentStock - 1))
@@ -466,26 +594,57 @@ private fun VentlyTextField(
     placeholder: String = "",
     keyboardType: KeyboardType = KeyboardType.Text,
     minLines: Int = 1,
+    supportingText: String? = null,
+    isError: Boolean = false,
+    isSuccess: Boolean = false,
+    visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     Column(modifier = modifier) {
         Text(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
+            color = when {
+                isError -> Color(0xFFEF4444)
+                isSuccess -> Color(0xFF10B981)
+                else -> OnSurfaceVariant
+            },
         )
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { newValue ->
+                if (keyboardType == KeyboardType.Number) {
+                    if (newValue.all { it.isDigit() }) onValueChange(newValue)
+                } else {
+                    onValueChange(newValue)
+                }
+            },
             placeholder = { Text(placeholder, color = Outline) },
+            supportingText = supportingText?.let {
+                {
+                    Text(
+                        text = it,
+                        fontSize = 11.sp,
+                        color = if (isError) Color(0xFFEF4444) else Outline,
+                    )
+                }
+            },
+            isError = isError,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             minLines = minLines,
             keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
+            visualTransformation = visualTransformation,
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Primary,
-                unfocusedBorderColor = OutlineVariant,
+                focusedBorderColor = if (isSuccess) Color(0xFF10B981) else Primary,
+                unfocusedBorderColor = when {
+                    isError -> Color(0xFFEF4444)
+                    isSuccess -> Color(0xFF10B981)
+                    else -> OutlineVariant
+                },
+                errorBorderColor = Color(0xFFEF4444),
+                errorSupportingTextColor = Color(0xFFEF4444),
             ),
         )
     }
@@ -508,7 +667,11 @@ private fun PriceTextField(
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
             value = value,
-            onValueChange = onValueChange,
+            onValueChange = { newValue ->
+                if (newValue.isEmpty() || newValue.count { it == '.' } <= 1 && newValue.all { it.isDigit() || it == '.' }) {
+                    onValueChange(newValue)
+                }
+            },
             placeholder = { Text("0.00", color = Outline) },
             prefix = { Text("S/  ", color = Outline) },
             modifier = Modifier.fillMaxWidth(),
@@ -535,7 +698,7 @@ private fun CategoryDropdown(
 
     Column(modifier = modifier) {
         Text(
-            text = "Categoría",
+            text = "Categoría *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = OnSurfaceVariant,
@@ -605,11 +768,11 @@ private fun UnitOfMeasureDropdown(
     onSelect: (String) -> Unit,
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = units.find { it.code == selected }?.name ?: selected
+    val selectedLabel = units.find { it.code == selected }?.let { "${it.code} - ${it.name}" } ?: "Seleccionar unidad"
 
     Column {
         Text(
-            text = "Unidad de medida",
+            text = "Unidad de medida *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = OnSurfaceVariant,
@@ -664,7 +827,7 @@ private fun IgvTypeSelector(
 
     Column {
         Text(
-            text = "Tipo de IGV",
+            text = "Tipo de IGV *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
             color = OnSurfaceVariant,
@@ -723,6 +886,7 @@ private fun IgvTypeSelector(
 private fun StockStepper(
     label: String,
     value: Int,
+    onValueChange: (Int) -> Unit,
     onDecrement: () -> Unit,
     onIncrement: () -> Unit,
     modifier: Modifier = Modifier,
@@ -753,13 +917,26 @@ private fun StockStepper(
                     tint = OnSurfaceVariant,
                 )
             }
-            Text(
-                text = "$value",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-                color = OnSurface,
+            BasicTextField(
+                value = value.toString(),
+                onValueChange = {
+                    if (it.isEmpty()) {
+                        onValueChange(0)
+                    } else {
+                        it.toIntOrNull()?.let { newValue ->
+                            onValueChange(newValue)
+                        }
+                    }
+                },
+                textStyle = TextStyle(
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                    color = OnSurface,
+                    textAlign = TextAlign.Center,
+                ),
                 modifier = Modifier.weight(1f),
-                textAlign = androidx.compose.ui.text.style.TextAlign.Center,
+                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                singleLine = true,
             )
             IconButton(
                 onClick = onIncrement,

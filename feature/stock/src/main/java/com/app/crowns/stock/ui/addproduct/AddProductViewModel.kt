@@ -81,10 +81,7 @@ class AddProductViewModel @Inject constructor(
     private suspend fun loadIgvTypes() {
         getIgvTypes().onSuccess { types ->
             _state.update { 
-                it.copy(
-                    igvTypes = types,
-                    igvType = it.igvType ?: types.find { t -> t.code == "10" } ?: types.firstOrNull()
-                )
+                it.copy(igvTypes = types)
             }
         }
     }
@@ -136,7 +133,9 @@ class AddProductViewModel @Inject constructor(
             val product = Product(
                 name = s.name,
                 description = s.description.ifBlank { null },
-                sku = s.sku.ifBlank { null },
+                sku = s.sku.ifEmpty { null }?.let { 
+                    if (it.length == 6) "${it.take(3)}-${it.drop(3)}" else it 
+                },
                 category = s.selectedCategory,
                 salePrice = s.salePrice.toDouble(),
                 costPrice = s.costPrice.toDoubleOrNull(),
