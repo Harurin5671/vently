@@ -4,8 +4,11 @@ import android.util.Log
 import com.app.crowns.data.catalog.mapper.toDomain as toCatalogDomain
 import com.app.crowns.data.invoice.datasource.InvoiceSupabaseDataSource
 import com.app.crowns.data.invoice.mapper.toDomain
+import com.app.crowns.data.invoice.mapper.toDto
+import com.app.crowns.domain.invoice.entities.GenerateXmlRequestEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.domain.invoice.entities.InvoiceItemEntity
+import com.app.crowns.domain.invoice.entities.InvoiceXmlResponseEntity
 import com.app.crowns.domain.invoice.repository.InvoiceRepository
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,5 +42,12 @@ class InvoiceRepositoryImpl @Inject constructor(
             invoiceDataSource.getInvoiceItems(invoiceId).getOrThrow().map { model ->
                 model.toDomain()
             }
+        }
+
+    override suspend fun generateXml(request: GenerateXmlRequestEntity): Result<InvoiceXmlResponseEntity> =
+        runCatching {
+            val dto = request.toDto()
+            val responseModel = invoiceDataSource.generateXml(dto).getOrThrow()
+            responseModel.toDomain()
         }
 }

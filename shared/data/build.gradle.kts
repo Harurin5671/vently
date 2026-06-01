@@ -39,6 +39,7 @@ dependencies {
     implementation(libs.supabase.postgrest)
     implementation(libs.supabase.auth)
     implementation(libs.supabase.storage)
+    implementation(libs.supabase.functions)
 
     // Hilt
     implementation(libs.google.dagger.hilt.android)
