@@ -16,7 +16,7 @@ data class AddProductUiState(
     val costPrice: String = "",
     val igvType: IgvTypeEntity? = null,
     val igvTypes: List<IgvTypeEntity> = emptyList(),
-    val unitOfMeasure: String = "NIU",
+    val unitOfMeasure: String = "",
     val unitsOfMeasure: List<UnitOfMeasureEntity> = emptyList(),
     val trackStock: Boolean = true,
     val currentStock: Int = 0,
@@ -36,5 +36,14 @@ val AddProductUiState.profitMargin: Double
         return ((sale - cost) / sale) * 100
     }
 
+val AddProductUiState.isSkuValid: Boolean
+    get() = sku.isEmpty() || sku.matches(Regex("^[A-Z]{3}[0-9]{3}$"))
+
 val AddProductUiState.isFormValid: Boolean
-    get() = name.isNotBlank() && salePrice.toDoubleOrNull() != null
+    get() = name.isNotBlank() &&
+            selectedCategory != null &&
+            salePrice.toDoubleOrNull() != null &&
+            costPrice.toDoubleOrNull() != null &&
+            unitOfMeasure.isNotBlank() &&
+            igvType != null &&
+            isSkuValid
