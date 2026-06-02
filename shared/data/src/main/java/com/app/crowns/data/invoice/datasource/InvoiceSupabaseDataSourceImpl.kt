@@ -45,12 +45,17 @@ class InvoiceSupabaseDataSourceImpl @Inject constructor(
 
     override suspend fun generateXml(request: GenerateXmlRequestDto): Result<InvoiceXmlResponseModel> =
         runCatching {
+            Log.d("Prueba_Generate_Xml", "DS: Iniciando invoke de la Edge Function 'generate-xml'")
+            Log.d("Prueba_Generate_Xml", "DS: Body del request: $request")
             val response = supabase.functions.invoke(
                 function = "generate-xml",
                 body = request
             )
-            response.body<InvoiceXmlResponseModel>()
+            Log.d("Prueba_Generate_Xml", "DS: Respuesta recibida de Supabase. Status: ${response.status}")
+            val body = response.body<InvoiceXmlResponseModel>()
+            Log.d("Prueba_Generate_Xml", "DS: Cuerpo decodificado exitosamente: $body")
+            body
         }.onFailure {
-            Log.e("INVOICE_DS", "Error al generar XML via Edge Function", it)
+            Log.e("Prueba_Generate_Xml", "DS: Error crítico en la llamada a la función", it)
         }
 }

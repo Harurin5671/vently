@@ -8,6 +8,7 @@ data class GenerateXmlRequestDto(
     @SerialName("company_id") val companyId: String,
     val series: String,
     @SerialName("issue_date") val issueDate: String,
+    val currency: String,
     @SerialName("payment_method") val paymentMethod: String,
     @SerialName("customer_doc_type") val customerDocType: String,
     @SerialName("customer_doc_number") val customerDocNumber: String,
@@ -19,4 +20,12 @@ data class GenerateXmlRequestDto(
 data class GenerateXmlRequestItemDto(
     @SerialName("product_id") val productId: String,
     val quantity: Double
+)
+
+@Serializable
+data class GenerateXmlResponseDto(
+    val success: Boolean,
+    val message: String? = null,
+    @SerialName("xml_base64") val xmlBase64: String? = null,
+    val hash: String? = null
 )

@@ -4,6 +4,7 @@ data class GenerateXmlRequestEntity(
     val companyId: String,
     val series: String,
     val issueDate: String,
+    val currency: String,
     val paymentMethod: String,
     val customerDocType: String,
     val customerDocNumber: String,

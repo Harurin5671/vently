@@ -46,8 +46,18 @@ class InvoiceRepositoryImpl @Inject constructor(
 
     override suspend fun generateXml(request: GenerateXmlRequestEntity): Result<InvoiceXmlResponseEntity> =
         runCatching {
+            Log.d("Prueba_Generate_Xml", "REPO: Iniciando proceso de generación")
+            Log.d("Prueba_Generate_Xml", "REPO: Mapeando Entity a DTO")
             val dto = request.toDto()
+            
+            Log.d("Prueba_Generate_Xml", "REPO: Llamando al DataSource")
             val responseModel = invoiceDataSource.generateXml(dto).getOrThrow()
-            responseModel.toDomain()
+            
+            Log.d("Prueba_Generate_Xml", "REPO: Mapeando respuesta a Entity de Dominio")
+            val entity = responseModel.toDomain()
+            Log.d("Prueba_Generate_Xml", "REPO: Proceso completado exitosamente")
+            entity
+        }.onFailure {
+            Log.e("Prueba_Generate_Xml", "REPO: Error en el flujo del repositorio", it)
         }
 }

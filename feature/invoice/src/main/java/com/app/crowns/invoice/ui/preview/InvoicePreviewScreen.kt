@@ -30,6 +30,8 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -37,6 +39,7 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -65,6 +68,13 @@ fun InvoicePreviewScreen(
     viewModel: InvoicePreviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.error) {
+        state.error?.let {
+            snackbarHostState.showSnackbar(it)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -77,6 +87,7 @@ fun InvoicePreviewScreen(
 
     InvoicePreviewContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
         onShowEmitDialog = viewModel::onShowEmitDialog,
         onDismissEmitDialog = viewModel::onDismissEmitDialog,
@@ -88,6 +99,7 @@ fun InvoicePreviewScreen(
 @Composable
 private fun InvoicePreviewContent(
     state: InvoicePreviewUiState,
+    snackbarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit,
     onShowEmitDialog: () -> Unit,
     onDismissEmitDialog: () -> Unit,
@@ -95,6 +107,7 @@ private fun InvoicePreviewContent(
 ) {
     Scaffold(
         containerColor = Surface,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {

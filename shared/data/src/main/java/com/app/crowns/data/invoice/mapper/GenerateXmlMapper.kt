@@ -13,6 +13,7 @@ fun GenerateXmlRequestEntity.toDto(): GenerateXmlRequestDto = GenerateXmlRequest
     companyId = companyId,
     series = series,
     issueDate = issueDate,
+    currency = currency,
     paymentMethod = paymentMethod,
     customerDocType = customerDocType,
     customerDocNumber = customerDocNumber,

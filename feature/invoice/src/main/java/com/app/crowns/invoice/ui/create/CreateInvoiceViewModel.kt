@@ -49,9 +49,10 @@ class CreateInvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             getIdentityDocumentTypes().onSuccess { types ->
                 _state.update { 
+                    val targetCode = if (it.invoiceType == InvoiceType.FACTURA) "6" else "1"
                     it.copy(
                         documentTypes = types,
-                        selectedDocumentType = it.selectedDocumentType ?: types.find { t -> t.code == "1" } ?: types.firstOrNull()
+                        selectedDocumentType = types.find { t -> t.code == targetCode } ?: types.firstOrNull()
                     )
                 }
             }

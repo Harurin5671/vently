@@ -9,6 +9,11 @@ import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import android.util.Log
+import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.invoice.entities.GenerateXmlRequestEntity
+import com.app.crowns.domain.invoice.entities.GenerateXmlRequestItemEntity
+import com.app.crowns.domain.invoice.usecase.GenerateXmlUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
@@ -38,7 +43,9 @@ sealed class InvoicePreviewNavigationEvent {
 @HiltViewModel
 class InvoicePreviewViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
-    @ApplicationContext private val context: Context,
+    private val generateXmlUseCase: GenerateXmlUseCase,
+    private val getCompanyUseCase: GetCompanyUseCase,
+    @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(InvoicePreviewUiState())
@@ -55,13 +62,65 @@ class InvoicePreviewViewModel @Inject constructor(
     fun onDismissEmitDialog() = _state.update { it.copy(showEmitDialog = false) }
 
     fun onConfirmEmit() {
+        val draft = draftStore.draft.value ?: return
+        Log.d("Prueba_Generate_Xml", "VM: Inicio de confirmación de emisión")
+        Log.d("Prueba_Generate_Xml", "VM: Datos del borrador: Tipo=${draft.type}, Items=${draft.items.size}")
+
         viewModelScope.launch {
-            _state.update { it.copy(isEmitting = true, showEmitDialog = false) }
-            // mock — aquí irá la llamada real a SUNAT
-            kotlinx.coroutines.delay(2_000)
-            draftStore.clear()
-            _state.update { it.copy(isEmitting = false) }
-            _navigationEvent.send(InvoicePreviewNavigationEvent.InvoiceEmitted)
+            _state.update { it.copy(isEmitting = true, showEmitDialog = false, error = null) }
+            
+            try {
+                // 1. Obtener la empresa actual para el ID
+                Log.d("Prueba_Generate_Xml", "VM: Obteniendo información de la empresa")
+                val company = getCompanyUseCase().getOrNull()
+                if (company == null) {
+                    Log.e("Prueba_Generate_Xml", "VM: Error - No se encontró la empresa")
+                    _state.update { it.copy(isEmitting = false, error = "No se pudo obtener la información de tu empresa") }
+                    return@launch
+                }
+                Log.d("Prueba_Generate_Xml", "VM: Empresa obtenida: ID=${company.id}, RUC=${company.documentNumber}")
+
+                // 2. Preparar el request para generar el XML
+                val series = "${draft.type.prefix}001"
+                
+                // Forzar doc type 6 si es factura por seguridad de negocio
+                val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" 
+                                     else (draft.clientDocumentType ?: "1")
+
+                Log.d("Prueba_Generate_Xml", "VM: Preparando GenerateXmlRequestEntity. Serie=$series, DocType=$customerDocType")
+                val request = GenerateXmlRequestEntity(
+                    companyId = company.id,
+                    series = series,
+                    issueDate = LocalDate.now().toString(), // YYYY-MM-DD
+                    currency = "PEN",
+                    paymentMethod = "Contado",
+                    customerDocType = customerDocType,
+                    customerDocNumber = draft.clientRuc ?: draft.clientName ?: "0", // Si no hay ruc en boleta usa el nombre o 0
+                    customerLegalName = draft.clientBusinessName ?: draft.clientName ?: "CLIENTE VARIOS",
+                    items = draft.items.map { 
+                        GenerateXmlRequestItemEntity(
+                            productId = it.productId,
+                            quantity = it.quantity.toDouble()
+                        )
+                    }
+                )
+
+                // 3. Llamar a la Edge Function
+                Log.d("Prueba_Generate_Xml", "VM: Ejecutando GenerateXmlUseCase")
+                generateXmlUseCase(request).onSuccess {
+                    Log.d("Prueba_Generate_Xml", "VM: ¡Éxito! XML generado y factura emitida")
+                    draftStore.clear()
+                    _state.update { it.copy(isEmitting = false) }
+                    _navigationEvent.send(InvoicePreviewNavigationEvent.InvoiceEmitted)
+                }.onFailure { e ->
+                    Log.e("Prueba_Generate_Xml", "VM: Error devuelto por el UseCase", e)
+                    _state.update { it.copy(isEmitting = false, error = "Error al emitir: ${e.message}") }
+                }
+
+            } catch (e: Exception) {
+                Log.e("Prueba_Generate_Xml", "VM: Excepción inesperada", e)
+                _state.update { it.copy(isEmitting = false, error = "Error inesperado: ${e.message}") }
+            }
         }
     }
 
