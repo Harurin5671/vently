@@ -34,7 +34,7 @@ class DashboardViewModel @Inject constructor(
 
     fun onEvent(event: DashboardEvent) {
         when (event) {
-            is DashboardEvent.Refresh -> loadDashboard()
+            is DashboardEvent.Refresh -> loadDashboard(isSilent = true)
             is DashboardEvent.OnInvoiceClick -> navigateToDetail(event.invoiceId)
             is DashboardEvent.OnNewBoleta -> emitNav(DashboardNavigationEvent.NavigateToNewBoleta)
             is DashboardEvent.OnNewFactura -> emitNav(DashboardNavigationEvent.NavigateToNewFactura)
@@ -43,10 +43,10 @@ class DashboardViewModel @Inject constructor(
         }
     }
 
-    private fun loadDashboard() {
+    private fun loadDashboard(isSilent: Boolean = false) {
         viewModelScope.launch {
             android.util.Log.d("DASHBOARD_VM", "Cargando datos del Dashboard...")
-            _state.update { it.copy(isLoading = true) }
+            if (!isSilent) _state.update { it.copy(isLoading = true) }
 
             val companyResult = getCompanyUseCase()
             val companyInfo = companyResult.getOrNull()

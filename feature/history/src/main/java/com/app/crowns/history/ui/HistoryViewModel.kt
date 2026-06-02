@@ -27,6 +27,7 @@ class HistoryViewModel @Inject constructor(
 
     fun onEvent(event: HistoryEvent) {
         when (event) {
+            is HistoryEvent.Refresh -> loadHistory(isSilent = true)
             is HistoryEvent.PreviousMonth -> _state.update {
                 it.copy(currentMonth = it.currentMonth.minusMonths(1))
             }
@@ -47,9 +48,9 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    private fun loadHistory() {
+    private fun loadHistory(isSilent: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            if (!isSilent) _state.update { it.copy(isLoading = true) }
             
             val statusesResult = getInvoiceStatusesUseCase()
             val statuses = statusesResult.getOrDefault(emptyList())
