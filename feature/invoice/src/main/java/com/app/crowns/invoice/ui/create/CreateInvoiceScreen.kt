@@ -206,6 +206,7 @@ private fun CreateInvoiceContent(
                     clientBusinessName = state.clientBusinessName,
                     isSearchingRuc = state.isSearchingRuc,
                     rucError = state.rucError,
+                    total = state.total,
                     documentTypes = state.documentTypes,
                     selectedDocumentType = state.selectedDocumentType,
                     onDocumentTypeChanged = { onEvent(CreateInvoiceEvent.OnDocumentTypeChanged(it)) },

@@ -8,6 +8,7 @@ import com.app.crowns.onboarding.domain.usecase.GetCompanyInfoUseCase
 import com.app.crowns.onboarding.domain.usecase.SaveCompanyUseCase
 import com.app.crowns.onboarding.domain.usecase.UploadCompanyLogoUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -74,13 +75,7 @@ class OnboardingViewModel @Inject constructor(
                     _navigationEvent.send(OnboardingNavigationEvent.NavigateToHome)
                 }
                 .onFailure { error ->
-                    val message = when {
-                        error.message?.contains("companies_ruc_unique") == true ->
-                            "Este RUC ya se encuentra registrado"
-                        error.message?.contains("companies_user_id_unique") == true ->
-                            "Ya tienes una empresa registrada"
-                        else -> error.message ?: "Error al guardar los datos"
-                    }
+                    val message = error.toUserFriendlyMessage("Error al guardar los datos")
                     _state.update {
                         it.copy(
                             isFinishing = false,

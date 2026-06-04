@@ -36,19 +36,20 @@ val CreateInvoiceUiState.total: Double
 val CreateInvoiceUiState.isFormValid: Boolean
     get() = items.isNotEmpty() && when (invoiceType) {
         InvoiceType.BOLETA -> {
-            if (clientRuc.isNotBlank()) {
-                val expectedLength = selectedDocumentType?.maxLength?.toInt() ?: 0
-                when (selectedDocumentType?.code) {
-                    "6" -> clientRuc.length == 11 && clientBusinessName.isNotBlank() // RUC
-                    "1" -> clientRuc.length == 8 // DNI
-                    else -> clientRuc.length <= (if (expectedLength > 0) expectedLength else 15)
-                }
-            } else true
+            val isTotalHigh = total >= 700.0
+            val doc = selectedDocumentType
+            doc != null && when {
+                doc.isNone -> !isTotalHigh
+                else -> doc.validate(clientRuc, clientName, clientBusinessName) && rucError == null
+            }
         }
         InvoiceType.FACTURA -> {
-            clientRuc.length == 11 && 
-            (clientRuc.startsWith("10") || clientRuc.startsWith("20")) &&
-            clientBusinessName.isNotBlank()
+            val doc = selectedDocumentType
+            doc != null && doc.isRuc &&
+                    clientRuc.length == 11 &&
+                    (clientRuc.startsWith("10") || clientRuc.startsWith("20")) &&
+                    clientBusinessName.isNotBlank() &&
+                    rucError == null
         }
     }
 

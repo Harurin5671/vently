@@ -22,6 +22,7 @@ sealed class AddProductEvent {
     data object OnDismissAddCategoryDialog : AddProductEvent()
     data object OnSaveCategory : AddProductEvent()
     data object OnSaveProduct : AddProductEvent()
+    data object OnDismissError : AddProductEvent()
 }
 
 sealed class AddProductNavigationEvent {

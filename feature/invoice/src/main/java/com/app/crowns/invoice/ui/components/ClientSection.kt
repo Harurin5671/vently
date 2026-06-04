@@ -6,6 +6,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -35,12 +36,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnPrimary
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.Success
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.InvoiceType
 
@@ -53,6 +49,7 @@ fun ClientSection(
     clientBusinessName: String,
     isSearchingRuc: Boolean,
     rucError: String?,
+    total: Double = 0.0,
     documentTypes: List<IdentityDocumentTypeEntity> = emptyList(),
     selectedDocumentType: IdentityDocumentTypeEntity? = null,
     onDocumentTypeChanged: (IdentityDocumentTypeEntity) -> Unit = {},
@@ -93,7 +90,10 @@ fun ClientSection(
                         expanded = expanded,
                         onDismissRequest = { expanded = false },
                     ) {
-                        documentTypes.filter { it.code != "0" }.forEach { type -> // Filter out "Sin Documento" (code 0)
+                        documentTypes.filter { type ->
+                            // En Boleta mostramos "Sin documento" solo si el total es < 700
+                            if (type.isNone) total < 700.0 else true
+                        }.forEach { type ->
                             DropdownMenuItem(
                                 text = { Text(type.name) },
                                 onClick = {
@@ -106,7 +106,7 @@ fun ClientSection(
                 }
 
                 // Document Number + Search (if RUC is selected)
-                if (selectedDocumentType?.code == "6") {
+                if (selectedDocumentType?.isRuc == true) {
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Top,
@@ -116,7 +116,7 @@ fun ClientSection(
                                 value = clientRuc,
                                 onValueChange = onClientRucChanged,
                                 enabled = !isSearchingRuc,
-                                label = { Text("RUC") },
+                                label = { Text("RUC *") },
                                 placeholder = { Text("20XXXXXXXXX", color = Outline) },
                                 isError = rucError != null,
                                 singleLine = true,
@@ -171,12 +171,12 @@ fun ClientSection(
                             }
                         }
                     }
-                } else {
+                } else if (selectedDocumentType?.isNone == false) {
                     OutlinedTextField(
                         value = clientRuc,
                         onValueChange = onClientRucChanged,
-                        label = { Text("Número de documento") },
-                        placeholder = { Text("Opcional", color = Outline) },
+                        label = { Text("Número de documento *") },
+                        placeholder = { Text("Obligatorio", color = Outline) },
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
@@ -188,22 +188,34 @@ fun ClientSection(
                 }
 
                 // Business Name / Name
-                val label = if (selectedDocumentType?.code == "6") "Razón Social" else "Nombre / Razón Social"
-                val placeholder = if (selectedDocumentType?.code == "6") "Autocompletado" else "Cliente general (opcional)"
-                
-                OutlinedTextField(
-                    value = if (selectedDocumentType?.code == "6") clientBusinessName else clientName,
-                    onValueChange = onClientNameChanged,
-                    readOnly = selectedDocumentType?.code == "6" && clientBusinessName.isNotBlank(),
-                    label = { Text(label) },
-                    placeholder = { Text(placeholder, color = Outline) },
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedBorderColor = Primary,
-                        unfocusedBorderColor = OutlineVariant,
-                    ),
-                )
+                if (selectedDocumentType?.isNone == false) {
+                    val isRuc = selectedDocumentType.isRuc
+                    val label = if (isRuc) "Razón Social *" else "Nombre / Razón Social *"
+                    val placeholder = if (isRuc) "Autocompletado" else "Obligatorio"
+
+                    OutlinedTextField(
+                        value = if (isRuc) clientBusinessName else clientName,
+                        onValueChange = onClientNameChanged,
+                        readOnly = isRuc && clientBusinessName.isNotBlank(),
+                        label = { Text(label) },
+                        placeholder = { Text(placeholder, color = Outline) },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = OutlineVariant,
+                        ),
+                    )
+                } else {
+                    // Si es "Sin documento", mostramos un mensaje informativo
+                    Text(
+                        text = "Boleta anónima permitida para montos menores a S/ 700.00",
+                        fontSize = 13.sp,
+                        color = OnSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                        modifier = Modifier.padding(vertical = 8.dp)
+                    )
+                }
             }
 
             InvoiceType.FACTURA -> {

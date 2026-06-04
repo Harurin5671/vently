@@ -11,6 +11,7 @@ import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
 import com.app.crowns.domain.catalog.usecase.GetIgvTypesUseCase
 import com.app.crowns.domain.catalog.usecase.GetUnitsOfMeasureUseCase
 import com.app.crowns.domain.product.usecase.SaveProductUseCase
+import com.app.crowns.common.util.toUserFriendlyMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.channels.Channel
@@ -64,11 +65,17 @@ class AddProductViewModel @Inject constructor(
             is AddProductEvent.OnTrackStockChanged -> _state.update { it.copy(trackStock = event.value) }
             is AddProductEvent.OnCurrentStockChanged -> _state.update { it.copy(currentStock = event.value) }
             is AddProductEvent.OnMinStockAlertChanged -> _state.update { it.copy(minStockAlert = event.value) }
-            is AddProductEvent.OnNewCategoryNameChanged -> _state.update { it.copy(newCategoryName = event.value) }
+            is AddProductEvent.OnNewCategoryNameChanged -> _state.update { 
+                it.copy(
+                    newCategoryName = event.value,
+                    error = if (it.showAddCategoryDialog) null else it.error
+                ) 
+            }
             is AddProductEvent.OnShowAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = true) }
-            is AddProductEvent.OnDismissAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "") }
+            is AddProductEvent.OnDismissAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", error = null) }
             is AddProductEvent.OnSaveCategory -> saveCategory()
             is AddProductEvent.OnSaveProduct -> saveProductData()
+            is AddProductEvent.OnDismissError -> _state.update { it.copy(error = null) }
         }
     }
 
@@ -109,15 +116,20 @@ class AddProductViewModel @Inject constructor(
                 }
                 .onFailure { error ->
                     Log.e("AddProductViewModel", "saveCategory -> Error: ${error.message}", error)
-                    _state.update { it.copy(error = error.message, isSaving = false) }
+                    val message = error.toUserFriendlyMessage("Error al guardar categoría")
+                    _state.update { it.copy(error = message, isSaving = false) }
                 }
         }
     }
 
     private fun saveProductData() {
         val s = _state.value
+        if (!s.isFormValid) {
+            _state.update { it.copy(showErrors = true) }
+            return
+        }
         val igvType = s.igvType ?: return
-        if (!s.isFormValid) return
+
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
             
@@ -152,7 +164,8 @@ class AddProductViewModel @Inject constructor(
                     _navigationEvent.send(AddProductNavigationEvent.NavigateBack)
                 }
                 .onFailure { error ->
-                    _state.update { it.copy(isSaving = false, error = error.message) }
+                    val message = error.toUserFriendlyMessage("Error al guardar producto")
+                    _state.update { it.copy(isSaving = false, error = message) }
                 }
         }
     }

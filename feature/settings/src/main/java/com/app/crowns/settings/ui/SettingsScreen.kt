@@ -56,7 +56,7 @@ fun SettingsScreen(
                 val bytes = inputStream?.readBytes()
                 inputStream?.close()
                 bytes?.let { b ->
-                    val base64 = Base64.encodeToString(b, Base64.DEFAULT)
+                    val base64 = Base64.encodeToString(b, Base64.NO_WRAP)
                     viewModel.onEvent(SettingsEvent.UploadCertificate(base64))
                 }
             } catch (e: Exception) {

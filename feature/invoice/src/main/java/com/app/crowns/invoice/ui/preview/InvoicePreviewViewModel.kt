@@ -19,6 +19,7 @@ import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
 import com.app.crowns.invoice.ui.create.InvoicePreviewUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.app.crowns.common.util.toUserFriendlyMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -114,12 +115,12 @@ class InvoicePreviewViewModel @Inject constructor(
                     _navigationEvent.send(InvoicePreviewNavigationEvent.InvoiceEmitted)
                 }.onFailure { e ->
                     Log.e("Prueba_Generate_Xml", "VM: Error devuelto por el UseCase", e)
-                    _state.update { it.copy(isEmitting = false, error = "Error al emitir: ${e.message}") }
+                    _state.update { it.copy(isEmitting = false, error = e.toUserFriendlyMessage("Error al emitir factura")) }
                 }
 
             } catch (e: Exception) {
                 Log.e("Prueba_Generate_Xml", "VM: Excepción inesperada", e)
-                _state.update { it.copy(isEmitting = false, error = "Error inesperado: ${e.message}") }
+                _state.update { it.copy(isEmitting = false, error = e.toUserFriendlyMessage("Error inesperado")) }
             }
         }
     }

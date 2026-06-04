@@ -24,6 +24,7 @@ data class AddProductUiState(
     val isLoading: Boolean = false,
     val isSaving: Boolean = false,
     val error: String? = null,
+    val showErrors: Boolean = false,
     val showAddCategoryDialog: Boolean = false,
     val newCategoryName: String = "",
 )

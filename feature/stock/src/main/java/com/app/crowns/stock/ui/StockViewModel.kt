@@ -6,6 +6,7 @@ import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import com.app.crowns.domain.product.repository.ProductRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -79,7 +80,7 @@ class StockViewModel @Inject constructor(
                 }
                 filterAndSearch()
             }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, error = e.message) }
+                _state.update { it.copy(isLoading = false, error = e.toUserFriendlyMessage("Error al cargar productos")) }
             }
         }
     }

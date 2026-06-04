@@ -1,5 +1,6 @@
 package com.app.crowns.settings.ui
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
@@ -11,6 +12,7 @@ import com.app.crowns.domain.company.usecase.UpdateCertificatePasswordUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
 import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
+import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -114,7 +116,8 @@ class SettingsViewModel @Inject constructor(
             updateCertificatePasswordUseCase(password).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                _state.update { it.copy(error = e.message, isLoading = false) }
+                Log.e("SETTINGS_DEBUG", "Error updating certificate password: ${e.javaClass.simpleName}: ${e.message}", e)
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al actualizar contraseña"), isLoading = false) }
             }
         }
     }
@@ -125,7 +128,8 @@ class SettingsViewModel @Inject constructor(
             updateCertificateUseCase(base64).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                _state.update { it.copy(error = e.message, isLoading = false) }
+                Log.e("SETTINGS_DEBUG", "Error uploading certificate: ${e.javaClass.simpleName}: ${e.message}", e)
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al subir certificado"), isLoading = false) }
             }
         }
     }
@@ -147,7 +151,7 @@ class SettingsViewModel @Inject constructor(
                     _state.update { it.copy(companyInfo = null, isLoading = false) }
                 }
             }.onFailure { e ->
-                _state.update { it.copy(error = e.message, isLoading = false) }
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cargar información"), isLoading = false) }
             }
         }
     }

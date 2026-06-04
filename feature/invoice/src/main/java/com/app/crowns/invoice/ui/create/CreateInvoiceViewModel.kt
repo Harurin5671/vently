@@ -3,6 +3,7 @@ package com.app.crowns.invoice.ui.create
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
 import com.app.crowns.domain.catalog.usecase.GetIdentityDocumentTypesUseCase
+import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.model.InvoiceType
@@ -49,10 +50,14 @@ class CreateInvoiceViewModel @Inject constructor(
         viewModelScope.launch {
             getIdentityDocumentTypes().onSuccess { types ->
                 _state.update { 
-                    val targetCode = if (it.invoiceType == InvoiceType.FACTURA) "6" else "1"
+                    val targetType = if (it.invoiceType == InvoiceType.FACTURA) 
+                        IdentityDocumentTypeEntity.Type.RUC 
+                    else 
+                        IdentityDocumentTypeEntity.Type.DNI
+                    
                     it.copy(
                         documentTypes = types,
-                        selectedDocumentType = types.find { t -> t.code == targetCode } ?: types.firstOrNull()
+                        selectedDocumentType = types.find { t -> t.type == targetType } ?: types.firstOrNull()
                     )
                 }
             }
@@ -87,9 +92,9 @@ class CreateInvoiceViewModel @Inject constructor(
         when (event) {
             is CreateInvoiceEvent.OnInvoiceTypeChanged -> _state.update {
                 val newDocType = if (event.type == InvoiceType.FACTURA) {
-                    it.documentTypes.find { t -> t.code == "6" }
+                    it.documentTypes.find { t -> t.isRuc }
                 } else {
-                    it.documentTypes.find { t -> t.code == "1" } ?: it.documentTypes.firstOrNull()
+                    it.documentTypes.find { t -> t.isDni } ?: it.documentTypes.firstOrNull()
                 }
                 it.copy(
                     invoiceType = event.type,
@@ -110,7 +115,7 @@ class CreateInvoiceViewModel @Inject constructor(
             }
 
             is CreateInvoiceEvent.OnClientNameChanged -> _state.update {
-                if (it.selectedDocumentType?.code == "6") {
+                if (it.selectedDocumentType?.isRuc == true) {
                     it.copy(clientBusinessName = event.value)
                 } else {
                     it.copy(clientName = event.value)

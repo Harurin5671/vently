@@ -39,6 +39,8 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -69,15 +71,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.input.key.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.SecondaryContainer
-import com.app.crowns.designsystem.color.Surface
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.catalog.entities.IgvTypeEntity
 import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
@@ -91,6 +85,14 @@ fun AddProductScreen(
     viewModel: AddProductViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.error, state.showAddCategoryDialog) {
+        if (state.error != null && !state.showAddCategoryDialog) {
+            snackbarHostState.showSnackbar(state.error!!)
+            viewModel.onEvent(AddProductEvent.OnDismissError)
+        }
+    }
 
     LaunchedEffect(Unit) {
         viewModel.navigationEvent.collect { event ->
@@ -102,6 +104,7 @@ fun AddProductScreen(
 
     AddProductContent(
         state = state,
+        snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
     )
@@ -111,11 +114,13 @@ fun AddProductScreen(
 @Composable
 private fun AddProductContent(
     state: AddProductUiState,
+    snackbarHostState: SnackbarHostState,
     onEvent: (AddProductEvent) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     Scaffold(
         containerColor = Surface,
+        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -147,7 +152,7 @@ private fun AddProductContent(
             ) {
                 Button(
                     onClick = { onEvent(AddProductEvent.OnSaveProduct) },
-                    enabled = state.isFormValid && !state.isSaving,
+                    enabled = !state.isSaving,
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(52.dp),
@@ -210,6 +215,8 @@ private fun AddProductContent(
                     value = state.name,
                     onValueChange = { onEvent(AddProductEvent.OnNameChanged(it)) },
                     placeholder = "Ej. Zapatillas Urban Pro",
+                    isError = state.showErrors && state.name.isBlank(),
+                    supportingText = if (state.showErrors && state.name.isBlank()) "El nombre es obligatorio" else null
                 )
                 VentlyTextField(
                     label = "Descripción",
@@ -349,6 +356,7 @@ private fun AddProductContent(
                         onSelect = { onEvent(AddProductEvent.OnCategorySelected(it)) },
                         onAddNew = { onEvent(AddProductEvent.OnShowAddCategoryDialog) },
                         modifier = Modifier.weight(1f),
+                        isError = state.showErrors && state.selectedCategory == null
                     )
                 }
             }
@@ -361,12 +369,14 @@ private fun AddProductContent(
                         value = state.salePrice,
                         onValueChange = { onEvent(AddProductEvent.OnSalePriceChanged(it)) },
                         modifier = Modifier.weight(1f),
+                        isError = state.showErrors && state.salePrice.toDoubleOrNull() == null
                     )
                     PriceTextField(
                         label = "Precio de costo *",
                         value = state.costPrice,
                         onValueChange = { onEvent(AddProductEvent.OnCostPriceChanged(it)) },
                         modifier = Modifier.weight(1f),
+                        isError = state.showErrors && state.costPrice.toDoubleOrNull() == null
                     )
                 }
                 // Margin
@@ -422,12 +432,14 @@ private fun AddProductContent(
                     selected = state.unitOfMeasure,
                     units = state.unitsOfMeasure,
                     onSelect = { onEvent(AddProductEvent.OnUnitOfMeasureSelected(it)) },
+                    isError = state.showErrors && state.unitOfMeasure.isBlank()
                 )
 
                 IgvTypeSelector(
                     selected = state.igvType,
                     types = state.igvTypes,
                     onSelect = { onEvent(AddProductEvent.OnIgvTypeSelected(it)) },
+                    isError = state.showErrors && state.igvType == null
                 )
             }
 
@@ -520,7 +532,11 @@ private fun AddProductContent(
     // Add category dialog
     if (state.showAddCategoryDialog) {
         AlertDialog(
-            onDismissRequest = { onEvent(AddProductEvent.OnDismissAddCategoryDialog) },
+            onDismissRequest = {
+                if (!state.isSaving) {
+                    onEvent(AddProductEvent.OnDismissAddCategoryDialog)
+                }
+            },
             title = { Text("Nueva categoría") },
             text = {
                 VentlyTextField(
@@ -528,15 +544,32 @@ private fun AddProductContent(
                     value = state.newCategoryName,
                     onValueChange = { onEvent(AddProductEvent.OnNewCategoryNameChanged(it)) },
                     placeholder = "Ej. Calzado",
+                    enabled = !state.isSaving,
+                    isError = state.error != null,
+                    supportingText = state.error,
                 )
             },
             confirmButton = {
-                TextButton(onClick = { onEvent(AddProductEvent.OnSaveCategory) }) {
-                    Text("Guardar", color = Primary)
+                TextButton(
+                    onClick = { onEvent(AddProductEvent.OnSaveCategory) },
+                    enabled = !state.isSaving && state.newCategoryName.isNotBlank(),
+                ) {
+                    if (state.isSaving) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Primary,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text("Guardar", color = Primary)
+                    }
                 }
             },
             dismissButton = {
-                TextButton(onClick = { onEvent(AddProductEvent.OnDismissAddCategoryDialog) }) {
+                TextButton(
+                    onClick = { onEvent(AddProductEvent.OnDismissAddCategoryDialog) },
+                    enabled = !state.isSaving
+                ) {
                     Text("Cancelar")
                 }
             },
@@ -597,6 +630,7 @@ private fun VentlyTextField(
     supportingText: String? = null,
     isError: Boolean = false,
     isSuccess: Boolean = false,
+    enabled: Boolean = true,
     visualTransformation: VisualTransformation = VisualTransformation.None,
 ) {
     Column(modifier = modifier) {
@@ -607,6 +641,7 @@ private fun VentlyTextField(
             color = when {
                 isError -> Color(0xFFEF4444)
                 isSuccess -> Color(0xFF10B981)
+                !enabled -> OnSurfaceVariant.copy(alpha = 0.38f)
                 else -> OnSurfaceVariant
             },
         )
@@ -631,6 +666,7 @@ private fun VentlyTextField(
                 }
             },
             isError = isError,
+            enabled = enabled,
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
             minLines = minLines,
@@ -645,6 +681,9 @@ private fun VentlyTextField(
                 },
                 errorBorderColor = Color(0xFFEF4444),
                 errorSupportingTextColor = Color(0xFFEF4444),
+                disabledBorderColor = OutlineVariant.copy(alpha = 0.38f),
+                disabledTextColor = OnSurface.copy(alpha = 0.38f),
+                disabledPlaceholderColor = Outline.copy(alpha = 0.38f),
             ),
         )
     }
@@ -656,13 +695,14 @@ private fun PriceTextField(
     value: String,
     onValueChange: (String) -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
     Column(modifier = modifier) {
         Text(
             text = label,
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
+            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
         OutlinedTextField(
@@ -676,10 +716,11 @@ private fun PriceTextField(
             prefix = { Text("S/  ", color = Outline) },
             modifier = Modifier.fillMaxWidth(),
             shape = RoundedCornerShape(12.dp),
+            isError = isError,
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
             colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Primary,
-                unfocusedBorderColor = OutlineVariant,
+                focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
+                unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
             ),
         )
     }
@@ -693,6 +734,7 @@ private fun CategoryDropdown(
     onSelect: (Category?) -> Unit,
     onAddNew: () -> Unit,
     modifier: Modifier = Modifier,
+    isError: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -701,7 +743,7 @@ private fun CategoryDropdown(
             text = "Categoría *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
+            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
         ExposedDropdownMenuBox(
@@ -712,14 +754,15 @@ private fun CategoryDropdown(
                 value = selected?.name ?: "Seleccionar",
                 onValueChange = {},
                 readOnly = true,
+                isError = isError,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = OutlineVariant,
+                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
+                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
                 ),
             )
             ExposedDropdownMenu(
@@ -766,6 +809,7 @@ private fun UnitOfMeasureDropdown(
     selected: String,
     units: List<UnitOfMeasureEntity>,
     onSelect: (String) -> Unit,
+    isError: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
     val selectedLabel = units.find { it.code == selected }?.let { "${it.code} - ${it.name}" } ?: "Seleccionar unidad"
@@ -775,7 +819,7 @@ private fun UnitOfMeasureDropdown(
             text = "Unidad de medida *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
+            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
         ExposedDropdownMenuBox(
@@ -786,14 +830,15 @@ private fun UnitOfMeasureDropdown(
                 value = selectedLabel,
                 onValueChange = {},
                 readOnly = true,
+                isError = isError,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = OutlineVariant,
+                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
+                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
                 ),
             )
             ExposedDropdownMenu(
@@ -822,6 +867,7 @@ private fun IgvTypeSelector(
     selected: IgvTypeEntity?,
     types: List<IgvTypeEntity>,
     onSelect: (IgvTypeEntity) -> Unit,
+    isError: Boolean = false,
 ) {
     var expanded by remember { mutableStateOf(false) }
 
@@ -830,7 +876,7 @@ private fun IgvTypeSelector(
             text = "Tipo de IGV *",
             fontSize = 14.sp,
             fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
+            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
         ExposedDropdownMenuBox(
@@ -841,14 +887,15 @@ private fun IgvTypeSelector(
                 value = selected?.name ?: "Seleccionar tipo",
                 onValueChange = {},
                 readOnly = true,
+                isError = isError,
                 trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
                 modifier = Modifier
                     .fillMaxWidth()
                     .menuAnchor(),
                 shape = RoundedCornerShape(12.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = OutlineVariant,
+                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
+                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
                 ),
             )
             ExposedDropdownMenu(
