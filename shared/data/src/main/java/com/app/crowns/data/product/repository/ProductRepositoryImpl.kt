@@ -44,18 +44,23 @@ class ProductRepositoryImpl @Inject constructor(
     override suspend fun saveProduct(product: Product, imageBytes: ByteArray?): Result<Unit> = runCatching {
         val companyId = getCompanyId()
 
-        // 1. Guardar el producto primero para obtener el ID (si es nuevo)
-        val savedProductEntity = remoteDataSource.saveProduct(product.toEntity(companyId)).getOrThrow()
-        val productId = savedProductEntity.id ?: throw Exception("Error al obtener ID del producto guardado")
+        val productId: String
+        if (product.id != null) {
+            // Actualizar producto existente
+            remoteDataSource.updateProduct(product.toEntity(companyId)).getOrThrow()
+            productId = product.id!!
+        } else {
+            // Insertar nuevo producto
+            val saved = remoteDataSource.saveProduct(product.toEntity(companyId)).getOrThrow()
+            productId = saved.id ?: throw Exception("Error al obtener ID del producto guardado")
+        }
 
-        // 2. Si hay imagen, subirla y actualizar el producto
+        // Si hay nueva imagen, subirla y actualizar la URL
         if (imageBytes != null) {
             val timestamp = System.currentTimeMillis()
             val imagePath = "$companyId/${productId}_$timestamp.jpg"
             val imageUrl = remoteDataSource.uploadProductImage(imageBytes, imagePath).getOrThrow()
-            
-            // Actualizar el producto con la URL de la imagen
-            remoteDataSource.updateProduct(savedProductEntity.copy(imageUrl = imageUrl)).getOrThrow()
+            remoteDataSource.updateProduct(product.toEntity(companyId).copy(id = productId, imageUrl = imageUrl)).getOrThrow()
         }
 
         notifyProductChanged()
@@ -69,8 +74,13 @@ class ProductRepositoryImpl @Inject constructor(
 
     override suspend fun saveCategory(category: Category): Result<Unit> = runCatching {
         val companyId = getCompanyId()
-
         remoteDataSource.saveCategory(category.toEntity(companyId)).getOrThrow()
+        notifyProductChanged()
+    }
+
+    override suspend fun updateCategory(category: Category): Result<Unit> = runCatching {
+        val companyId = getCompanyId()
+        remoteDataSource.updateCategory(category.toEntity(companyId)).getOrThrow()
         notifyProductChanged()
     }
 }

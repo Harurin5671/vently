@@ -2,6 +2,8 @@ package com.app.crowns.stock.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.catalog.usecase.GetIgvTypesUseCase
+import com.app.crowns.domain.catalog.usecase.GetUnitsOfMeasureUseCase
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import com.app.crowns.domain.product.repository.ProductRepository
@@ -21,6 +23,8 @@ import javax.inject.Inject
 @HiltViewModel
 class StockViewModel @Inject constructor(
     private val getProductsUseCase: GetProductsUseCase,
+    private val getIgvTypes: GetIgvTypesUseCase,
+    private val getUnitsOfMeasure: GetUnitsOfMeasureUseCase,
     repository: ProductRepository,
 ) : ViewModel() {
 
@@ -31,6 +35,8 @@ class StockViewModel @Inject constructor(
     val navigationEvent = _navigationEvent.receiveAsFlow()
 
     init {
+        loadIgvTypes()
+        loadUnitsOfMeasure()
         loadStock()
 
         repository.productChanges
@@ -47,6 +53,15 @@ class StockViewModel @Inject constructor(
             is StockEvent.OnFilterSelected -> applyFilter(event.filter)
             is StockEvent.OnSearchChanged -> applySearch(event.query)
             is StockEvent.OnProductClick -> navigateToDetail(event.productId)
+            is StockEvent.OnProductSelected -> {
+                val resolved = resolveIgvType(event.product)
+                _state.update { it.copy(selectedProduct = resolved) }
+            }
+            is StockEvent.OnDismissProductDetail -> _state.update { it.copy(selectedProduct = null) }
+            is StockEvent.OnEditProduct -> {
+                _state.update { it.copy(selectedProduct = null) }
+                emitNav(StockNavigationEvent.NavigateToEditProduct(event.productId))
+            }
             is StockEvent.OnAddProduct -> emitNav(StockNavigationEvent.NavigateToAddProduct)
         }
     }
@@ -118,6 +133,29 @@ class StockViewModel @Inject constructor(
 
     private fun navigateToDetail(productId: String) {
         emitNav(StockNavigationEvent.NavigateToProductDetail(productId))
+    }
+
+    private fun loadIgvTypes() {
+        viewModelScope.launch {
+            getIgvTypes().onSuccess { types ->
+                _state.update { it.copy(igvTypes = types) }
+            }
+        }
+    }
+
+    private fun loadUnitsOfMeasure() {
+        viewModelScope.launch {
+            getUnitsOfMeasure().onSuccess { units ->
+                _state.update { it.copy(unitsOfMeasure = units) }
+            }
+        }
+    }
+
+    private fun resolveIgvType(product: Product): Product {
+        val types = _state.value.igvTypes
+        if (types.isEmpty()) return product
+        val matched = types.find { it.code == product.igvType.code } ?: return product
+        return product.copy(igvType = matched)
     }
 
     private fun emitNav(event: StockNavigationEvent) {

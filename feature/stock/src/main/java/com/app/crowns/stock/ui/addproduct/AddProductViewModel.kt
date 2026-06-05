@@ -8,6 +8,7 @@ import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.repository.ProductRepository
 import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
+import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import com.app.crowns.domain.catalog.usecase.GetIgvTypesUseCase
 import com.app.crowns.domain.catalog.usecase.GetUnitsOfMeasureUseCase
 import com.app.crowns.domain.product.usecase.SaveProductUseCase
@@ -26,6 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddProductViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
+    private val getProducts: GetProductsUseCase,
     private val getIgvTypes: GetIgvTypesUseCase,
     private val getUnitsOfMeasure: GetUnitsOfMeasureUseCase,
     private val saveProduct: SaveProductUseCase,
@@ -72,10 +74,12 @@ class AddProductViewModel @Inject constructor(
                 ) 
             }
             is AddProductEvent.OnShowAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = true) }
-            is AddProductEvent.OnDismissAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", error = null) }
+            is AddProductEvent.OnDismissAddCategoryDialog -> _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", editingCategoryId = null, error = null) }
+            is AddProductEvent.OnEditCategorySelected -> _state.update { it.copy(newCategoryName = event.category.name, editingCategoryId = event.category.id, error = null) }
             is AddProductEvent.OnSaveCategory -> saveCategory()
             is AddProductEvent.OnSaveProduct -> saveProductData()
             is AddProductEvent.OnDismissError -> _state.update { it.copy(error = null) }
+            is AddProductEvent.OnLoadProductForEdit -> loadProductForEdit(event.productId)
         }
     }
 
@@ -101,24 +105,73 @@ class AddProductViewModel @Inject constructor(
 
     private fun saveCategory() {
         val name = _state.value.newCategoryName.trim()
-        Log.d("AddProductViewModel", "saveCategory -> name: $name")
-        if (name.isBlank()) {
-            Log.w("AddProductViewModel", "saveCategory -> name is blank, returning")
-            return
-        }
+        val editingId = _state.value.editingCategoryId
+        if (name.isBlank()) return
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
-            repository.saveCategory(Category(id = "", name = name))
+            val result = if (editingId != null) {
+                repository.updateCategory(Category(id = editingId, name = name))
+            } else {
+                repository.saveCategory(Category(id = "", name = name))
+            }
+            result
                 .onSuccess {
-                    Log.d("AddProductViewModel", "saveCategory -> Success")
                     loadCategories()
-                    _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", isSaving = false) }
+                    _state.update { it.copy(showAddCategoryDialog = false, newCategoryName = "", editingCategoryId = null, isSaving = false) }
                 }
                 .onFailure { error ->
-                    Log.e("AddProductViewModel", "saveCategory -> Error: ${error.message}", error)
-                    val message = error.toUserFriendlyMessage("Error al guardar categoría")
-                    _state.update { it.copy(error = message, isSaving = false) }
+                    val label = if (editingId != null) "Error al actualizar categoría" else "Error al guardar categoría"
+                    _state.update { it.copy(error = error.toUserFriendlyMessage(label), isSaving = false) }
                 }
+        }
+    }
+
+    private fun loadProductForEdit(productId: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+
+            // Ensure catalog data is loaded before pre-filling selections
+            if (_state.value.igvTypes.isEmpty()) {
+                loadIgvTypes()
+                loadUnitsOfMeasure()
+            }
+            if (_state.value.categories.isEmpty()) {
+                loadCategories()
+            }
+
+            getProducts().onSuccess { products ->
+                val product = products.find { it.id == productId } ?: return@onSuccess
+                val skuRaw = product.sku ?: ""
+
+                // Match against catalog list by code to ensure dropdown equality works
+                val matchedIgvType = _state.value.igvTypes
+                    .find { it.code == product.igvType.code }
+                    ?: product.igvType
+                val matchedCategory = _state.value.categories
+                    .find { it.id == product.category?.id }
+                    ?: product.category
+
+                _state.update { state ->
+                    state.copy(
+                        isLoading = false,
+                        editingProductId = productId,
+                        existingImageUrl = product.imageUrl,
+                        name = product.name,
+                        description = product.description ?: "",
+                        sku = skuRaw,
+                        selectedCategory = matchedCategory,
+                        salePrice = product.salePrice.toString(),
+                        costPrice = product.costPrice?.toString() ?: "",
+                        igvType = matchedIgvType,
+                        unitOfMeasure = product.unitOfMeasure,
+                        trackStock = product.trackStock,
+                        currentStock = product.currentStock,
+                        minStockAlert = product.minStockAlert?.toString() ?: "",
+                    )
+                }
+            }.onFailure {
+                _state.update { it.copy(isLoading = false) }
+            }
         }
     }
 
@@ -132,7 +185,7 @@ class AddProductViewModel @Inject constructor(
 
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
-            
+
             val imageBytes = s.imageUri?.let { uri ->
                 try {
                     context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
@@ -143,11 +196,10 @@ class AddProductViewModel @Inject constructor(
             }
 
             val product = Product(
+                id = s.editingProductId,
                 name = s.name,
                 description = s.description.ifBlank { null },
-                sku = s.sku.ifEmpty { null }?.let { 
-                    if (it.length == 6) "${it.take(3)}-${it.drop(3)}" else it 
-                },
+                sku = s.sku.ifEmpty { null },
                 category = s.selectedCategory,
                 salePrice = s.salePrice.toDouble(),
                 costPrice = s.costPrice.toDoubleOrNull(),
@@ -156,6 +208,8 @@ class AddProductViewModel @Inject constructor(
                 trackStock = s.trackStock,
                 currentStock = s.currentStock,
                 minStockAlert = s.minStockAlert.toIntOrNull(),
+                // Preserve existing image URL when no new image is selected
+                imageUrl = if (imageBytes == null) s.existingImageUrl else null,
             )
             Log.d("AddProductViewModel", "product -> name: $product")
             saveProduct(product, imageBytes)

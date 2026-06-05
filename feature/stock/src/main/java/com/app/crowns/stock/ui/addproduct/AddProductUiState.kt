@@ -27,6 +27,9 @@ data class AddProductUiState(
     val showErrors: Boolean = false,
     val showAddCategoryDialog: Boolean = false,
     val newCategoryName: String = "",
+    val editingCategoryId: String? = null,
+    val editingProductId: String? = null,
+    val existingImageUrl: String? = null,
 )
 
 val AddProductUiState.profitMargin: Double
@@ -38,7 +41,7 @@ val AddProductUiState.profitMargin: Double
     }
 
 val AddProductUiState.isSkuValid: Boolean
-    get() = sku.isEmpty() || sku.matches(Regex("^[A-Z]{3}[0-9]{3}$"))
+    get() = sku.isEmpty() || sku.matches(Regex("^[A-Z]{3}-[0-9]{3}$"))
 
 val AddProductUiState.isFormValid: Boolean
     get() = name.isNotBlank() &&

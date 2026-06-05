@@ -20,9 +20,11 @@ sealed class AddProductEvent {
     data class OnNewCategoryNameChanged(val value: String) : AddProductEvent()
     data object OnShowAddCategoryDialog : AddProductEvent()
     data object OnDismissAddCategoryDialog : AddProductEvent()
+    data class OnEditCategorySelected(val category: Category) : AddProductEvent()
     data object OnSaveCategory : AddProductEvent()
     data object OnSaveProduct : AddProductEvent()
     data object OnDismissError : AddProductEvent()
+    data class OnLoadProductForEdit(val productId: String) : AddProductEvent()
 }
 
 sealed class AddProductNavigationEvent {

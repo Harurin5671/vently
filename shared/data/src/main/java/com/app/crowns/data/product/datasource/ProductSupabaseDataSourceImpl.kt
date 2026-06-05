@@ -42,6 +42,13 @@ class ProductSupabaseDataSourceImpl @Inject constructor(
         supabase.from("categories").insert(category)
     }
 
+    override suspend fun updateCategory(category: CategoryEntity): Result<Unit> = runCatching {
+        supabase.from("categories")
+            .update(category) {
+                filter { eq("id", category.id!!) }
+            }
+    }
+
     override suspend fun uploadProductImage(
         imageBytes: ByteArray,
         path: String

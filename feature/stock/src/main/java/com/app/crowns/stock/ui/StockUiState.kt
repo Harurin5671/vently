@@ -1,5 +1,7 @@
 package com.app.crowns.stock.ui
 
+import com.app.crowns.domain.catalog.entities.IgvTypeEntity
+import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
 import com.app.crowns.domain.product.model.Product
 
 data class StockUiState(
@@ -12,6 +14,9 @@ data class StockUiState(
     val selectedFilter: StockFilter = StockFilter.ALL,
     val searchQuery: String = "",
     val error: String? = null,
+    val selectedProduct: Product? = null,
+    val igvTypes: List<IgvTypeEntity> = emptyList(),
+    val unitsOfMeasure: List<UnitOfMeasureEntity> = emptyList(),
 )
 
 enum class StockFilter(val label: String) {

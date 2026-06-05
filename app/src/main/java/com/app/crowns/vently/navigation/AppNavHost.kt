@@ -100,7 +100,10 @@ fun AppNavHost(
                             StockScreen(
                                 onNavigateToAddProduct = {
                                     backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
-                                }
+                                },
+                                onNavigateToEditProduct = { productId ->
+                                    backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString(), productId = productId))
+                                },
                             )
                         },
                         historyContent = { HistoryScreen() },
@@ -121,6 +124,7 @@ fun AppNavHost(
                         onNavigateBack = {
                             backStack.removeLastOrNull()
                         },
+                        productId = destination.productId,
                         viewModel = hiltViewModel(key = destination.id)
                     )
                 }

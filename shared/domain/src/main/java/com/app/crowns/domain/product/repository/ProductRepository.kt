@@ -10,5 +10,6 @@ interface ProductRepository {
     suspend fun saveProduct(product: Product, imageBytes: ByteArray? = null): Result<Unit>
     suspend fun getCategories(): Result<List<Category>>
     suspend fun saveCategory(category: Category): Result<Unit>
+    suspend fun updateCategory(category: Category): Result<Unit>
     suspend fun notifyProductChanged()
 }

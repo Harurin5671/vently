@@ -29,7 +29,8 @@ fun VentlyImageSelector(
     onImageSelected: (Uri) -> Unit,
     modifier: Modifier = Modifier,
     size: Dp = 80.dp,
-    shape: androidx.compose.ui.graphics.Shape = CircleShape
+    shape: androidx.compose.ui.graphics.Shape = CircleShape,
+    existingImageUrl: String? = null,
 ) {
     val photoPickerLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.PickVisualMedia()
@@ -49,9 +50,10 @@ fun VentlyImageSelector(
             },
         contentAlignment = Alignment.Center
     ) {
-        if (selectedImageUri != null) {
+        val imageModel: Any? = selectedImageUri ?: existingImageUrl
+        if (imageModel != null) {
             AsyncImage(
-                model = selectedImageUri,
+                model = imageModel,
                 contentDescription = "Selected Image",
                 modifier = Modifier.clip(shape),
                 contentScale = ContentScale.Crop

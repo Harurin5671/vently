@@ -22,11 +22,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
@@ -65,6 +67,8 @@ import com.app.crowns.designsystem.color.SurfaceContainerLowest
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.domain.product.model.Product
+import com.app.crowns.domain.product.model.profitMargin
+import com.app.crowns.ui.components.VentlyModalBottomSheet
 import com.app.crowns.ui.components.VentlyStockEmptyState
 import com.app.crowns.ui.components.shimmerEffect
 
@@ -72,6 +76,7 @@ import com.app.crowns.ui.components.shimmerEffect
 fun StockScreen(
     onNavigateToProductDetail: (String) -> Unit = {},
     onNavigateToAddProduct: () -> Unit = {},
+    onNavigateToEditProduct: (String) -> Unit = {},
     viewModel: StockViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -83,6 +88,8 @@ fun StockScreen(
                     onNavigateToProductDetail(event.productId)
                 is StockNavigationEvent.NavigateToAddProduct ->
                     onNavigateToAddProduct()
+                is StockNavigationEvent.NavigateToEditProduct ->
+                    onNavigateToEditProduct(event.productId)
             }
         }
     }
@@ -202,7 +209,7 @@ private fun StockContent(
                     items(state.filteredProducts, key = { it.id ?: "" }) { product ->
                         ProductItem(
                             product = product,
-                            onClick = { onEvent(StockEvent.OnProductClick(product.id ?: "")) },
+                            onClick = { onEvent(StockEvent.OnProductSelected(product)) },
                         )
                     }
                 }
@@ -224,6 +231,17 @@ private fun StockContent(
 
                 item { Spacer(Modifier.height(80.dp)) }
             }
+        }
+
+        if (state.selectedProduct != null) {
+            val unit = state.unitsOfMeasure.find { it.code == state.selectedProduct.unitOfMeasure }
+            val unitLabel = if (unit != null) "${unit.code} - ${unit.name}" else state.selectedProduct.unitOfMeasure
+            ProductDetailSheet(
+                product = state.selectedProduct,
+                onDismiss = { onEvent(StockEvent.OnDismissProductDetail) },
+                onEdit = { productId -> onEvent(StockEvent.OnEditProduct(productId)) },
+                unitLabel = unitLabel,
+            )
         }
     }
 }
@@ -601,6 +619,175 @@ private fun ProductItem(
                 color = OnSurfaceVariant,
             )
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ProductDetailSheet(
+    product: Product,
+    onDismiss: () -> Unit,
+    onEdit: (String) -> Unit,
+    unitLabel: String,
+) {
+    val locale = LocalLocale.current.platformLocale
+    val statusColor = when (product.stockStatus) {
+        StockStatus.LOW -> StockLow
+        StockStatus.NONE -> StockNone
+        StockStatus.OK -> null
+    }
+    val statusLabel = when (product.stockStatus) {
+        StockStatus.LOW -> "STOCK BAJO"
+        StockStatus.NONE -> "SIN STOCK"
+        StockStatus.OK -> null
+    }
+
+    VentlyModalBottomSheet(
+        onDismiss = onDismiss,
+        title = product.name,
+    ) {
+        // Image / avatar
+        Box(
+            modifier = Modifier
+                .size(80.dp)
+                .clip(RoundedCornerShape(16.dp))
+                .background(PrimaryContainer.copy(alpha = 0.2f))
+                .align(Alignment.CenterHorizontally),
+            contentAlignment = Alignment.Center,
+        ) {
+            if (product.imageUrl != null) {
+                AsyncImage(
+                    model = product.imageUrl,
+                    contentDescription = product.name,
+                    modifier = Modifier.fillMaxSize(),
+                )
+            } else {
+                Text(
+                    text = product.name.firstOrNull()?.uppercaseChar()?.toString() ?: "?",
+                    fontSize = 32.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Primary,
+                )
+            }
+        }
+
+        Spacer(Modifier.height(4.dp))
+
+        // Status badge (centrado)
+        if (statusLabel != null && statusColor != null) {
+            Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+                Text(
+                    text = statusLabel,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = statusColor,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(999.dp))
+                        .background(statusColor.copy(alpha = 0.12f))
+                        .padding(horizontal = 12.dp, vertical = 4.dp),
+                )
+            }
+        }
+
+        Spacer(Modifier.height(16.dp))
+        HorizontalDivider(color = OutlineVariant)
+        Spacer(Modifier.height(16.dp))
+
+        // Detail rows
+        ProductDetailRow(label = "SKU", value = product.sku ?: "Sin SKU")
+        ProductDetailRow(label = "Categoría", value = product.category?.name ?: "Sin categoría")
+        ProductDetailRow(label = "Tipo de IGV", value = "${product.igvType.name} (${product.igvType.percentage}%)")
+        ProductDetailRow(label = "Unidad de medida", value = unitLabel)
+        ProductDetailRow(
+            label = "Precio de venta",
+            value = "S/ ${String.format(locale, "%.2f", product.salePrice)}",
+        )
+        if (product.costPrice != null) {
+            ProductDetailRow(
+                label = "Precio de costo",
+                value = "S/ ${String.format(locale, "%.2f", product.costPrice)}",
+            )
+            ProductDetailRow(
+                label = "Margen de ganancia",
+                value = "${String.format(locale, "%.1f", product.profitMargin)}%",
+            )
+        }
+        ProductDetailRow(
+            label = "Stock actual",
+            value = "${product.currentStock} uds",
+            valueColor = statusColor ?: Primary,
+        )
+        if (product.trackStock && product.minStockAlert != null) {
+            ProductDetailRow(label = "Alerta de stock mínimo", value = "${product.minStockAlert} uds")
+        }
+        val description = product.description
+        if (description != null) {
+            Spacer(Modifier.height(8.dp))
+            Text(
+                text = "Descripción",
+                fontSize = 12.sp,
+                fontWeight = FontWeight.Medium,
+                color = OnSurfaceVariant,
+            )
+            Spacer(Modifier.height(4.dp))
+            Text(
+                text = description,
+                fontSize = 14.sp,
+                color = OnSurface,
+            )
+        }
+
+        Spacer(Modifier.height(24.dp))
+        Button(
+            onClick = { onEdit(product.id ?: "") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+            shape = RoundedCornerShape(12.dp),
+            colors = ButtonDefaults.buttonColors(
+                containerColor = Primary,
+                contentColor = OnPrimary,
+            ),
+        ) {
+            Icon(
+                imageVector = Icons.Filled.Edit,
+                contentDescription = null,
+                modifier = Modifier.size(18.dp),
+            )
+            Spacer(Modifier.width(8.dp))
+            Text(
+                text = "Editar producto",
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+            )
+        }
+    }
+}
+
+@Composable
+private fun ProductDetailRow(
+    label: String,
+    value: String,
+    valueColor: Color = OnSurface,
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 8.dp),
+        horizontalArrangement = Arrangement.SpaceBetween,
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = label,
+            fontSize = 14.sp,
+            color = OnSurfaceVariant,
+        )
+        Text(
+            text = value,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = valueColor,
+        )
     }
 }
 

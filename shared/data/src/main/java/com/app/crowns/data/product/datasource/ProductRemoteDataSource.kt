@@ -9,5 +9,6 @@ interface ProductRemoteDataSource {
     suspend fun updateProduct(product: ProductEntity): Result<Unit>
     suspend fun getCategories(companyId: String): Result<List<CategoryEntity>>
     suspend fun saveCategory(category: CategoryEntity): Result<Unit>
+    suspend fun updateCategory(category: CategoryEntity): Result<Unit>
     suspend fun uploadProductImage(imageBytes: ByteArray, path: String): Result<String>
 }

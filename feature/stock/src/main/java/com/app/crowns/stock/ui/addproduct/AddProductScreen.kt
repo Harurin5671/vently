@@ -11,9 +11,12 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -23,17 +26,17 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountBalance
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material.icons.filled.Save
-import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
@@ -44,7 +47,6 @@ import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
@@ -53,6 +55,8 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -60,35 +64,38 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.OffsetMapping
-import androidx.compose.ui.text.input.TransformedText
 import androidx.compose.ui.text.input.VisualTransformation
-import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.focus.FocusRequester
-import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.input.key.*
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.catalog.entities.IgvTypeEntity
 import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
 import com.app.crowns.ui.components.VentlyImageSelector
+import com.app.crowns.ui.components.VentlyModalBottomSheet
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.app.crowns.ui.components.shimmerEffect
 
 @Composable
 fun AddProductScreen(
     onNavigateBack: () -> Unit,
+    productId: String? = null,
     viewModel: AddProductViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    LaunchedEffect(productId) {
+        if (!productId.isNullOrBlank()) {
+            viewModel.onEvent(AddProductEvent.OnLoadProductForEdit(productId))
+        }
+    }
+
     LaunchedEffect(state.error, state.showAddCategoryDialog) {
-        if (state.error != null && !state.showAddCategoryDialog) {
+        if (state.error != null && !state.showAddCategoryDialog && state.newCategoryName.isBlank()) {
             snackbarHostState.showSnackbar(state.error!!)
             viewModel.onEvent(AddProductEvent.OnDismissError)
         }
@@ -125,7 +132,7 @@ private fun AddProductContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Nuevo producto",
+                        text = if (state.editingProductId != null) "Editar producto" else "Nuevo producto",
                         fontSize = 18.sp,
                         fontWeight = FontWeight.SemiBold,
                         color = OnSurface,
@@ -176,7 +183,7 @@ private fun AddProductContent(
                         )
                         Spacer(Modifier.width(8.dp))
                         Text(
-                            text = "Guardar producto",
+                            text = if (state.editingProductId != null) "Guardar cambios" else "Guardar producto",
                             fontSize = 16.sp,
                             fontWeight = FontWeight.Medium,
                         )
@@ -185,6 +192,11 @@ private fun AddProductContent(
             }
         }
     ) { innerPadding ->
+        if (state.isLoading) {
+            AddProductSkeleton(modifier = Modifier.padding(innerPadding))
+            return@Scaffold
+        }
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -204,7 +216,8 @@ private fun AddProductContent(
                     selectedImageUri = state.imageUri,
                     onImageSelected = { onEvent(AddProductEvent.OnImageSelected(it)) },
                     size = 100.dp,
-                    shape = RoundedCornerShape(16.dp)
+                    shape = RoundedCornerShape(16.dp),
+                    existingImageUrl = state.existingImageUrl,
                 )
             }
 
@@ -238,108 +251,80 @@ private fun AddProductContent(
                             color = OnSurfaceVariant,
                         )
                         Spacer(Modifier.height(4.dp))
-                        
-                        val skuParts = remember(state.sku) {
-                            val letters = state.sku.filter { it.isLetter() }.take(3)
-                            val numbers = state.sku.filter { it.isDigit() }.take(3)
-                            letters to numbers
-                        }
-                        
-                        val focusRequesterLetters = remember { FocusRequester() }
-                        val focusRequesterNumbers = remember { FocusRequester() }
 
                         val isSkuFieldActive = state.sku.isNotEmpty()
-                        val isSkuCorrect = state.sku.length == 6
-                        
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                        val isSkuCorrect = state.sku.matches(Regex("^[A-Z]{3}-[0-9]{3}$"))
+                        val skuColor = when {
+                            isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
+                            isSkuCorrect -> Color(0xFF10B981)
+                            else -> OnSurface
+                        }
+                        val borderColor = when {
+                            isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
+                            isSkuCorrect -> Color(0xFF10B981)
+                            else -> OutlineVariant
+                        }
+
+                        var skuFieldValue by remember { mutableStateOf(TextFieldValue(state.sku, TextRange(state.sku.length))) }
+                        LaunchedEffect(state.sku) {
+                            if (state.sku != skuFieldValue.text) {
+                                skuFieldValue = TextFieldValue(state.sku, TextRange(state.sku.length))
+                            }
+                        }
+
+                        BasicTextField(
+                            value = skuFieldValue,
+                            onValueChange = { tfv ->
+                                val clean = tfv.text.replace("-", "").uppercase()
+                                val letters = clean.filter { it.isLetter() }.take(3)
+                                val digits = clean.filter { it.isDigit() }.take(3)
+                                val newSku = if (letters.length == 3 && digits.isNotEmpty()) {
+                                    "$letters-$digits"
+                                } else {
+                                    letters
+                                }
+                                // When dash is auto-inserted the raw length jumps by 2,
+                                // so we always place the cursor at the end of the new value.
+                                val newCursor = if (newSku.length > tfv.text.length) {
+                                    newSku.length
+                                } else {
+                                    minOf(tfv.selection.end, newSku.length)
+                                }
+                                skuFieldValue = TextFieldValue(newSku, TextRange(newCursor))
+                                onEvent(AddProductEvent.OnSkuChanged(newSku))
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
                                 .height(56.dp)
                                 .clip(RoundedCornerShape(12.dp))
-                                .border(
-                                    width = 1.dp,
-                                    color = when {
-                                        isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
-                                        isSkuCorrect -> Color(0xFF10B981)
-                                        else -> OutlineVariant
-                                    },
-                                    shape = RoundedCornerShape(12.dp)
-                                )
-                                .padding(horizontal = 8.dp)
-                        ) {
-                            BasicTextField(
-                                value = skuParts.first,
-                                onValueChange = { input ->
-                                    if (input.length <= 3 && input.all { it.isLetter() }) {
-                                        val currentNumbers = state.sku.filter { it.isDigit() }
-                                        val newSku = input.uppercase() + currentNumbers
-                                        onEvent(AddProductEvent.OnSkuChanged(newSku))
-                                        if (input.length == 3) focusRequesterNumbers.requestFocus()
+                                .border(1.dp, borderColor, RoundedCornerShape(12.dp)),
+                            singleLine = true,
+                            textStyle = TextStyle(
+                                fontSize = 16.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = skuColor,
+                                textAlign = TextAlign.Center,
+                                letterSpacing = 2.sp,
+                            ),
+                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+                            decorationBox = { innerTextField ->
+                                Box(
+                                    modifier = Modifier.fillMaxWidth(),
+                                    contentAlignment = Alignment.Center,
+                                ) {
+                                    if (state.sku.isEmpty()) {
+                                        Text(
+                                            text = "AAA-000",
+                                            color = Outline,
+                                            fontSize = 16.sp,
+                                            fontWeight = FontWeight.Medium,
+                                            letterSpacing = 2.sp,
+                                        )
                                     }
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .focusRequester(focusRequesterLetters),
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    textAlign = TextAlign.End,
-                                    fontSize = 16.sp,
-                                    color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else OnSurface
-                                ),
-                                decorationBox = { innerTextField ->
-                                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterEnd) {
-                                        if (skuParts.first.isEmpty()) {
-                                            Text("AAA", color = Outline, fontSize = 16.sp)
-                                        }
-                                        innerTextField()
-                                    }
+                                    innerTextField()
                                 }
-                            )
-                            
-                            Text(
-                                text = "-",
-                                fontWeight = FontWeight.Bold,
-                                color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else Outline,
-                                modifier = Modifier.padding(horizontal = 2.dp)
-                            )
-                            
-                            BasicTextField(
-                                value = skuParts.second,
-                                onValueChange = { input ->
-                                    if (input.length <= 3 && input.all { it.isDigit() }) {
-                                        val currentLetters = state.sku.filter { it.isLetter() }
-                                        val newSku = currentLetters + input
-                                        onEvent(AddProductEvent.OnSkuChanged(newSku))
-                                    }
-                                },
-                                modifier = Modifier
-                                    .weight(1f)
-                                    .focusRequester(focusRequesterNumbers)
-                                    .onKeyEvent {
-                                        if (it.key == Key.Backspace && it.type == KeyEventType.KeyUp && skuParts.second.isEmpty()) {
-                                            focusRequesterLetters.requestFocus()
-                                            true
-                                        } else false
-                                    },
-                                singleLine = true,
-                                textStyle = TextStyle(
-                                    textAlign = TextAlign.Start,
-                                    fontSize = 16.sp,
-                                    color = if (isSkuFieldActive && !isSkuCorrect) Color(0xFFEF4444) else if (isSkuCorrect) Color(0xFF10B981) else OnSurface
-                                ),
-                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                decorationBox = { innerTextField ->
-                                    Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
-                                        if (skuParts.second.isEmpty()) {
-                                            Text("000", color = Outline, fontSize = 16.sp)
-                                        }
-                                        innerTextField()
-                                    }
-                                }
-                            )
-                        }
+                            },
+                        )
                         if (isSkuFieldActive && !isSkuCorrect) {
                             Text(
                                 text = "Formato: 3 letras y 3 números (Ej. ABC-123)",
@@ -354,9 +339,16 @@ private fun AddProductContent(
                         categories = state.categories,
                         selected = state.selectedCategory,
                         onSelect = { onEvent(AddProductEvent.OnCategorySelected(it)) },
-                        onAddNew = { onEvent(AddProductEvent.OnShowAddCategoryDialog) },
+                        onEditCategory = { onEvent(AddProductEvent.OnEditCategorySelected(it)) },
+                        newCategoryName = state.newCategoryName,
+                        editingCategoryId = state.editingCategoryId,
+                        onNewCategoryNameChange = { onEvent(AddProductEvent.OnNewCategoryNameChanged(it)) },
+                        onSaveCategory = { onEvent(AddProductEvent.OnSaveCategory) },
+                        onDismissNewCategory = { onEvent(AddProductEvent.OnDismissAddCategoryDialog) },
+                        isSavingCategory = state.isSaving,
+                        categoryError = state.error,
                         modifier = Modifier.weight(1f),
-                        isError = state.showErrors && state.selectedCategory == null
+                        isError = state.showErrors && state.selectedCategory == null,
                     )
                 }
             }
@@ -399,7 +391,7 @@ private fun AddProductContent(
                         text = String.format(LocalLocale.current.platformLocale, "%.2f%%", state.profitMargin),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = Color(0xFF10B981),
+                        color = if (state.profitMargin >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
                     )
                 }
             }
@@ -529,57 +521,61 @@ private fun AddProductContent(
         }
     }
 
-    // Add category dialog
-    if (state.showAddCategoryDialog) {
-        AlertDialog(
-            onDismissRequest = {
-                if (!state.isSaving) {
-                    onEvent(AddProductEvent.OnDismissAddCategoryDialog)
-                }
-            },
-            title = { Text("Nueva categoría") },
-            text = {
-                VentlyTextField(
-                    label = "Nombre",
-                    value = state.newCategoryName,
-                    onValueChange = { onEvent(AddProductEvent.OnNewCategoryNameChanged(it)) },
-                    placeholder = "Ej. Calzado",
-                    enabled = !state.isSaving,
-                    isError = state.error != null,
-                    supportingText = state.error,
-                )
-            },
-            confirmButton = {
-                TextButton(
-                    onClick = { onEvent(AddProductEvent.OnSaveCategory) },
-                    enabled = !state.isSaving && state.newCategoryName.isNotBlank(),
-                ) {
-                    if (state.isSaving) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Primary,
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text("Guardar", color = Primary)
-                    }
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = { onEvent(AddProductEvent.OnDismissAddCategoryDialog) },
-                    enabled = !state.isSaving
-                ) {
-                    Text("Cancelar")
-                }
-            },
-        )
-    }
 }
 
 // ─────────────────────────────────────────────
 // Components
 // ─────────────────────────────────────────────
+
+@Composable
+private fun AddProductSkeleton(modifier: Modifier = Modifier) {
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp),
+        verticalArrangement = Arrangement.spacedBy(16.dp),
+    ) {
+        Spacer(Modifier.height(4.dp))
+
+        // Image avatar skeleton
+        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
+            Box(
+                modifier = Modifier
+                    .size(100.dp)
+                    .clip(RoundedCornerShape(16.dp))
+                    .shimmerEffect()
+            )
+        }
+
+        // Section skeleton helper
+        @Composable
+        fun sectionSkeleton(rows: Int) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                Box(modifier = Modifier.width(120.dp).height(14.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .clip(RoundedCornerShape(12.dp))
+                        .shimmerEffect()
+                        .padding(16.dp),
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    repeat(rows) {
+                        Box(modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
+                    }
+                }
+            }
+        }
+
+        sectionSkeleton(rows = 3) // Información básica
+        sectionSkeleton(rows = 2) // Precios
+        sectionSkeleton(rows = 2) // SUNAT
+        sectionSkeleton(rows = 1) // Control de stock
+
+        Spacer(Modifier.height(80.dp))
+    }
+}
 
 @Composable
 private fun SectionCard(
@@ -732,11 +728,34 @@ private fun CategoryDropdown(
     categories: List<Category>,
     selected: Category?,
     onSelect: (Category?) -> Unit,
-    onAddNew: () -> Unit,
+    onEditCategory: (Category) -> Unit,
+    newCategoryName: String,
+    editingCategoryId: String?,
+    onNewCategoryNameChange: (String) -> Unit,
+    onSaveCategory: () -> Unit,
+    onDismissNewCategory: () -> Unit,
+    isSavingCategory: Boolean,
+    categoryError: String?,
     modifier: Modifier = Modifier,
     isError: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showSheet by remember { mutableStateOf(false) }
+    var showForm by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredCategories = remember(searchQuery, categories) {
+        if (searchQuery.isBlank()) categories
+        else categories.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
+
+    // Vuelve a la lista cuando el guardado termina sin error
+    val previouslySaving = remember { mutableStateOf(false) }
+    LaunchedEffect(isSavingCategory, categoryError) {
+        if (previouslySaving.value && !isSavingCategory && categoryError == null) {
+            showForm = false
+            onNewCategoryNameChange("")
+        }
+        previouslySaving.value = isSavingCategory
+    }
 
     Column(modifier = modifier) {
         Text(
@@ -746,58 +765,184 @@ private fun CategoryDropdown(
             color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
-        ) {
-            OutlinedTextField(
-                value = selected?.name ?: "Seleccionar",
-                onValueChange = {},
-                readOnly = true,
-                isError = isError,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
-                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                ),
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                categories.forEach { category ->
-                    DropdownMenuItem(
-                        text = { Text(category.name) },
-                        onClick = {
-                            onSelect(category)
-                            expanded = false
-                        },
-                    )
-                }
-                DropdownMenuItem(
-                    text = {
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        ) {
-                            Icon(
-                                imageVector = Icons.Filled.Add,
-                                contentDescription = null,
-                                tint = Primary,
-                                modifier = Modifier.size(16.dp),
-                            )
-                            Text("Nueva categoría", color = Primary)
-                        }
-                    },
-                    onClick = {
-                        expanded = false
-                        onAddNew()
-                    },
+        OutlinedTextField(
+            value = selected?.name ?: "Seleccionar",
+            onValueChange = {},
+            readOnly = true,
+            isError = isError,
+            singleLine = true,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
                 )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showSheet = true },
+            enabled = false,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
+                disabledTextColor = OnSurface,
+                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
+            ),
+        )
+    }
+
+    if (showSheet) {
+        VentlyModalBottomSheet(
+            onDismiss = {
+                if (!isSavingCategory) {
+                    showSheet = false
+                    showForm = false
+                    searchQuery = ""
+                    if (showForm) {
+                        onDismissNewCategory()
+                        onNewCategoryNameChange("")
+                    }
+                }
+            },
+            title = if (showForm) (if (editingCategoryId != null) "Editar categoría" else "Nueva categoría") else "Categoría",
+            onBack = if (showForm) {
+                {
+                    showForm = false
+                    onNewCategoryNameChange("")
+                    onDismissNewCategory()
+                }
+            } else null,
+            searchQuery = if (!showForm) searchQuery else null,
+            onSearchQueryChange = if (!showForm) ({ searchQuery = it }) else null,
+            searchPlaceholder = "Buscar categoría...",
+        ) {
+            if (showForm) {
+                VentlyTextField(
+                    label = "Nombre de la categoría",
+                    value = newCategoryName,
+                    onValueChange = onNewCategoryNameChange,
+                    placeholder = "Ej. Calzado, Electrónica...",
+                    enabled = !isSavingCategory,
+                    isError = categoryError != null,
+                    supportingText = categoryError,
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = onSaveCategory,
+                    enabled = !isSavingCategory && newCategoryName.isNotBlank(),
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .height(52.dp),
+                    shape = RoundedCornerShape(12.dp),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = Primary,
+                        contentColor = Color.White,
+                        disabledContainerColor = Primary.copy(alpha = 0.38f),
+                        disabledContentColor = Color.White,
+                    ),
+                ) {
+                    if (isSavingCategory) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(20.dp),
+                            color = Color.White,
+                            strokeWidth = 2.dp,
+                        )
+                    } else {
+                        Text(
+                            text = if (editingCategoryId != null) "Guardar cambios" else "Guardar categoría",
+                            fontSize = 15.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                }
+                Spacer(Modifier.height(4.dp))
+            } else {
+                LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                    items(filteredCategories) { category ->
+                        val isSelected = category.id == selected?.id
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable {
+                                    onSelect(category)
+                                    showSheet = false
+                                    searchQuery = ""
+                                }
+                                .background(
+                                    if (isSelected) PrimaryContainer.copy(alpha = 0.15f) else Color.Transparent
+                                )
+                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 0.dp),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically,
+                        ) {
+                            Text(
+                                text = category.name,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) Primary else OnSurface,
+                                modifier = Modifier.weight(1f),
+                            )
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                if (isSelected) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Check,
+                                        contentDescription = null,
+                                        tint = Primary,
+                                        modifier = Modifier
+                                            .padding(end = 4.dp)
+                                            .size(18.dp),
+                                    )
+                                }
+                                IconButton(
+                                    onClick = {
+                                        onEditCategory(category)
+                                        showForm = true
+                                    },
+                                    modifier = Modifier.size(40.dp),
+                                ) {
+                                    Icon(
+                                        imageVector = Icons.Filled.Edit,
+                                        contentDescription = "Editar categoría",
+                                        tint = OnSurfaceVariant,
+                                        modifier = Modifier.size(17.dp),
+                                    )
+                                }
+                            }
+                        }
+                        HorizontalDivider(color = OutlineVariant.copy(alpha = 0.4f))
+                    }
+                    item {
+                        Row(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .clickable { showForm = true }
+                                .padding(horizontal = 4.dp, vertical = 14.dp),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(10.dp),
+                        ) {
+                            Box(
+                                modifier = Modifier
+                                    .size(28.dp)
+                                    .clip(RoundedCornerShape(8.dp))
+                                    .background(Primary.copy(alpha = 0.10f)),
+                                contentAlignment = Alignment.Center,
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Filled.Add,
+                                    contentDescription = null,
+                                    tint = Primary,
+                                    modifier = Modifier.size(16.dp),
+                                )
+                            }
+                            Text(
+                                text = "Nueva categoría",
+                                fontSize = 14.sp,
+                                fontWeight = FontWeight.Medium,
+                                color = Primary,
+                            )
+                        }
+                    }
+                }
             }
         }
     }
@@ -811,8 +956,17 @@ private fun UnitOfMeasureDropdown(
     onSelect: (String) -> Unit,
     isError: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
-    val selectedLabel = units.find { it.code == selected }?.let { "${it.code} - ${it.name}" } ?: "Seleccionar unidad"
+    var showSheet by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val selectedUnit = units.find { it.code == selected }
+    val selectedLabel = selectedUnit?.let { "${it.code} - ${it.name}" } ?: "Seleccionar unidad"
+    val filteredUnits = remember(searchQuery, units) {
+        if (searchQuery.isBlank()) units
+        else units.filter {
+            it.name.contains(searchQuery, ignoreCase = true) ||
+                it.code.contains(searchQuery, ignoreCase = true)
+        }
+    }
 
     Column {
         Text(
@@ -822,40 +976,104 @@ private fun UnitOfMeasureDropdown(
             color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
+        OutlinedTextField(
+            value = selectedLabel,
+            onValueChange = {},
+            readOnly = true,
+            isError = isError,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showSheet = true },
+            enabled = false,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
+                disabledTextColor = OnSurface,
+                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
+            ),
+        )
+    }
+
+    if (showSheet) {
+        VentlyModalBottomSheet(
+            onDismiss = {
+                showSheet = false
+                searchQuery = ""
+            },
+            title = "Unidad de medida",
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            searchPlaceholder = "Buscar por nombre o código...",
         ) {
-            OutlinedTextField(
-                value = selectedLabel,
-                onValueChange = {},
-                readOnly = true,
-                isError = isError,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
-                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                ),
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                units.forEach { unit ->
-                    DropdownMenuItem(
-                        text = {
-                            Text(text = "${unit.code} - ${unit.name}")
-                        },
-                        onClick = {
-                            onSelect(unit.code)
-                            expanded = false
-                        },
-                    )
+            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                items(filteredUnits) { unit ->
+                    val isSelected = unit.code == selected
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(unit.code)
+                                showSheet = false
+                            }
+                            .background(
+                                if (isSelected) Primary.copy(alpha = 0.08f) else Color.Transparent
+                            )
+                            .padding(horizontal = 4.dp, vertical = 14.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(modifier = Modifier.weight(1f)) {
+                            Text(
+                                text = unit.name,
+                                fontSize = 15.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) Primary else OnSurface,
+                            )
+                            Row(
+                                verticalAlignment = Alignment.CenterVertically,
+                                horizontalArrangement = Arrangement.spacedBy(6.dp),
+                            ) {
+                                Box(
+                                    modifier = Modifier
+                                        .clip(RoundedCornerShape(4.dp))
+                                        .background(Primary.copy(alpha = 0.10f))
+                                        .padding(horizontal = 6.dp, vertical = 2.dp),
+                                ) {
+                                    Text(
+                                        text = unit.code,
+                                        fontSize = 11.sp,
+                                        fontWeight = FontWeight.Medium,
+                                        color = Primary,
+                                    )
+                                }
+                                if (unit.description.isNotBlank()) {
+                                    Text(
+                                        text = unit.description,
+                                        fontSize = 12.sp,
+                                        color = OnSurfaceVariant,
+                                    )
+                                }
+                            }
+                        }
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = OutlineVariant.copy(alpha = 0.5f))
                 }
+                item { Spacer(Modifier.height(8.dp)) }
             }
         }
     }
@@ -869,7 +1087,12 @@ private fun IgvTypeSelector(
     onSelect: (IgvTypeEntity) -> Unit,
     isError: Boolean = false,
 ) {
-    var expanded by remember { mutableStateOf(false) }
+    var showSheet by remember { mutableStateOf(false) }
+    var searchQuery by remember { mutableStateOf("") }
+    val filteredTypes = remember(searchQuery, types) {
+        if (searchQuery.isBlank()) types
+        else types.filter { it.name.contains(searchQuery, ignoreCase = true) }
+    }
 
     Column {
         Text(
@@ -879,51 +1102,98 @@ private fun IgvTypeSelector(
             color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
         )
         Spacer(Modifier.height(4.dp))
-        ExposedDropdownMenuBox(
-            expanded = expanded,
-            onExpandedChange = { expanded = it },
+        OutlinedTextField(
+            value = selected?.name ?: "Seleccionar tipo",
+            onValueChange = {},
+            readOnly = true,
+            isError = isError,
+            trailingIcon = {
+                Icon(
+                    imageVector = Icons.Filled.KeyboardArrowDown,
+                    contentDescription = null,
+                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
+                )
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable { showSheet = true },
+            enabled = false,
+            shape = RoundedCornerShape(12.dp),
+            colors = OutlinedTextFieldDefaults.colors(
+                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
+                disabledTextColor = OnSurface,
+                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
+            ),
+        )
+    }
+
+    if (showSheet) {
+        VentlyModalBottomSheet(
+            onDismiss = {
+                showSheet = false
+                searchQuery = ""
+            },
+            title = "Tipo de IGV",
+            searchQuery = searchQuery,
+            onSearchQueryChange = { searchQuery = it },
+            searchPlaceholder = "Buscar tipo de IGV...",
         ) {
-            OutlinedTextField(
-                value = selected?.name ?: "Seleccionar tipo",
-                onValueChange = {},
-                readOnly = true,
-                isError = isError,
-                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .menuAnchor(),
-                shape = RoundedCornerShape(12.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
-                    unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                ),
-            )
-            ExposedDropdownMenu(
-                expanded = expanded,
-                onDismissRequest = { expanded = false },
-            ) {
-                types.forEach { type ->
-                    DropdownMenuItem(
-                        text = {
-                            Column {
+            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
+                items(filteredTypes) { type ->
+                    val isSelected = type.code == selected?.code
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable {
+                                onSelect(type)
+                                showSheet = false
+                            }
+                            .background(
+                                if (isSelected) PrimaryContainer.copy(alpha = 0.15f) else Color.Transparent
+                            )
+                            .padding(horizontal = 4.dp, vertical = 12.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically,
+                    ) {
+                        Column(
+                            modifier = Modifier.weight(1f),
+                            verticalArrangement = Arrangement.spacedBy(4.dp),
+                        ) {
+                            Text(
+                                text = type.name,
+                                fontSize = 14.sp,
+                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
+                                color = if (isSelected) Primary else OnSurface,
+                            )
+                            Box(
+                                modifier = Modifier
+                                    .clip(RoundedCornerShape(6.dp))
+                                    .background(
+                                        if (isSelected) Primary.copy(alpha = 0.12f)
+                                        else OutlineVariant.copy(alpha = 0.4f)
+                                    )
+                                    .padding(horizontal = 8.dp, vertical = 3.dp),
+                            ) {
                                 Text(
-                                    text = type.name,
-                                    fontSize = 14.sp,
-                                    fontWeight = FontWeight.Medium
-                                )
-                                Text(
-                                    text = "Código: ${type.code} - ${type.percentage}%",
-                                    fontSize = 12.sp,
-                                    color = OnSurfaceVariant
+                                    text = "${type.percentage}% de IGV",
+                                    fontSize = 11.sp,
+                                    fontWeight = FontWeight.Medium,
+                                    color = if (isSelected) Primary else OnSurfaceVariant,
                                 )
                             }
-                        },
-                        onClick = {
-                            onSelect(type)
-                            expanded = false
-                        },
-                    )
+                        }
+                        if (isSelected) {
+                            Icon(
+                                imageVector = Icons.Filled.Check,
+                                contentDescription = null,
+                                tint = Primary,
+                                modifier = Modifier.size(20.dp),
+                            )
+                        }
+                    }
+                    HorizontalDivider(color = OutlineVariant.copy(alpha = 0.4f))
                 }
+                item { Spacer(Modifier.height(8.dp)) }
             }
         }
     }
