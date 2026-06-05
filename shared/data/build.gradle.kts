@@ -39,7 +39,7 @@ android {
         buildConfigField(
             "String",
             "FIELD_ENCRYPTION_KEY",
-            "\"${localProps.getProperty("fieldEncryptionKey", "")}\""
+            "\"${localProps.getProperty("FIELD_ENCRYPTION_KEY", "")}\""
         )
     }
 }
