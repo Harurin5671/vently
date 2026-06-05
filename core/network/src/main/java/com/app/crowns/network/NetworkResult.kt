@@ -27,3 +27,10 @@ inline fun <T, R> NetworkResult<T>.map(transform: (T) -> R): NetworkResult<R> {
         is NetworkResult.Unauthorized -> this
     }
 }
+
+fun <T> NetworkResult<T>.getOrThrow(): T = when (this) {
+    is NetworkResult.Success -> data
+    is NetworkResult.HttpError -> throw Exception("HTTP $code: $message")
+    is NetworkResult.NetworkError -> throw cause
+    is NetworkResult.Unauthorized -> throw Exception("Unauthorized")
+}

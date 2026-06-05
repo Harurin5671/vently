@@ -149,6 +149,11 @@ fun AppNavHost(
                         onInvoiceEmitted = {
                             backStack.clear()
                             backStack.add(AppDestination.Home)
+                        },
+                        onNavigateToHistory = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Home)
+                            selectedHomeTab = 2
                         }
                     )
                 }

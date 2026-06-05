@@ -1,6 +1,5 @@
 package com.app.crowns.invoice.ui.create
 
-import android.graphics.Bitmap
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
@@ -52,11 +51,3 @@ val CreateInvoiceUiState.isFormValid: Boolean
                     rucError == null
         }
     }
-
-data class InvoicePreviewUiState(
-    val isGeneratingPdf: Boolean = true,
-    val pdfPages: List<Bitmap> = emptyList(),
-    val showEmitDialog: Boolean = false,
-    val isEmitting: Boolean = false,
-    val error: String? = null,
-)

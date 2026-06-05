@@ -41,5 +41,5 @@ data class InvoiceSupabaseModel(
     @SerialName("customer_legal_name") val customerLegalName: String,
     @SerialName("customer_address") val customerAddress: String? = null,
     @SerialName("customer_email") val customerEmail: String? = null,
-
+    @SerialName("xml_document_string") val xmlDocumentString: String? = null,
 )

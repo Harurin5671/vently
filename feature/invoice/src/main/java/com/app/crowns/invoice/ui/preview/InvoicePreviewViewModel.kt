@@ -14,12 +14,12 @@ import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.invoice.entities.GenerateXmlRequestEntity
 import com.app.crowns.domain.invoice.entities.GenerateXmlRequestItemEntity
 import com.app.crowns.domain.invoice.usecase.GenerateXmlUseCase
+import com.app.crowns.domain.invoice.usecase.SendToSunatUseCase
+import com.app.crowns.domain.invoice.usecase.SignInvoiceUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
-import com.app.crowns.invoice.ui.create.InvoicePreviewUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
-import com.app.crowns.common.util.toUserFriendlyMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.channels.Channel
@@ -35,6 +35,9 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 import javax.inject.Inject
+import androidx.core.graphics.toColorInt
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.withRotation
 
 sealed class InvoicePreviewNavigationEvent {
     data object NavigateBack : InvoicePreviewNavigationEvent()
@@ -45,6 +48,8 @@ sealed class InvoicePreviewNavigationEvent {
 class InvoicePreviewViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
     private val generateXmlUseCase: GenerateXmlUseCase,
+    private val signInvoiceUseCase: SignInvoiceUseCase,
+    private val sendToSunatUseCase: SendToSunatUseCase,
     private val getCompanyUseCase: GetCompanyUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
@@ -65,38 +70,31 @@ class InvoicePreviewViewModel @Inject constructor(
     fun onConfirmEmit() {
         val draft = draftStore.draft.value ?: return
         Log.d("Prueba_Generate_Xml", "VM: Inicio de confirmación de emisión")
-        Log.d("Prueba_Generate_Xml", "VM: Datos del borrador: Tipo=${draft.type}, Items=${draft.items.size}")
 
         viewModelScope.launch {
             _state.update { it.copy(isEmitting = true, showEmitDialog = false, error = null) }
             
             try {
-                // 1. Obtener la empresa actual para el ID
-                Log.d("Prueba_Generate_Xml", "VM: Obteniendo información de la empresa")
+                // 1. Obtener la empresa
                 val company = getCompanyUseCase().getOrNull()
                 if (company == null) {
-                    Log.e("Prueba_Generate_Xml", "VM: Error - No se encontró la empresa")
                     _state.update { it.copy(isEmitting = false, error = "No se pudo obtener la información de tu empresa") }
                     return@launch
                 }
-                Log.d("Prueba_Generate_Xml", "VM: Empresa obtenida: ID=${company.id}, RUC=${company.documentNumber}")
 
-                // 2. Preparar el request para generar el XML
+                // 2. GENERAR XML
                 val series = "${draft.type.prefix}001"
+                Log.d("Prueba123123", series)
+                val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" else (draft.clientDocumentType ?: "1")
                 
-                // Forzar doc type 6 si es factura por seguridad de negocio
-                val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" 
-                                     else (draft.clientDocumentType ?: "1")
-
-                Log.d("Prueba_Generate_Xml", "VM: Preparando GenerateXmlRequestEntity. Serie=$series, DocType=$customerDocType")
-                val request = GenerateXmlRequestEntity(
+                val generateRequest = GenerateXmlRequestEntity(
                     companyId = company.id,
                     series = series,
-                    issueDate = LocalDate.now().toString(), // YYYY-MM-DD
+                    issueDate = LocalDate.now().toString(),
                     currency = "PEN",
                     paymentMethod = "Contado",
                     customerDocType = customerDocType,
-                    customerDocNumber = draft.clientRuc ?: draft.clientName ?: "0", // Si no hay ruc en boleta usa el nombre o 0
+                    customerDocNumber = draft.clientRuc ?: draft.clientName ?: "0",
                     customerLegalName = draft.clientBusinessName ?: draft.clientName ?: "CLIENTE VARIOS",
                     items = draft.items.map { 
                         GenerateXmlRequestItemEntity(
@@ -106,21 +104,42 @@ class InvoicePreviewViewModel @Inject constructor(
                     }
                 )
 
-                // 3. Llamar a la Edge Function
-                Log.d("Prueba_Generate_Xml", "VM: Ejecutando GenerateXmlUseCase")
-                generateXmlUseCase(request).onSuccess {
-                    Log.d("Prueba_Generate_Xml", "VM: ¡Éxito! XML generado y factura emitida")
+                val xmlResponse = generateXmlUseCase(generateRequest).getOrThrow()
+                Log.d("Prueba_Generate_Xml", "VM: XML Generado ID: ${xmlResponse.invoiceId}")
+                _state.update { it.copy(
+                    documentId = xmlResponse.documentId,
+                    series = series,
+                    correlative = xmlResponse.correlative.toString()
+                ) }
+
+                // 3. FIRMAR XML
+                Log.d("Prueba_Sign_Invoice", "VM: Iniciando firma para invoiceId: ${xmlResponse.invoiceId}")
+                val signResult = signInvoiceUseCase(xmlResponse.invoiceId).getOrThrow()
+                Log.d("Prueba_Sign_Invoice", "VM: Firma completada. Success: ${signResult.success}")
+                
+                if (!signResult.success) {
+                    _state.update { it.copy(isEmitting = false, error = "Error en firma: ${signResult.status}") }
+                    return@launch
+                }
+
+                // 4. ENVIAR A SUNAT
+                Log.d("Prueba_Send_Sunat", "VM: Iniciando envío a SUNAT para invoiceId: ${xmlResponse.invoiceId}")
+                val sunatResult = sendToSunatUseCase(xmlResponse.invoiceId).getOrThrow()
+                Log.d("Prueba_Send_Sunat", "VM: Envío a SUNAT completado. Success: ${sunatResult.success}")
+                
+                _state.update { it.copy(
+                    isEmitting = false,
+                    showResultScreen = true,
+                    sunatResponse = sunatResult
+                ) }
+                
+                if (sunatResult.isSuccess) {
                     draftStore.clear()
-                    _state.update { it.copy(isEmitting = false) }
-                    _navigationEvent.send(InvoicePreviewNavigationEvent.InvoiceEmitted)
-                }.onFailure { e ->
-                    Log.e("Prueba_Generate_Xml", "VM: Error devuelto por el UseCase", e)
-                    _state.update { it.copy(isEmitting = false, error = e.toUserFriendlyMessage("Error al emitir factura")) }
                 }
 
             } catch (e: Exception) {
-                Log.e("Prueba_Generate_Xml", "VM: Excepción inesperada", e)
-                _state.update { it.copy(isEmitting = false, error = e.toUserFriendlyMessage("Error inesperado")) }
+                Log.e("Prueba_Generate_Xml", "VM: Error en flujo", e)
+                _state.update { it.copy(isEmitting = false, error = "Error: ${e.message}") }
             }
         }
     }
@@ -156,40 +175,40 @@ class InvoicePreviewViewModel @Inject constructor(
         val canvas = page.canvas
 
         val paintTitle = Paint().apply {
-            color = Color.parseColor("#1c1a25")
+            color = "#1c1a25".toColorInt()
             textSize = 20f
             isFakeBoldText = true
             isAntiAlias = true
         }
         val paintLabel = Paint().apply {
-            color = Color.parseColor("#797588")
+            color = "#797588".toColorInt()
             textSize = 11f
             isAntiAlias = true
         }
         val paintBody = Paint().apply {
-            color = Color.parseColor("#1c1a25")
+            color = "#1c1a25".toColorInt()
             textSize = 13f
             isAntiAlias = true
         }
         val paintBold = Paint().apply {
-            color = Color.parseColor("#1c1a25")
+            color = "#1c1a25".toColorInt()
             textSize = 13f
             isFakeBoldText = true
             isAntiAlias = true
         }
         val paintPrimary = Paint().apply {
-            color = Color.parseColor("#6c47ff")
+            color = "#6c47ff".toColorInt()
             textSize = 20f
             isFakeBoldText = true
             isAntiAlias = true
         }
         val paintLine = Paint().apply {
-            color = Color.parseColor("#E2E8F0")
+            color = "#E2E8F0".toColorInt()
             strokeWidth = 0.5f
             isAntiAlias = true
         }
         val paintWatermark = Paint().apply {
-            color = Color.parseColor("#E8E8F0")
+            color = "#E8E8F0".toColorInt()
             textSize = 60f
             isFakeBoldText = true
             alpha = 80
@@ -199,10 +218,9 @@ class InvoicePreviewViewModel @Inject constructor(
         var y = margin + 20f
 
         // Watermark
-        canvas.save()
-        canvas.rotate(-30f, pageWidth / 2f, pageHeight / 2f)
-        canvas.drawText("BORRADOR", pageWidth / 2f - 120f, pageHeight / 2f, paintWatermark)
-        canvas.restore()
+        canvas.withRotation(-30f, pageWidth / 2f, pageHeight / 2f) {
+            drawText("BORRADOR", pageWidth / 2f - 120f, pageHeight / 2f, paintWatermark)
+        }
 
         // Header — business name
         canvas.drawText("Vently", margin, y, paintTitle)
@@ -315,11 +333,7 @@ class InvoicePreviewViewModel @Inject constructor(
         for (i in 0 until renderer.pageCount) {
             val page = renderer.openPage(i)
             val scale = 2f  // retina quality
-            val bitmap = Bitmap.createBitmap(
-                (page.width * scale).toInt(),
-                (page.height * scale).toInt(),
-                Bitmap.Config.ARGB_8888,
-            )
+            val bitmap = createBitmap((page.width * scale).toInt(), (page.height * scale).toInt())
             bitmap.eraseColor(Color.WHITE)
             page.render(bitmap, null, null, PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY)
             page.close()
