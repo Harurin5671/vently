@@ -9,4 +9,5 @@ sealed interface SettingsEvent {
         val facturaSerie: String,
         val facturaCorrelative: Int
     ) : SettingsEvent
+    data class UpdateSolCredentials(val username: String, val password: String) : SettingsEvent
 }

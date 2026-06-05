@@ -11,6 +11,7 @@ import com.app.crowns.domain.company.usecase.GetDocumentSeriesUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificatePasswordUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
 import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesUseCase
+import com.app.crowns.domain.company.usecase.UpdateSolCredentialsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -34,6 +35,7 @@ class SettingsViewModel @Inject constructor(
     private val updateCertificatePasswordUseCase: UpdateCertificatePasswordUseCase,
     private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
     private val updateDocumentSeriesUseCase: UpdateDocumentSeriesUseCase,
+    private val updateSolCredentialsUseCase: UpdateSolCredentialsUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -53,6 +55,7 @@ class SettingsViewModel @Inject constructor(
                 event.facturaSerie,
                 event.facturaCorrelative
             )
+            is SettingsEvent.UpdateSolCredentials -> updateSolCredentials(event.username, event.password)
         }
     }
 
@@ -106,6 +109,18 @@ class SettingsViewModel @Inject constructor(
                 loadCompanyInfo()
             } else {
                 _state.update { it.copy(error = "Error al actualizar las series", isLoading = false) }
+            }
+        }
+    }
+
+    private fun updateSolCredentials(username: String, password: String) {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            updateSolCredentialsUseCase(username, password).onSuccess {
+                loadCompanyInfo()
+            }.onFailure { e ->
+                Log.e("SETTINGS_DEBUG", "Error updating SOL credentials: ${e.javaClass.simpleName}: ${e.message}", e)
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al actualizar credenciales SOL"), isLoading = false) }
             }
         }
     }

@@ -15,4 +15,6 @@ data class CompanyInfo(
     val logoUrl: String? = null,
     val certificateBase64: String? = null,
     val certificatePassword: String? = null,
+    val solUsername: String? = null,
+    val solPassword: String? = null,
 )

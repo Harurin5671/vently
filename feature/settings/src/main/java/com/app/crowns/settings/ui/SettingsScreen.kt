@@ -26,6 +26,9 @@ import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
+import com.app.crowns.ui.components.VentlyModalBottomSheet
 import com.app.crowns.settings.ui.components.*
 
 // ---------------------------------------------------------------------------
@@ -78,6 +81,9 @@ fun SettingsScreen(
         onUpdateDocumentSeries = { boletaS, boletaC, facturaS, facturaC ->
             viewModel.onEvent(SettingsEvent.UpdateDocumentSeries(boletaS, boletaC, facturaS, facturaC))
         },
+        onUpdateSolCredentials = { username, password ->
+            viewModel.onEvent(SettingsEvent.UpdateSolCredentials(username, password))
+        },
         onNavigateToEmail = onNavigateToEmail,
         onNavigateToPassword = onNavigateToPassword,
         onNavigateToPlan = onNavigateToPlan,
@@ -101,6 +107,7 @@ private fun SettingsContent(
     onSelectCertificate: () -> Unit,
     onUpdateCertificatePassword: (String) -> Unit,
     onUpdateDocumentSeries: (String, Int, String, Int) -> Unit,
+    onUpdateSolCredentials: (String, String) -> Unit,
     onNavigateToEmail: () -> Unit,
     onNavigateToPassword: () -> Unit,
     onNavigateToPlan: () -> Unit,
@@ -113,7 +120,10 @@ private fun SettingsContent(
     var lowStockAlert by remember { mutableStateOf(true) }
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showSeriesDialog by remember { mutableStateOf(false) }
+    var showSolDialog by remember { mutableStateOf(false) }
     var tempPassword by remember { mutableStateOf("") }
+    var tempSolUsername by remember { mutableStateOf("") }
+    var tempSolPassword by remember { mutableStateOf("") }
     var tempBoletaSeries by remember { mutableStateOf("") }
     var tempBoletaCorrelative by remember { mutableStateOf("") }
     var tempFacturaSeries by remember { mutableStateOf("") }
@@ -206,133 +216,19 @@ private fun SettingsContent(
                         tempPassword = companyInfo?.certificatePassword ?: ""
                         showPasswordDialog = true
                     },
+                    showDivider = true,
+                )
+                SettingsItemWithBadge(
+                    title = "Usuario y contraseña SOL",
+                    badgeText = if (companyInfo?.solUsername != null && companyInfo.solPassword != null) "ACTIVO" else "PENDIENTE",
+                    badgeGreen = companyInfo?.solUsername != null && companyInfo.solPassword != null,
+                    trailingIcon = Icons.Default.ChevronRight,
+                    onClick = {
+                        tempSolUsername = companyInfo?.solUsername ?: ""
+                        tempSolPassword = companyInfo?.solPassword ?: ""
+                        showSolDialog = true
+                    },
                     showDivider = false,
-                )
-            }
-
-            if (showSeriesDialog) {
-                AlertDialog(
-                    onDismissRequest = { showSeriesDialog = false },
-                    title = { 
-                        Text(
-                            text = "Series y correlativos",
-                            fontSize = 18.sp,
-                            fontWeight = FontWeight.Bold
-                        ) 
-                    },
-                    text = {
-                        Column(
-                            verticalArrangement = Arrangement.spacedBy(20.dp),
-                            modifier = Modifier.padding(top = 8.dp)
-                        ) {
-                            // Section Boleta
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "BOLETAS",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Outline
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedTextField(
-                                        value = tempBoletaSeries,
-                                        onValueChange = { },
-                                        label = { Text("Serie") },
-                                        readOnly = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    OutlinedTextField(
-                                        value = tempBoletaCorrelative,
-                                        onValueChange = { if (it.all { char -> char.isDigit() }) tempBoletaCorrelative = it },
-                                        label = { Text("Correlativo") },
-                                        placeholder = { Text("0") },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        modifier = Modifier.weight(1.5f)
-                                    )
-                                }
-                            }
-
-                            // Section Factura
-                            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                                Text(
-                                    text = "FACTURAS",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Bold,
-                                    color = Outline
-                                )
-                                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                                    OutlinedTextField(
-                                        value = tempFacturaSeries,
-                                        onValueChange = { },
-                                        label = { Text("Serie") },
-                                        readOnly = true,
-                                        modifier = Modifier.weight(1f)
-                                    )
-                                    OutlinedTextField(
-                                        value = tempFacturaCorrelative,
-                                        onValueChange = { if (it.all { char -> char.isDigit() }) tempFacturaCorrelative = it },
-                                        label = { Text("Correlativo") },
-                                        placeholder = { Text("0") },
-                                        singleLine = true,
-                                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                                        modifier = Modifier.weight(1.5f)
-                                    )
-                                }
-                            }
-                        }
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                onUpdateDocumentSeries(
-                                    tempBoletaSeries,
-                                    tempBoletaCorrelative.toIntOrNull() ?: 0,
-                                    tempFacturaSeries,
-                                    tempFacturaCorrelative.toIntOrNull() ?: 0
-                                )
-                                showSeriesDialog = false
-                            }
-                        ) {
-                            Text("Guardar")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showSeriesDialog = false }) {
-                            Text("Cancelar")
-                        }
-                    }
-                )
-            }
-
-            if (showPasswordDialog) {
-                AlertDialog(
-                    onDismissRequest = { showPasswordDialog = false },
-                    title = { Text("Contraseña del certificado") },
-                    text = {
-                        OutlinedTextField(
-                            value = tempPassword,
-                            onValueChange = { tempPassword = it },
-                            label = { Text("Contraseña") },
-                            singleLine = true,
-                            modifier = Modifier.fillMaxWidth()
-                        )
-                    },
-                    confirmButton = {
-                        TextButton(
-                            onClick = {
-                                onUpdateCertificatePassword(tempPassword)
-                                showPasswordDialog = false
-                            }
-                        ) {
-                            Text("Guardar")
-                        }
-                    },
-                    dismissButton = {
-                        TextButton(onClick = { showPasswordDialog = false }) {
-                            Text("Cancelar")
-                        }
-                    }
                 )
             }
 
@@ -429,6 +325,201 @@ private fun SettingsContent(
                     .padding(bottom = 24.dp)
                     .wrapContentWidth(Alignment.CenterHorizontally),
             )
+        }
+
+        if (showSeriesDialog) {
+            VentlyModalBottomSheet(
+                onDismiss = { showSeriesDialog = false },
+                title = "Series y correlativos",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "BOLETAS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Outline,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = tempBoletaSeries,
+                                onValueChange = { },
+                                label = { Text("Serie") },
+                                readOnly = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = OutlineVariant,
+                                ),
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = tempBoletaCorrelative,
+                                onValueChange = { if (it.all { char -> char.isDigit() }) tempBoletaCorrelative = it },
+                                label = { Text("Correlativo") },
+                                placeholder = { Text("0") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = OutlineVariant,
+                                ),
+                                modifier = Modifier.weight(1.5f),
+                            )
+                        }
+                    }
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text(
+                            text = "FACTURAS",
+                            fontSize = 11.sp,
+                            fontWeight = FontWeight.Bold,
+                            color = Outline,
+                        )
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            OutlinedTextField(
+                                value = tempFacturaSeries,
+                                onValueChange = { },
+                                label = { Text("Serie") },
+                                readOnly = true,
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = OutlineVariant,
+                                ),
+                                modifier = Modifier.weight(1f),
+                            )
+                            OutlinedTextField(
+                                value = tempFacturaCorrelative,
+                                onValueChange = { if (it.all { char -> char.isDigit() }) tempFacturaCorrelative = it },
+                                label = { Text("Correlativo") },
+                                placeholder = { Text("0") },
+                                singleLine = true,
+                                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                                colors = OutlinedTextFieldDefaults.colors(
+                                    focusedBorderColor = Primary,
+                                    unfocusedBorderColor = OutlineVariant,
+                                ),
+                                modifier = Modifier.weight(1.5f),
+                            )
+                        }
+                    }
+                }
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        onUpdateDocumentSeries(
+                            tempBoletaSeries,
+                            tempBoletaCorrelative.toIntOrNull() ?: 0,
+                            tempFacturaSeries,
+                            tempFacturaCorrelative.toIntOrNull() ?: 0,
+                        )
+                        showSeriesDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (showPasswordDialog) {
+            var passwordVisible by remember { mutableStateOf(false) }
+            VentlyModalBottomSheet(
+                onDismiss = { showPasswordDialog = false },
+                title = "Contraseña del certificado",
+            ) {
+                OutlinedTextField(
+                    value = tempPassword,
+                    onValueChange = { tempPassword = it },
+                    label = { Text("Contraseña") },
+                    singleLine = true,
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                    trailingIcon = {
+                        IconButton(onClick = { passwordVisible = !passwordVisible }) {
+                            Icon(
+                                imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                contentDescription = null,
+                                tint = OnSurfaceVariant,
+                            )
+                        }
+                    },
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = Primary,
+                        unfocusedBorderColor = OutlineVariant,
+                    ),
+                    modifier = Modifier.fillMaxWidth(),
+                )
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        onUpdateCertificatePassword(tempPassword)
+                        showPasswordDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (showSolDialog) {
+            var solPasswordVisible by remember { mutableStateOf(false) }
+            VentlyModalBottomSheet(
+                onDismiss = { showSolDialog = false },
+                title = "Credenciales SOL",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    OutlinedTextField(
+                        value = tempSolUsername,
+                        onValueChange = { tempSolUsername = it },
+                        label = { Text("Usuario SOL") },
+                        singleLine = true,
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = OutlineVariant,
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                    OutlinedTextField(
+                        value = tempSolPassword,
+                        onValueChange = { tempSolPassword = it },
+                        label = { Text("Contraseña SOL") },
+                        singleLine = true,
+                        visualTransformation = if (solPasswordVisible) VisualTransformation.None else PasswordVisualTransformation(),
+                        trailingIcon = {
+                            IconButton(onClick = { solPasswordVisible = !solPasswordVisible }) {
+                                Icon(
+                                    imageVector = if (solPasswordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
+                                    contentDescription = null,
+                                    tint = OnSurfaceVariant,
+                                )
+                            }
+                        },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Primary,
+                            unfocusedBorderColor = OutlineVariant,
+                        ),
+                        modifier = Modifier.fillMaxWidth(),
+                    )
+                }
+                Spacer(Modifier.height(16.dp))
+                Button(
+                    onClick = {
+                        onUpdateSolCredentials(tempSolUsername, tempSolPassword)
+                        showSolDialog = false
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
         }
     }
 }

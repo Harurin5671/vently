@@ -1,8 +1,17 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.library)
     alias(libs.plugins.kotlin.serialization)
     alias(libs.plugins.ksp)
     alias(libs.plugins.hilt)
+}
+
+val localProps = Properties().apply {
+    rootProject.file("local.properties")
+        .takeIf { it.exists() }
+        ?.inputStream()
+        ?.let { load(it) }
 }
 
 android {
@@ -24,6 +33,15 @@ android {
         targetCompatibility = JavaVersion.VERSION_11
     }
 
+    buildFeatures { buildConfig = true }
+
+    defaultConfig {
+        buildConfigField(
+            "String",
+            "FIELD_ENCRYPTION_KEY",
+            "\"${localProps.getProperty("fieldEncryptionKey", "")}\""
+        )
+    }
 }
 
 dependencies {

@@ -18,6 +18,8 @@ fun CompanyEntity.toDomain(): CompanyInfo = CompanyInfo(
     logoUrl = logoUrl,
     certificateBase64 = certificateBase64,
     certificatePassword = certificatePassword,
+    solUsername = solUsername,
+    solPassword = solPassword,
 )
 
 fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity = CompanyEntity(
@@ -36,4 +38,6 @@ fun CompanyInfo.toEntity(userId: String, logoUrl: String? = null): CompanyEntity
     logoUrl = logoUrl ?: this.logoUrl,
     certificateBase64 = certificateBase64,
     certificatePassword = certificatePassword,
+    solUsername = solUsername,
+    solPassword = solPassword,
 )
