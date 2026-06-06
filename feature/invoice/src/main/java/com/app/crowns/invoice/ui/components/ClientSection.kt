@@ -196,13 +196,19 @@ fun ClientSection(
                 // Business Name / Name
                 if (selectedDocumentType?.isNone == false) {
                     val isRuc = selectedDocumentType.isRuc
+                    val isDni = selectedDocumentType.isDni
                     val label = if (isRuc) "Razón Social *" else "Nombre / Razón Social *"
-                    val placeholder = if (isRuc) "Autocompletado" else "Obligatorio"
+                    val placeholder = if (isRuc || isDni) "Autocompletado" else "Obligatorio"
+                    
+                    // Jamás es editable si es RUC o DNI (debe usarse el botón Buscar)
+                    // Solo es editable para otros tipos de documento (Pasaporte, etc.)
+                    val isReadOnly = isRuc || isDni
 
                     OutlinedTextField(
                         value = if (isRuc) clientBusinessName else clientName,
                         onValueChange = onClientNameChanged,
-                        readOnly = isRuc && clientBusinessName.isNotBlank(),
+                        readOnly = isReadOnly,
+                        enabled = !isReadOnly,
                         label = { Text(label) },
                         placeholder = { Text(placeholder, color = Outline) },
                         modifier = Modifier.fillMaxWidth(),
@@ -210,6 +216,9 @@ fun ClientSection(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = Primary,
                             unfocusedBorderColor = OutlineVariant,
+                            disabledBorderColor = OutlineVariant,
+                            disabledLabelColor = OnSurfaceVariant,
+                            disabledTextColor = OnSurface,
                         ),
                     )
                 } else {

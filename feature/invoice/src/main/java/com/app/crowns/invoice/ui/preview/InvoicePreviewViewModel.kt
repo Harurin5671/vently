@@ -154,8 +154,9 @@ class InvoicePreviewViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isGeneratingPdf = true, error = null) }
             try {
+                val company = getCompanyUseCase().getOrNull()
                 val pages = withContext(Dispatchers.IO) {
-                    val pdfFile = generatePdf(draft)
+                    val pdfFile = generatePdf(draft, company)
                     renderPdfToPages(pdfFile)
                 }
                 _state.update { it.copy(isGeneratingPdf = false, pdfPages = pages) }
@@ -165,7 +166,7 @@ class InvoicePreviewViewModel @Inject constructor(
         }
     }
 
-    private fun generatePdf(invoice: Invoice): File {
+    private fun generatePdf(invoice: Invoice, company: com.app.crowns.domain.company.model.CompanyInfo?): File {
         val pageWidth = 595   // A4 width in points
         val pageHeight = 842  // A4 height in points
         val margin = 40f
@@ -176,29 +177,29 @@ class InvoicePreviewViewModel @Inject constructor(
 
         val paintTitle = Paint().apply {
             color = "#1c1a25".toColorInt()
-            textSize = 20f
+            textSize = 18f
             isFakeBoldText = true
             isAntiAlias = true
         }
         val paintLabel = Paint().apply {
             color = "#797588".toColorInt()
-            textSize = 11f
+            textSize = 10f
             isAntiAlias = true
         }
         val paintBody = Paint().apply {
             color = "#1c1a25".toColorInt()
-            textSize = 13f
+            textSize = 12f
             isAntiAlias = true
         }
         val paintBold = Paint().apply {
             color = "#1c1a25".toColorInt()
-            textSize = 13f
+            textSize = 12f
             isFakeBoldText = true
             isAntiAlias = true
         }
         val paintPrimary = Paint().apply {
             color = "#6c47ff".toColorInt()
-            textSize = 20f
+            textSize = 18f
             isFakeBoldText = true
             isAntiAlias = true
         }
@@ -208,58 +209,89 @@ class InvoicePreviewViewModel @Inject constructor(
             isAntiAlias = true
         }
         val paintWatermark = Paint().apply {
-            color = "#E8E8F0".toColorInt()
+            color = "#F1F5F9".toColorInt()
             textSize = 60f
             isFakeBoldText = true
-            alpha = 80
+            alpha = 40
             isAntiAlias = true
         }
 
         var y = margin + 20f
+        val leftMaxWidth = 320f
 
         // Watermark
         canvas.withRotation(-30f, pageWidth / 2f, pageHeight / 2f) {
             drawText("BORRADOR", pageWidth / 2f - 120f, pageHeight / 2f, paintWatermark)
         }
 
-        // Header — business name
-        canvas.drawText("Vently", margin, y, paintTitle)
-
-        // Invoice type + number (right side)
-        val invoiceTypeLabel = when (invoice.type) {
-            InvoiceType.BOLETA -> "BOLETA ELECTRÓNICA"
-            InvoiceType.FACTURA -> "FACTURA ELECTRÓNICA"
+        // Branding (App Name) - Top Left
+        val paintBranding = Paint(paintPrimary).apply {
+            textSize = 10f
+            alpha = 100
         }
+        canvas.drawText("Vently", margin, margin - 10f, paintBranding)
+
+        // Header — Right Side Info (Grouped first to handle baseline)
+        val paintRightLabel = Paint(paintLabel).apply { textAlign = Paint.Align.RIGHT }
+        val paintRightPrimary = Paint(paintPrimary).apply { textAlign = Paint.Align.RIGHT }
+        
+        var rightY = margin + 18f
+        val invoiceTypeLabel = when (invoice.type) {
+            InvoiceType.BOLETA -> "BOLETA DE VENTA"
+            InvoiceType.FACTURA -> "FACTURA"
+        } + " ELECTRÓNICA"
+        
         val invoiceNumber = when (invoice.type) {
             InvoiceType.BOLETA -> "B001-00001"
             InvoiceType.FACTURA -> "F001-00001"
         }
-        canvas.drawText(invoiceTypeLabel, pageWidth - margin - 180f, y, paintLabel)
-        y += 20f
-        canvas.drawText(invoiceNumber, pageWidth - margin - 150f, y, paintPrimary)
-        y += 20f
-
+        
+        canvas.drawText(invoiceTypeLabel, pageWidth - margin, rightY, paintRightLabel)
+        rightY += 18f
+        canvas.drawText(invoiceNumber, pageWidth - margin, rightY, paintRightPrimary)
+        rightY += 18f
         val dateStr = LocalDate.now().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"))
-        canvas.drawText(dateStr, pageWidth - margin - 100f, y, paintLabel)
-        y += 30f
+        canvas.drawText("Fecha: $dateStr", pageWidth - margin, rightY, paintRightLabel)
+
+        // Header — Left Side (Company Info)
+        val businessName = company?.businessName?.uppercase() ?: "VENTLY S.A.C."
+        y = drawWrappedText(businessName, margin, y, leftMaxWidth, paintTitle, canvas)
+
+        if (company != null) {
+            y += 4f
+            canvas.drawText("RUC: ${company.documentNumber}", margin, y, paintBody)
+            y += 14f
+            y = drawWrappedText(company.address, margin, y, leftMaxWidth, paintLabel, canvas)
+            y = drawWrappedText("${company.district}, ${company.province} - ${company.department}", margin, y, leftMaxWidth, paintLabel, canvas)
+        }
+
+        // Ensure y is below header info
+        y = maxOf(y, rightY) + 25f
 
         // Divider
         canvas.drawLine(margin, y, pageWidth - margin, y, paintLine)
         y += 20f
 
         // Client section
-        canvas.drawText("Cliente:", margin, y, paintLabel)
+        canvas.drawText("DATOS DEL RECEPTOR", margin, y, paintLabel)
         y += 18f
-        val clientDisplay = when (invoice.type) {
-            InvoiceType.BOLETA -> invoice.clientName?.ifBlank { "Cliente general" } ?: "Cliente general"
+
+        val clientLabel = if (invoice.type == InvoiceType.FACTURA) "Razón Social: " else "Nombre: "
+        val clientValue = when (invoice.type) {
+            InvoiceType.BOLETA -> invoice.clientName?.ifBlank { "CLIENTE VARIOS" } ?: "CLIENTE VARIOS"
             InvoiceType.FACTURA -> invoice.clientBusinessName ?: ""
         }
-        canvas.drawText(clientDisplay, margin, y, paintBold)
-        if (invoice.type == InvoiceType.FACTURA && !invoice.clientRuc.isNullOrBlank()) {
-            y += 18f
-            canvas.drawText("RUC: ${invoice.clientRuc}", margin, y, paintBody)
+        
+        canvas.drawText(clientLabel, margin, y, paintBody)
+        y = drawWrappedText(clientValue, margin + 85f, y, pageWidth - margin - (margin + 85f), paintBold, canvas)
+
+        if (!invoice.clientRuc.isNullOrBlank()) {
+            val docLabel = if (invoice.type == InvoiceType.FACTURA) "RUC: " else "Documento: "
+            canvas.drawText(docLabel, margin, y, paintBody)
+            canvas.drawText(invoice.clientRuc, margin + 85f, y, paintBody)
+            y += 16f
         }
-        y += 30f
+        y += 15f
 
         // Divider
         canvas.drawLine(margin, y, pageWidth - margin, y, paintLine)
@@ -268,29 +300,34 @@ class InvoicePreviewViewModel @Inject constructor(
         // Items header
         canvas.drawText("Descripción", margin, y, paintLabel)
         canvas.drawText("Cant.", 340f, y, paintLabel)
-        canvas.drawText("P.Unit", 420f, y, paintLabel)
-        canvas.drawText("Total", pageWidth - margin - 40f, y, paintLabel)
-        y += 16f
+        canvas.drawText("P.Unit", 410f, y, paintLabel)
+        canvas.drawText("Total", pageWidth - margin, y, paintRightLabel)
+        y += 14f
         canvas.drawLine(margin, y, pageWidth - margin, y, paintLine)
         y += 16f
 
         // Items
         invoice.items.forEach { item ->
-            canvas.drawText(item.name.take(40), margin, y, paintBody)
-            canvas.drawText("${item.quantity}", 340f, y, paintBody)
+            val startY = y
+            val descNextY = drawWrappedText(item.name, margin, y, 280f, paintBody, canvas)
+            
+            canvas.drawText("${item.quantity}", 340f, startY, paintBody)
             canvas.drawText(
                 String.format(Locale.getDefault(), "%.2f", item.unitPrice),
-                420f, y, paintBody
+                410f, startY, paintBody
             )
             canvas.drawText(
                 String.format(Locale.getDefault(), "%.2f", item.subtotal),
-                pageWidth - margin - 60f, y, paintBody
+                pageWidth - margin, startY, paintRightLabel
             )
-            y += 20f
-            canvas.drawLine(margin, y - 4f, pageWidth - margin, y - 4f, paintLine)
+            
+            y = maxOf(descNextY, startY + 16f)
+            y += 4f
+            canvas.drawLine(margin, y, pageWidth - margin, y, paintLine)
+            y += 16f
         }
 
-        y += 20f
+        y += 10f
 
         // Totals
         val subtotal = invoice.subtotal
@@ -318,6 +355,18 @@ class InvoicePreviewViewModel @Inject constructor(
             pageWidth - margin - 80f, y, paintPrimary
         )
 
+        // Footer (legal text)
+        var footerY = pageHeight - margin - 60f
+        canvas.drawLine(margin, footerY, pageWidth - margin, footerY, paintLine)
+        footerY += 20f
+        val footerText = "Representación impresa de la ${invoiceTypeLabel.uppercase()}"
+        val footerWidth = paintLabel.measureText(footerText)
+        canvas.drawText(footerText, (pageWidth - footerWidth) / 2f, footerY, paintLabel)
+        footerY += 16f
+        val footerNote = "Consulte la validez de este comprobante en el portal de la SUNAT"
+        val footerNoteWidth = paintLabel.measureText(footerNote)
+        canvas.drawText(footerNote, (pageWidth - footerNoteWidth) / 2f, footerY, paintLabel)
+
         document.finishPage(page)
 
         val file = File(context.cacheDir, "invoice_preview.pdf")
@@ -342,5 +391,35 @@ class InvoicePreviewViewModel @Inject constructor(
         renderer.close()
         fd.close()
         return bitmaps
+    }
+
+    private fun drawWrappedText(
+        text: String,
+        x: Float,
+        y: Float,
+        maxWidth: Float,
+        paint: Paint,
+        canvas: android.graphics.Canvas
+    ): Float {
+        val words = text.split(" ")
+        var currentLine = ""
+        var currentY = y
+        val lineHeight = paint.textSize * 1.2f
+
+        for (word in words) {
+            val testLine = if (currentLine.isEmpty()) word else "$currentLine $word"
+            val testWidth = paint.measureText(testLine)
+            if (testWidth > maxWidth) {
+                if (currentLine.isNotEmpty()) {
+                    canvas.drawText(currentLine, x, currentY, paint)
+                    currentY += lineHeight
+                }
+                currentLine = word
+            } else {
+                currentLine = testLine
+            }
+        }
+        canvas.drawText(currentLine, x, currentY, paint)
+        return currentY + lineHeight
     }
 }
