@@ -20,6 +20,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Edit
@@ -35,6 +36,7 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -135,23 +137,35 @@ private fun StockContent(
             )
         }
     ) { innerPadding ->
-        if (state.products.isEmpty() && !state.isLoading) {
-            VentlyStockEmptyState(
-                title = "Tu inventario está vacío",
-                description = "Comienza agregando tu primer producto para llevar el control de tu stock.",
-                icon = Icons.Filled.Inventory,
-                buttonText = "Agregar producto",
-                onButtonClick = { onEvent(StockEvent.OnAddProduct) },
-                modifier = Modifier.padding(innerPadding)
-            )
-        } else {
-            LazyColumn(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
+        PullToRefreshBox(
+            isRefreshing = state.isLoading && state.products.isNotEmpty(),
+            onRefresh = { onEvent(StockEvent.Refresh) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (state.products.isEmpty() && !state.isLoading) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                ) {
+                    VentlyStockEmptyState(
+                        title = "Tu inventario está vacío",
+                        description = "Comienza agregando tu primer producto para llevar el control de tu stock.",
+                        icon = Icons.Filled.Inventory,
+                        buttonText = "Agregar producto",
+                        onButtonClick = { onEvent(StockEvent.OnAddProduct) },
+                        modifier = Modifier.align(Alignment.Center)
+                    )
+                }
+            } else {
+                LazyColumn(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
                 // Stats
                 item {
                     Spacer(Modifier.height(4.dp))
@@ -232,8 +246,9 @@ private fun StockContent(
                 item { Spacer(Modifier.height(80.dp)) }
             }
         }
+    }
 
-        if (state.selectedProduct != null) {
+    if (state.selectedProduct != null) {
             val unit = state.unitsOfMeasure.find { it.code == state.selectedProduct.unitOfMeasure }
             val unitLabel = if (unit != null) "${unit.code} - ${unit.name}" else state.selectedProduct.unitOfMeasure
             ProductDetailSheet(

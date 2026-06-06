@@ -8,13 +8,18 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -60,11 +65,14 @@ fun HistoryScreen(
     )
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun HistoryContent(
     state: HistoryUiState,
     onEvent: (HistoryEvent) -> Unit,
 ) {
+    val filteredInvoices = state.filteredInvoices
+    
     Scaffold(
         containerColor = SurfaceContainerHigh,
         topBar = {
@@ -74,19 +82,34 @@ private fun HistoryContent(
             )
         }
     ) { innerPadding ->
-        when {
-            state.isLoading && state.groupedInvoices.isEmpty() -> {
-                HistorySkeletonList(modifier = Modifier.padding(innerPadding))
-            }
-            state.groupedInvoices.isEmpty() -> {
-                HistoryEmptyState(modifier = Modifier.padding(innerPadding))
-            }
-            else -> {
-                HistoryList(
-                    state = state,
-                    onEvent = onEvent,
-                    modifier = Modifier.padding(innerPadding)
-                )
+        PullToRefreshBox(
+            isRefreshing = state.isLoading && state.invoices.isNotEmpty(),
+            onRefresh = { onEvent(HistoryEvent.Refresh) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            when {
+                state.isLoading && state.invoices.isEmpty() -> {
+                    HistorySkeletonList()
+                }
+                filteredInvoices.isEmpty() -> {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .verticalScroll(rememberScrollState()),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        HistoryEmptyState(currentMonth = state.currentMonth)
+                    }
+                }
+                else -> {
+                    HistoryList(
+                        state = state,
+                        onEvent = onEvent,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                }
             }
         }
     }

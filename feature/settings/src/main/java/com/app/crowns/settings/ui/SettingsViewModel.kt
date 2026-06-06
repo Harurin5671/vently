@@ -3,6 +3,7 @@ package com.app.crowns.settings.ui
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
@@ -21,16 +22,10 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-data class SettingsUiState(
-    val companyInfo: CompanyInfo? = null,
-    val documentSeries: List<DocumentSeries> = emptyList(),
-    val isLoading: Boolean = false,
-    val error: String? = null
-)
-
 @HiltViewModel
 class SettingsViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
+    private val getCurrentUserUseCase: GetCurrentUserUseCase,
     private val updateCertificateUseCase: UpdateCertificateUseCase,
     private val updateCertificatePasswordUseCase: UpdateCertificatePasswordUseCase,
     private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
@@ -47,6 +42,7 @@ class SettingsViewModel @Inject constructor(
 
     fun onEvent(event: SettingsEvent) {
         when (event) {
+            is SettingsEvent.Refresh -> loadCompanyInfo()
             is SettingsEvent.UploadCertificate -> uploadCertificate(event.base64)
             is SettingsEvent.UpdateCertificatePassword -> updateCertificatePassword(event.password)
             is SettingsEvent.UpdateDocumentSeries -> updateDocumentSeries(
@@ -152,21 +148,25 @@ class SettingsViewModel @Inject constructor(
     private fun loadCompanyInfo() {
         viewModelScope.launch {
             _state.update { it.copy(isLoading = true) }
+            
+            val user = getCurrentUserUseCase()
+            
             getCompanyUseCase().onSuccess { company ->
                 if (company != null) {
                     val seriesResult = getDocumentSeriesUseCase(company.id)
                     _state.update { 
                         it.copy(
                             companyInfo = company,
+                            userInfo = user,
                             documentSeries = seriesResult.getOrDefault(emptyList()),
                             isLoading = false 
                         ) 
                     }
                 } else {
-                    _state.update { it.copy(companyInfo = null, isLoading = false) }
+                    _state.update { it.copy(companyInfo = null, userInfo = user, isLoading = false) }
                 }
             }.onFailure { e ->
-                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cargar información"), isLoading = false) }
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cargar información"), userInfo = user, isLoading = false) }
             }
         }
     }

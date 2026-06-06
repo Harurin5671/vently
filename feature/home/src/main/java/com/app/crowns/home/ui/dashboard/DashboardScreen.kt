@@ -22,12 +22,18 @@ import androidx.compose.material.icons.automirrored.filled.ReceiptLong
 import androidx.compose.material.icons.filled.Business
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Inventory2
+import androidx.compose.material.icons.filled.Close
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
+import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -37,6 +43,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -50,6 +57,7 @@ import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.QuickActionCard
 import com.app.crowns.home.ui.components.RecentInvoiceItem
 import com.app.crowns.home.ui.components.StatCard
+import com.app.crowns.ui.components.VentlyModalBottomSheet
 import com.app.crowns.ui.components.shimmerEffect
 import java.time.LocalDateTime
 import java.time.format.DateTimeFormatter
@@ -61,6 +69,7 @@ fun DashboardScreen(
     onNavigateToNewFactura: () -> Unit = {},
     onNavigateToStock: () -> Unit = {},
     onNavigateToHistory: () -> Unit = {},
+    onNavigateToSettings: () -> Unit = {},
     onNavigateToInvoiceDetail: (String) -> Unit = {},
     viewModel: DashboardViewModel = hiltViewModel(),
 ) {
@@ -86,6 +95,7 @@ fun DashboardScreen(
                 is DashboardNavigationEvent.NavigateToNewFactura -> onNavigateToNewFactura()
                 is DashboardNavigationEvent.NavigateToStock -> onNavigateToStock()
                 is DashboardNavigationEvent.NavigateToHistory -> onNavigateToHistory()
+                is DashboardNavigationEvent.NavigateToSettings -> onNavigateToSettings()
                 is DashboardNavigationEvent.NavigateToInvoiceDetail -> onNavigateToInvoiceDetail(
                     event.invoiceId
                 )
@@ -113,20 +123,26 @@ private fun DashboardContent(
 //            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }
     ) { innerPadding ->
-        if (state.isLoading) {
-            DashboardSkeleton(modifier = Modifier.padding(innerPadding))
-        } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(innerPadding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(horizontal = 16.dp),
-            ) {
-                Spacer(Modifier.height(16.dp))
+        PullToRefreshBox(
+            isRefreshing = state.isLoading && state.recentInvoices.isNotEmpty(),
+            onRefresh = { onEvent(DashboardEvent.Refresh) },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
+        ) {
+            if (state.isLoading && state.recentInvoices.isEmpty()) {
+                DashboardSkeleton()
+            } else {
+                Column(
+                    modifier = Modifier
+                        .fillMaxSize()
+                        .verticalScroll(rememberScrollState())
+                        .padding(horizontal = 16.dp),
+                ) {
+                    Spacer(Modifier.height(16.dp))
 
-                // Greeting
-                GreetingSection(userName = state.userName)
+                    // Greeting
+                    GreetingSection(userName = state.userName)
 
                 Spacer(Modifier.height(16.dp))
 
@@ -138,14 +154,14 @@ private fun DashboardContent(
                     StatCard(
                         label = "Ventas hoy",
                         value = "S/ ${String.format(locale, "%,.2f", state.todaySales)}",
-                        badge = "+${state.salesGrowthPercent.toInt()}%",
-                        badgeColor = com.app.crowns.designsystem.color.Success,
+                        badge = "${if (state.salesGrowthPercent >= 0) "+" else ""}${state.salesGrowthPercent.toInt()}%",
+                        badgeColor = if (state.salesGrowthPercent >= 0) Success else Error,
                         modifier = Modifier.weight(1f),
                     )
                     StatCard(
-                        label = "Comprobantes",
+                        label = "Comprobantes (mes)",
                         value = "${state.totalInvoices}",
-                        subtitle = "${state.acceptedInvoices} aceptados · ${state.pendingInvoices} pendientes",
+                        subtitle = "${state.acceptedInvoices} aceptados",
                         modifier = Modifier.weight(1f),
                     )
                 }
@@ -282,6 +298,77 @@ private fun DashboardContent(
             }
         }
     }
+
+    if (state.showMissingDataDialog) {
+        VentlyModalBottomSheet(
+            onDismiss = { onEvent(DashboardEvent.DismissMissingDataDialog) },
+            title = "Información pendiente",
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                Text(
+                    text = "Para emitir comprobantes electrónicos, necesitas configurar tus credenciales en Ajustes.",
+                    style = MaterialTheme.typography.bodyLarge,
+                    textAlign = TextAlign.Center,
+                    color = OnSurface
+                )
+
+                Column(
+                    verticalArrangement = Arrangement.spacedBy(8.dp),
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    val missingItems = mutableListOf<String>()
+                    if (state.companyInfo?.certificateBase64 == null) missingItems.add("Certificado digital")
+                    if (state.companyInfo?.certificatePassword == null) missingItems.add("Contraseña del certificado")
+                    if (state.companyInfo?.solUsername == null || state.companyInfo.solPassword == null) missingItems.add("Usuario y contraseña SOL")
+
+                    missingItems.forEach { item ->
+                        Row(
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Close,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.error,
+                                modifier = Modifier.size(16.dp)
+                            )
+                            Text(
+                                text = item,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = OnSurfaceVariant
+                            )
+                        }
+                    }
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Button(
+                    onClick = { onEvent(DashboardEvent.OnGoToSettings) },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                    shape = MaterialTheme.shapes.medium
+                ) {
+                    Text("Configurar ahora", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+                }
+
+                TextButton(
+                    onClick = { onEvent(DashboardEvent.DismissMissingDataDialog) },
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Ahora no", color = OnSurfaceVariant)
+                }
+            }
+            Spacer(modifier = Modifier.height(16.dp))
+        }
+    }
+}
 }
 
 @Composable

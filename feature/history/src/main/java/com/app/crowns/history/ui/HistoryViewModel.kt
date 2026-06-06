@@ -27,12 +27,14 @@ class HistoryViewModel @Inject constructor(
 
     fun onEvent(event: HistoryEvent) {
         when (event) {
-            is HistoryEvent.Refresh -> loadHistory(isSilent = true)
+            is HistoryEvent.Refresh -> loadHistory(isSilent = false)
             is HistoryEvent.PreviousMonth -> _state.update {
                 it.copy(currentMonth = it.currentMonth.minusMonths(1))
             }
             is HistoryEvent.NextMonth -> _state.update {
-                it.copy(currentMonth = it.currentMonth.plusMonths(1))
+                if (it.currentMonth < java.time.YearMonth.now()) {
+                    it.copy(currentMonth = it.currentMonth.plusMonths(1))
+                } else it
             }
             is HistoryEvent.OnFilterSelected -> _state.update {
                 it.copy(selectedFilter = event.filter)

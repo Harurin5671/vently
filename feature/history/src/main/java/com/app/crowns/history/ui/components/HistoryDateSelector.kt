@@ -15,6 +15,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
+import com.app.crowns.designsystem.color.OutlineVariant
 import com.app.crowns.designsystem.color.Primary
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
@@ -30,6 +31,8 @@ fun HistoryDateSelector(
     val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "PE"))
     val label = currentMonth.format(formatter)
         .replaceFirstChar { it.uppercase() }
+    
+    val isNextDisabled = currentMonth >= YearMonth.now()
 
     Row(
         modifier = modifier.fillMaxWidth(),
@@ -49,11 +52,14 @@ fun HistoryDateSelector(
             fontWeight = FontWeight.Medium,
             color = OnSurface,
         )
-        IconButton(onClick = onNext) {
+        IconButton(
+            onClick = onNext,
+            enabled = !isNextDisabled
+        ) {
             Icon(
                 imageVector = Icons.AutoMirrored.Filled.KeyboardArrowRight,
                 contentDescription = "Mes siguiente",
-                tint = Primary,
+                tint = if (isNextDisabled) OutlineVariant else Primary,
             )
         }
     }

@@ -14,6 +14,7 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -34,12 +35,31 @@ class DashboardViewModel @Inject constructor(
 
     fun onEvent(event: DashboardEvent) {
         when (event) {
-            is DashboardEvent.Refresh -> loadDashboard(isSilent = true)
+            is DashboardEvent.Refresh -> loadDashboard(isSilent = false)
             is DashboardEvent.OnInvoiceClick -> navigateToDetail(event.invoiceId)
-            is DashboardEvent.OnNewBoleta -> emitNav(DashboardNavigationEvent.NavigateToNewBoleta)
-            is DashboardEvent.OnNewFactura -> emitNav(DashboardNavigationEvent.NavigateToNewFactura)
+            is DashboardEvent.OnNewBoleta -> checkCredentialsAndEmit(DashboardNavigationEvent.NavigateToNewBoleta)
+            is DashboardEvent.OnNewFactura -> checkCredentialsAndEmit(DashboardNavigationEvent.NavigateToNewFactura)
             is DashboardEvent.OnStockClick -> emitNav(DashboardNavigationEvent.NavigateToStock)
             is DashboardEvent.OnHistoryClick -> emitNav(DashboardNavigationEvent.NavigateToHistory)
+            is DashboardEvent.DismissMissingDataDialog -> _state.update { it.copy(showMissingDataDialog = false) }
+            is DashboardEvent.OnGoToSettings -> {
+                _state.update { it.copy(showMissingDataDialog = false) }
+                emitNav(DashboardNavigationEvent.NavigateToSettings)
+            }
+        }
+    }
+
+    private fun checkCredentialsAndEmit(navEvent: DashboardNavigationEvent) {
+        val company = _state.value.companyInfo
+        val isDataComplete = company?.certificateBase64 != null &&
+                company.certificatePassword != null &&
+                company.solUsername != null &&
+                company.solPassword != null
+
+        if (isDataComplete) {
+            emitNav(navEvent)
+        } else {
+            _state.update { it.copy(showMissingDataDialog = true) }
         }
     }
 
@@ -63,16 +83,35 @@ class DashboardViewModel @Inject constructor(
                 inv.copy(statusInfo = statuses.find { it.code == inv.status })
             }
 
+            val now = LocalDate.now()
+            val todayStr = now.toString() // "yyyy-MM-dd"
+            val monthStr = todayStr.substring(0, 7) // "yyyy-MM"
+
+            val thisMonthInvoices = invoices.filter { it.issueDate.startsWith(monthStr) }
+            val todayInvoices = thisMonthInvoices.filter { it.issueDate.startsWith(todayStr) }
+            val previousMonthInvoices = thisMonthInvoices.filter { !it.issueDate.startsWith(todayStr) }
+
+            val todaySales = todayInvoices.sumOf { it.total.toDoubleOrNull() ?: 0.0 }
+            val previousMonthSales = previousMonthInvoices.sumOf { it.total.toDoubleOrNull() ?: 0.0 }
+            
+            val growth = if (previousMonthSales > 0) {
+                ((todaySales - previousMonthSales) / previousMonthSales) * 100
+            } else if (todaySales > 0) {
+                100.0 // Si es el primer día con ventas del mes
+            } else {
+                0.0
+            }
+
             _state.update {
                 it.copy(
                     isLoading = false,
                     userName = companyInfo?.businessName ?: "Usuario",
                     companyInfo = companyInfo,
-                    todaySales = invoices.sumOf { inv -> inv.total.toDoubleOrNull() ?: 0.0 },
-                    salesGrowthPercent = 0.0,
-                    totalInvoices = invoices.size,
-                    acceptedInvoices = invoices.count { inv -> inv.status == InvoiceStatusEntity.ACCEPTED },
-                    pendingInvoices = invoices.count { inv -> 
+                    todaySales = todaySales,
+                    salesGrowthPercent = growth,
+                    totalInvoices = thisMonthInvoices.size,
+                    acceptedInvoices = thisMonthInvoices.count { inv -> inv.status == InvoiceStatusEntity.ACCEPTED },
+                    pendingInvoices = thisMonthInvoices.count { inv ->
                         inv.status == InvoiceStatusEntity.PENDING || 
                         inv.status == InvoiceStatusEntity.DRAFT
                     },

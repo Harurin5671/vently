@@ -2,7 +2,10 @@ package com.app.crowns.history.ui
 
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import java.time.LocalDate
 import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 data class HistoryUiState(
     val currentMonth: YearMonth = YearMonth.now(),
@@ -22,25 +25,39 @@ enum class HistoryFilter(val label: String) {
 
 val HistoryUiState.filteredInvoices: List<InvoiceEntity>
     get() = invoices.filter { invoice ->
-        when (selectedFilter) {
+        // Parse date - handles ISO like "2023-10-27T10:00:00" or simple date "2023-10-27"
+        val dateStr = invoice.issueDate.take(10)
+        val date = try { LocalDate.parse(dateStr) } catch (e: Exception) { LocalDate.now() }
+        val month = YearMonth.from(date)
+        
+        val matchesMonth = month == currentMonth
+        val matchesFilter = when (selectedFilter) {
             HistoryFilter.ALL -> true
             HistoryFilter.BOLETA -> invoice.documentType == "03"
             HistoryFilter.FACTURA -> invoice.documentType == "01"
             HistoryFilter.ACCEPTED -> invoice.status == InvoiceStatusEntity.ACCEPTED
             HistoryFilter.PENDING -> invoice.status == InvoiceStatusEntity.PENDING || invoice.status == InvoiceStatusEntity.DRAFT
         }
+        matchesMonth && matchesFilter
     }
 
 // Agrupa por fecha para mostrar HOY, AYER, etc.
 val HistoryUiState.groupedInvoices: Map<String, List<InvoiceEntity>>
     get() {
-        val today = java.time.LocalDate.now()
+        val today = LocalDate.now()
         val yesterday = today.minusDays(1)
-        return filteredInvoices.groupBy { invoice ->
-            when (val invoiceDate = invoice.issueDate.take(10)) {
-                today.toString() -> "HOY"
-                yesterday.toString() -> "AYER"
-                else -> invoiceDate
+        val dateFormatter = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es", "PE"))
+        
+        return filteredInvoices
+            .sortedByDescending { it.issueDate }
+            .groupBy { invoice ->
+                val dateStr = invoice.issueDate.take(10)
+                val date = try { LocalDate.parse(dateStr) } catch (e: Exception) { today }
+                
+                when (date) {
+                    today -> "HOY"
+                    yesterday -> "AYER"
+                    else -> date.format(dateFormatter).uppercase()
+                }
             }
-        }
     }

@@ -152,6 +152,9 @@ fun LoginContent(
                 Spacer(Modifier.height(16.dp))
                 TextRegister {}
 
+                Spacer(Modifier.height(24.dp))
+                TextTermsAndConditions()
+
                 // Error
                 state.error?.let { error ->
                     Spacer(modifier = Modifier.height(16.dp))
@@ -165,6 +168,46 @@ fun LoginContent(
             }
         }
     }
+}
+
+@Composable
+fun TextTermsAndConditions(
+    onClickTerms: () -> Unit = {},
+    onClickPrivacy: () -> Unit = {}
+) {
+    val text = buildAnnotatedString {
+        append("Al continuar, aceptas nuestros ")
+        withLink(
+            LinkAnnotation.Clickable(
+                tag = "terminos",
+                linkInteractionListener = { onClickTerms() },
+                styles = TextLinkStyles(
+                    style = SpanStyle(color = Primary)
+                )
+            )
+        ) {
+            append("Términos y Condiciones")
+        }
+        append(" y ")
+        withLink(
+            LinkAnnotation.Clickable(
+                tag = "privacidad",
+                linkInteractionListener = { onClickPrivacy() },
+                styles = TextLinkStyles(
+                    style = SpanStyle(color = Primary)
+                )
+            )
+        ) {
+            append("Política de Privacidad")
+        }
+    }
+
+    Text(
+        text = text,
+        style = MaterialTheme.typography.bodySmall,
+        color = MaterialTheme.colorScheme.onSurfaceVariant,
+        textAlign = TextAlign.Center
+    )
 }
 
 @Composable

@@ -7,6 +7,8 @@ sealed class DashboardEvent {
     data object OnNewFactura : DashboardEvent()
     data object OnStockClick : DashboardEvent()
     data object OnHistoryClick : DashboardEvent()
+    data object DismissMissingDataDialog : DashboardEvent()
+    data object OnGoToSettings : DashboardEvent()
 }
 
 sealed class DashboardNavigationEvent {
@@ -14,5 +16,6 @@ sealed class DashboardNavigationEvent {
     data object NavigateToNewFactura : DashboardNavigationEvent()
     data object NavigateToStock : DashboardNavigationEvent()
     data object NavigateToHistory : DashboardNavigationEvent()
+    data object NavigateToSettings : DashboardNavigationEvent()
     data class NavigateToInvoiceDetail(val invoiceId: String) : DashboardNavigationEvent()
 }

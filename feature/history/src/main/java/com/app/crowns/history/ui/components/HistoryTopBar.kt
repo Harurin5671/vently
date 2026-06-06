@@ -54,30 +54,30 @@ fun HistoryTopBar(
                 )
             },
             actions = {
-                IconButton(onClick = { }) {
-                    Icon(
-                        imageVector = Icons.Filled.FilterList,
-                        contentDescription = "Filtrar",
-                        tint = OnSurface,
-                    )
-                }
+//                IconButton(onClick = { }) {
+//                    Icon(
+//                        imageVector = Icons.Filled.FilterList,
+//                        contentDescription = "Filtrar",
+//                        tint = OnSurface,
+//                    )
+//                }
                 // Avatar placeholder
-                Box(
-                    modifier = Modifier
-                        .padding(end = 8.dp)
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(SurfaceContainerHigh)
-                        .border(1.dp, OutlineVariant, CircleShape),
-                    contentAlignment = Alignment.Center,
-                ) {
-                    Text(
-                        text = "U",
-                        fontSize = 12.sp,
-                        fontWeight = FontWeight.SemiBold,
-                        color = OnSurfaceVariant,
-                    )
-                }
+//                Box(
+//                    modifier = Modifier
+//                        .padding(end = 8.dp)
+//                        .size(32.dp)
+//                        .clip(CircleShape)
+//                        .background(SurfaceContainerHigh)
+//                        .border(1.dp, OutlineVariant, CircleShape),
+//                    contentAlignment = Alignment.Center,
+//                ) {
+//                    Text(
+//                        text = "U",
+//                        fontSize = 12.sp,
+//                        fontWeight = FontWeight.SemiBold,
+//                        color = OnSurfaceVariant,
+//                    )
+//                }
             },
             colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
         )

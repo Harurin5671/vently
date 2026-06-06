@@ -4,32 +4,68 @@ import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.OpenInNew
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Visibility
+import androidx.compose.material.icons.filled.VisibilityOff
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.TopAppBarDefaults
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.text.input.KeyboardType
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.*
+import com.app.crowns.designsystem.color.OnPrimary
+import com.app.crowns.designsystem.color.OnSurfaceVariant
+import com.app.crowns.designsystem.color.Outline
+import com.app.crowns.designsystem.color.OutlineVariant
+import com.app.crowns.designsystem.color.Primary
+import com.app.crowns.designsystem.color.Surface
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
+import com.app.crowns.settings.ui.components.BusinessProfileCard
+import com.app.crowns.settings.ui.components.SettingsItem
+import com.app.crowns.settings.ui.components.SettingsItemWithBadge
+import com.app.crowns.settings.ui.components.SettingsSection
+import com.app.crowns.settings.ui.components.SettingsShimmer
 import com.app.crowns.ui.components.VentlyModalBottomSheet
-import com.app.crowns.settings.ui.components.*
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -69,7 +105,9 @@ fun SettingsScreen(
     }
 
     SettingsContent(
+        isLoading = state.isLoading,
         companyInfo = state.companyInfo,
+        userInfo = state.userInfo,
         documentSeries = state.documentSeries,
         onNavigateToEditBusiness = onNavigateToEditBusiness,
         onSelectCertificate = {
@@ -84,6 +122,7 @@ fun SettingsScreen(
         onUpdateSolCredentials = { username, password ->
             viewModel.onEvent(SettingsEvent.UpdateSolCredentials(username, password))
         },
+        onRefresh = { viewModel.onEvent(SettingsEvent.Refresh) },
         onNavigateToEmail = onNavigateToEmail,
         onNavigateToPassword = onNavigateToPassword,
         onNavigateToPlan = onNavigateToPlan,
@@ -101,13 +140,16 @@ fun SettingsScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun SettingsContent(
+    isLoading: Boolean,
     companyInfo: CompanyInfo?,
+    userInfo: com.app.crowns.domain.auth.model.User?,
     documentSeries: List<DocumentSeries>,
     onNavigateToEditBusiness: () -> Unit,
     onSelectCertificate: () -> Unit,
     onUpdateCertificatePassword: (String) -> Unit,
     onUpdateDocumentSeries: (String, Int, String, Int) -> Unit,
     onUpdateSolCredentials: (String, String) -> Unit,
+    onRefresh: () -> Unit,
     onNavigateToEmail: () -> Unit,
     onNavigateToPassword: () -> Unit,
     onNavigateToPlan: () -> Unit,
@@ -121,6 +163,7 @@ private fun SettingsContent(
     var showPasswordDialog by remember { mutableStateOf(false) }
     var showSeriesDialog by remember { mutableStateOf(false) }
     var showSolDialog by remember { mutableStateOf(false) }
+    var showDeleteAccountDialog by remember { mutableStateOf(false) }
     var tempPassword by remember { mutableStateOf("") }
     var tempSolUsername by remember { mutableStateOf("") }
     var tempSolPassword by remember { mutableStateOf("") }
@@ -174,157 +217,122 @@ private fun SettingsContent(
             )
         },
     ) { innerPadding ->
-        Column(
+        PullToRefreshBox(
+            isRefreshing = isLoading && companyInfo != null,
+            onRefresh = onRefresh,
             modifier = Modifier
                 .fillMaxSize()
                 .padding(innerPadding)
-                .padding(horizontal = 16.dp)
-                .verticalScroll(rememberScrollState()),
-            verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            Spacer(Modifier.height(0.dp))
-
-            // ── Business Profile Card ──────────────────────────────────────
-            BusinessProfileCard(
-                companyInfo = companyInfo,
-                onEdit = onNavigateToEditBusiness
-            )
-
-            // ── Facturación ───────────────────────────────────────────────
-            SettingsSection(title = "Facturación") {
-                SettingsItem(
-                    title = "Series y correlativos",
-                    subtitle = "$boletaSubtitle · $facturaSubtitle",
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = { showSeriesDialog = true },
-                    showDivider = true,
-                )
-                SettingsItemWithBadge(
-                    title = "Certificado digital",
-                    badgeText = if (companyInfo?.certificateBase64 != null) "ACTIVO" else "PENDIENTE",
-                    badgeGreen = companyInfo?.certificateBase64 != null,
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = onSelectCertificate,
-                    showDivider = true,
-                )
-                SettingsItemWithBadge(
-                    title = "Contraseña del certificado",
-                    badgeText = if (companyInfo?.certificatePassword != null) "ACTIVO" else "PENDIENTE",
-                    badgeGreen = companyInfo?.certificatePassword != null,
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = {
-                        tempPassword = companyInfo?.certificatePassword ?: ""
-                        showPasswordDialog = true
-                    },
-                    showDivider = true,
-                )
-                SettingsItemWithBadge(
-                    title = "Usuario y contraseña SOL",
-                    badgeText = if (companyInfo?.solUsername != null && companyInfo.solPassword != null) "ACTIVO" else "PENDIENTE",
-                    badgeGreen = companyInfo?.solUsername != null && companyInfo.solPassword != null,
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = {
-                        tempSolUsername = companyInfo?.solUsername ?: ""
-                        tempSolPassword = companyInfo?.solPassword ?: ""
-                        showSolDialog = true
-                    },
-                    showDivider = false,
-                )
-            }
-
-            // ── Cuenta ────────────────────────────────────────────────────
-            SettingsSection(title = "Cuenta") {
-                SettingsItem(
-                    title = "Correo electrónico",
-                    subtitle = "fere******@gmail.com", // TODO: Get real email
-                    trailingIcon = Icons.Default.ChevronRight,
-                    onClick = onNavigateToEmail,
-                    showDivider = true,
-                )
-//                SettingsItem(
-//                    title = "Cambiar contraseña",
-//                    trailingIcon = Icons.Default.Lock,
-//                    onClick = onNavigateToPassword,
-//                    showDivider = true,
-//                )
-//                SettingsItemWithBadge(
-//                    title = "Plan actual",
-//                    badgeText = "GRATUITO",
-//                    badgeGreen = false,
-//                    trailingIcon = Icons.Default.ChevronRight,
-//                    onClick = onNavigateToPlan,
-//                    showDivider = false,
-//                )
-            }
-
-            // ── Preferencias ──────────────────────────────────────────────
-//            SettingsSection(title = "Preferencias") {
-//                SettingsToggleItem(
-//                    title = "Notificaciones push",
-//                    checked = pushNotifications,
-//                    onCheckedChange = { pushNotifications = it },
-//                    showDivider = true,
-//                )
-//                SettingsToggleItem(
-//                    title = "Alerta de stock bajo",
-//                    checked = lowStockAlert,
-//                    onCheckedChange = { lowStockAlert = it },
-//                    showDivider = false,
-//                )
-//            }
-
-            // ── Soporte ───────────────────────────────────────────────────
-//            SettingsSection(title = "Soporte") {
-//                SettingsItem(
-//                    title = "Centro de ayuda",
-//                    trailingIcon = Icons.AutoMirrored.Filled.OpenInNew,
-//                    onClick = onNavigateToHelp,
-//                    showDivider = true,
-//                )
-//                SettingsItem(
-//                    title = "Reportar un problema",
-//                    trailingIcon = Icons.Default.Flag,
-//                    onClick = onNavigateToReport,
-//                    showDivider = false,
-//                )
-//            }
-
-            // ── Danger Zone ───────────────────────────────────────────────
             Column(
                 modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 8.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp),
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp)
+                    .verticalScroll(rememberScrollState()),
+                verticalArrangement = Arrangement.spacedBy(24.dp),
             ) {
-                TextButton(onClick = onLogout) {
-                    Text(
-                        text = "Cerrar sesión",
-                        color = MaterialTheme.colorScheme.error,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Medium,
+                Spacer(Modifier.height(0.dp))
+
+                if (isLoading && companyInfo == null) {
+                    SettingsShimmer()
+                } else {
+                    // ── Business Profile Card ──────────────────────────────────────
+                    BusinessProfileCard(
+                        companyInfo = companyInfo,
+                        onEdit = onNavigateToEditBusiness
+                    )
+
+                // ── Facturación ───────────────────────────────────────────────
+                SettingsSection(title = "Facturación") {
+                    SettingsItem(
+                        title = "Series y correlativos",
+                        subtitle = "$boletaSubtitle · $facturaSubtitle",
+                        trailingIcon = Icons.Default.ChevronRight,
+                        onClick = { showSeriesDialog = true },
+                        showDivider = true,
+                    )
+                    SettingsItemWithBadge(
+                        title = "Certificado digital",
+                        badgeText = if (companyInfo?.certificateBase64 != null) "ACTIVO" else "PENDIENTE",
+                        badgeGreen = companyInfo?.certificateBase64 != null,
+                        trailingIcon = Icons.Default.ChevronRight,
+                        onClick = onSelectCertificate,
+                        showDivider = true,
+                    )
+                    SettingsItemWithBadge(
+                        title = "Contraseña del certificado",
+                        badgeText = if (companyInfo?.certificatePassword != null) "ACTIVO" else "PENDIENTE",
+                        badgeGreen = companyInfo?.certificatePassword != null,
+                        trailingIcon = Icons.Default.ChevronRight,
+                        onClick = {
+                            tempPassword = companyInfo?.certificatePassword ?: ""
+                            showPasswordDialog = true
+                        },
+                        showDivider = true,
+                    )
+                    SettingsItemWithBadge(
+                        title = "Usuario y contraseña SOL",
+                        badgeText = if (companyInfo?.solUsername != null && companyInfo.solPassword != null) "ACTIVO" else "PENDIENTE",
+                        badgeGreen = companyInfo?.solUsername != null && companyInfo.solPassword != null,
+                        trailingIcon = Icons.Default.ChevronRight,
+                        onClick = {
+                            tempSolUsername = companyInfo?.solUsername ?: ""
+                            tempSolPassword = companyInfo?.solPassword ?: ""
+                            showSolDialog = true
+                        },
+                        showDivider = false,
                     )
                 }
+
+                // ── Cuenta ────────────────────────────────────────────────────
+                SettingsSection(title = "Cuenta") {
+                    SettingsItem(
+                        title = "Correo electrónico",
+                        subtitle = userInfo?.email ?: "Cargando...",
+                        trailingIcon = Icons.Default.ChevronRight,
+                        onClick = onNavigateToEmail,
+                        showDivider = true,
+                    )
+                }
+
+                // ── Danger Zone ───────────────────────────────────────────────
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(top = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(16.dp),
+                ) {
+                    TextButton(onClick = onLogout) {
+                        Text(
+                            text = "Cerrar sesión",
+                            color = MaterialTheme.colorScheme.error,
+                            fontSize = 14.sp,
+                            fontWeight = FontWeight.Medium,
+                        )
+                    }
+                    Text(
+                        text = "Eliminar cuenta",
+                        color = OutlineVariant,
+                        fontSize = 12.sp,
+                        modifier = Modifier
+                            .clickable { showDeleteAccountDialog = true }
+                            .padding(4.dp),
+                    )
+                }
+            }
+
+                // ── Footer ────────────────────────────────────────────────────
                 Text(
-                    text = "Eliminar cuenta",
+                    text = "Vently v$appVersion",
                     color = OutlineVariant,
                     fontSize = 12.sp,
                     modifier = Modifier
-                        .clickable { onDeleteAccount() }
-                        .padding(4.dp),
+                        .fillMaxWidth()
+                        .padding(bottom = 24.dp)
+                        .wrapContentWidth(Alignment.CenterHorizontally),
                 )
             }
-
-            // ── Footer ────────────────────────────────────────────────────
-            Text(
-                text = "Vently v$appVersion",
-                color = OutlineVariant,
-                fontSize = 12.sp,
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(bottom = 24.dp)
-                    .wrapContentWidth(Alignment.CenterHorizontally),
-            )
         }
 
         if (showSeriesDialog) {
@@ -461,6 +469,81 @@ private fun SettingsContent(
                     shape = MaterialTheme.shapes.medium,
                 ) {
                     Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+                }
+                Spacer(Modifier.height(8.dp))
+            }
+        }
+
+        if (showDeleteAccountDialog) {
+            VentlyModalBottomSheet(
+                onDismiss = { showDeleteAccountDialog = false },
+                title = "Eliminar cuenta",
+            ) {
+                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                    Text(
+                        text = "Esta acción es permanente e irreversible.",
+                        style = MaterialTheme.typography.bodyMedium,
+                        fontWeight = FontWeight.SemiBold,
+                        color = MaterialTheme.colorScheme.onSurface,
+                    )
+                    Text(
+                        text = "Se eliminarán permanentemente:",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = OnSurfaceVariant,
+                    )
+                    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        listOf(
+                            "Tu cuenta y datos de acceso",
+                            "Información de tu empresa",
+                            "Historial de boletas y facturas",
+                            "Productos e inventario",
+                        ).forEach { item ->
+                            Row(
+                                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                                verticalAlignment = Alignment.CenterVertically,
+                            ) {
+                                Text(
+                                    text = "•",
+                                    color = MaterialTheme.colorScheme.error,
+                                    fontSize = 16.sp,
+                                )
+                                Text(
+                                    text = item,
+                                    style = MaterialTheme.typography.bodySmall,
+                                    color = OnSurfaceVariant,
+                                )
+                            }
+                        }
+                    }
+                }
+                Spacer(Modifier.height(24.dp))
+                Button(
+                    onClick = {
+                        showDeleteAccountDialog = false
+                        onDeleteAccount()
+                    },
+                    modifier = Modifier.fillMaxWidth(),
+                    colors = ButtonDefaults.buttonColors(
+                        containerColor = MaterialTheme.colorScheme.error,
+                    ),
+                    shape = MaterialTheme.shapes.medium,
+                ) {
+                    Text(
+                        text = "Sí, eliminar mi cuenta",
+                        color = OnPrimary,
+                        fontWeight = FontWeight.SemiBold,
+                    )
+                }
+                Spacer(Modifier.height(4.dp))
+                TextButton(
+                    onClick = { showDeleteAccountDialog = false },
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Cancelar",
+                        color = OnSurfaceVariant,
+                        fontWeight = FontWeight.Medium,
+                    )
                 }
                 Spacer(Modifier.height(8.dp))
             }

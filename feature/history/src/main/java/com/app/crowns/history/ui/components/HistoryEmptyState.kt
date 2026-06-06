@@ -10,17 +10,25 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
+import java.time.YearMonth
+import java.time.format.DateTimeFormatter
+import java.util.Locale
 
 @Composable
 fun HistoryEmptyState(
+    currentMonth: YearMonth,
     modifier: Modifier = Modifier
 ) {
+    val formatter = DateTimeFormatter.ofPattern("MMMM yyyy", Locale("es", "PE"))
+    val monthName = currentMonth.format(formatter).replaceFirstChar { it.uppercase() }
+
     Box(
         modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center,
@@ -28,21 +36,24 @@ fun HistoryEmptyState(
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier.padding(32.dp)
         ) {
             Text(
-                text = "📄",
+                text = "📅",
                 fontSize = 48.sp,
             )
             Text(
                 text = "No hay comprobantes",
                 fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
+                fontWeight = FontWeight.SemiBold,
                 color = OnSurface,
+                textAlign = TextAlign.Center
             )
             Text(
-                text = "Los comprobantes emitidos aparecerán aquí",
+                text = "No encontramos movimientos para $monthName. Intenta con otro mes.",
                 fontSize = 14.sp,
                 color = Outline,
+                textAlign = TextAlign.Center
             )
         }
     }
@@ -52,6 +63,6 @@ fun HistoryEmptyState(
 @Composable
 private fun HistoryEmptyStatePreview() {
     VentlyTheme {
-        HistoryEmptyState()
+        HistoryEmptyState(currentMonth = YearMonth.now())
     }
 }

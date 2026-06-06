@@ -94,6 +94,7 @@ fun AppNavHost(
                                 },
                                 onNavigateToStock = { selectedHomeTab = 1 },
                                 onNavigateToHistory = { selectedHomeTab = 2 },
+                                onNavigateToSettings = { selectedHomeTab = 3 },
                             )
                         },
                         stockContent = {

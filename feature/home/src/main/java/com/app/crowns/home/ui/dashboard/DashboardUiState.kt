@@ -13,6 +13,7 @@ data class DashboardUiState(
     val acceptedInvoices: Int = 0,
     val pendingInvoices: Int = 0,
     val recentInvoices: List<InvoiceEntity> = emptyList(),
+    val showMissingDataDialog: Boolean = false,
     val error: String? = null,
 )
 
