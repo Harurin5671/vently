@@ -105,8 +105,14 @@ fun ClientSection(
                     }
                 }
 
-                // Document Number + Search (if RUC is selected)
-                if (selectedDocumentType?.isRuc == true) {
+                // Document Number + Search (if RUC or DNI is selected)
+                if (selectedDocumentType?.isRuc == true || selectedDocumentType?.isDni == true) {
+                    val isRuc = selectedDocumentType.isRuc
+                    val label = if (isRuc) "RUC *" else "DNI *"
+                    val placeholder = if (isRuc) "20XXXXXXXXX" else "XXXXXXXX"
+                    val searchEnabled = if (isRuc) clientRuc.length == 11 else clientRuc.length == 8
+                    val hasValue = if (isRuc) clientBusinessName.isNotBlank() else clientName.isNotBlank()
+
                     Row(
                         horizontalArrangement = Arrangement.spacedBy(8.dp),
                         verticalAlignment = Alignment.Top,
@@ -116,13 +122,13 @@ fun ClientSection(
                                 value = clientRuc,
                                 onValueChange = onClientRucChanged,
                                 enabled = !isSearchingRuc,
-                                label = { Text("RUC *") },
-                                placeholder = { Text("20XXXXXXXXX", color = Outline) },
+                                label = { Text(label) },
+                                placeholder = { Text(placeholder, color = Outline) },
                                 isError = rucError != null,
                                 singleLine = true,
                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                 trailingIcon = {
-                                    if (clientBusinessName.isNotBlank()) {
+                                    if (hasValue) {
                                         Icon(
                                             imageVector = Icons.Filled.CheckCircle,
                                             contentDescription = null,
@@ -134,8 +140,8 @@ fun ClientSection(
                                 modifier = Modifier.fillMaxWidth(),
                                 shape = RoundedCornerShape(12.dp),
                                 colors = OutlinedTextFieldDefaults.colors(
-                                    focusedBorderColor = if (clientBusinessName.isNotBlank()) Success else Primary,
-                                    unfocusedBorderColor = if (clientBusinessName.isNotBlank()) Success else OutlineVariant,
+                                    focusedBorderColor = if (hasValue) Success else Primary,
+                                    unfocusedBorderColor = if (hasValue) Success else OutlineVariant,
                                     errorBorderColor = Color(0xFFEF4444),
                                 ),
                             )
@@ -150,7 +156,7 @@ fun ClientSection(
 
                         Button(
                             onClick = onSearchRuc,
-                            enabled = clientRuc.length == 11 && !isSearchingRuc,
+                            enabled = searchEnabled && !isSearchingRuc,
                             modifier = Modifier
                                 .height(56.dp)
                                 .width(100.dp),

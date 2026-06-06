@@ -2,6 +2,7 @@ package com.app.crowns.invoice.ui.create
 
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
+import com.app.crowns.domain.customer.usecase.SearchPersonUseCase
 import com.app.crowns.domain.catalog.usecase.GetIdentityDocumentTypesUseCase
 import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.invoice.domain.model.Invoice
@@ -27,6 +28,7 @@ import javax.inject.Inject
 class CreateInvoiceViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
     private val searchCompanyUseCase: SearchCompanyUseCase,
+    private val searchPersonUseCase: SearchPersonUseCase,
     private val getCompanyUseCase: GetCompanyUseCase,
     private val getProductsUseCase: GetProductsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
@@ -110,7 +112,9 @@ class CreateInvoiceViewModel @Inject constructor(
                 it.copy(
                     selectedDocumentType = event.type,
                     clientRuc = "", // Clear number when type changes to avoid length conflicts
-                    rucError = null
+                    rucError = null,
+                    clientName = "",
+                    clientBusinessName = ""
                 )
             }
 
@@ -137,11 +141,18 @@ class CreateInvoiceViewModel @Inject constructor(
                 }
 
                 _state.update {
-                    it.copy(clientRuc = newValue, rucError = error, clientBusinessName = "")
+                    it.copy(clientRuc = newValue, rucError = error, clientBusinessName = "", clientName = "")
                 }
             }
 
-            is CreateInvoiceEvent.OnSearchRuc -> searchRuc()
+            is CreateInvoiceEvent.OnSearchRuc -> {
+                val state = _state.value
+                if (state.selectedDocumentType?.isDni == true) {
+                    searchDni()
+                } else {
+                    searchRuc()
+                }
+            }
             is CreateInvoiceEvent.OnAddItem -> addItem(event.item)
             is CreateInvoiceEvent.OnRemoveItem -> removeItem(event.productId)
             is CreateInvoiceEvent.OnIncreaseQuantity -> changeQuantity(event.productId, +1)
@@ -165,6 +176,44 @@ class CreateInvoiceViewModel @Inject constructor(
             is CreateInvoiceEvent.RefreshProducts -> loadProducts()
 
             is CreateInvoiceEvent.OnPreview -> onPreview()
+        }
+    }
+
+    private fun searchDni() {
+        val dni = _state.value.clientRuc
+        if (dni.length != 8) {
+            _state.update { it.copy(rucError = "El DNI debe tener 8 dígitos") }
+            return
+        }
+
+        viewModelScope.launch {
+            _state.update { it.copy(isSearchingRuc = true, rucError = null) }
+            searchPersonUseCase(dni).fold(
+                onSuccess = { person ->
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            clientName = person.fullName,
+                        )
+                    }
+                },
+                onHttpError = { error ->
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            rucError = "No se encontró el DNI o hubo un error"
+                        )
+                    }
+                },
+                onNetworkError = {
+                    _state.update {
+                        it.copy(
+                            isSearchingRuc = false,
+                            rucError = "Sin conexión a internet"
+                        )
+                    }
+                }
+            )
         }
     }
 

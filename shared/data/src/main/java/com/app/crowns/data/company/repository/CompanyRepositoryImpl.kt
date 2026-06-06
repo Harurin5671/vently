@@ -6,8 +6,11 @@ import com.app.crowns.data.company.entity.CompanyEntity
 import com.app.crowns.data.company.entity.DocumentSeriesEntity
 import com.app.crowns.data.company.mapper.toDomain
 import com.app.crowns.data.company.mapper.toEntity
+import com.app.crowns.data.customer.dto.PersonInfoDto
+import com.app.crowns.data.customer.dto.toDomain
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
+import com.app.crowns.domain.customer.model.PersonInfo
 import com.app.crowns.data.security.CryptoManager
 import com.app.crowns.domain.company.repository.CompanyRepository
 import com.app.crowns.network.KtorHttpClient
@@ -62,6 +65,19 @@ class CompanyRepositoryImpl @Inject constructor(
             Log.d("COMPANY_REPO", "DTO mapeado exitosamente a dominio: $domain")
             domain
         }
+    }
+
+    override suspend fun getPersonInfo(dni: String): NetworkResult<PersonInfo> {
+        Log.d("COMPANY_REPO", "Iniciando getPersonInfo para DNI: $dni")
+        Log.d("COMPANY_REPO", "URL completa: ${baseUrl}get-dni")
+
+        val result = httpClient.get(
+            url = "${baseUrl}get-dni",
+            deserializer = PersonInfoDto.serializer(),
+            queryParams = mapOf("dni" to dni),
+        )
+
+        return result.map { it.toDomain() }
     }
 
     override suspend fun updateCertificate(base64: String): Result<Unit> = runCatching {
