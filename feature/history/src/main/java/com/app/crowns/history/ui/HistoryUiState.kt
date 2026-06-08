@@ -1,6 +1,7 @@
 package com.app.crowns.history.ui
 
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
+import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import java.time.LocalDate
 import java.time.YearMonth
@@ -11,6 +12,7 @@ data class HistoryUiState(
     val currentMonth: YearMonth = YearMonth.now(),
     val selectedFilter: HistoryFilter = HistoryFilter.ALL,
     val invoices: List<InvoiceEntity> = emptyList(),
+    val companyInfo: CompanyInfo? = null,
     val expandedInvoiceId: String? = null,
     val isLoading: Boolean = false,
 )

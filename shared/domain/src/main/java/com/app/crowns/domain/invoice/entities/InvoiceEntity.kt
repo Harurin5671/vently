@@ -31,3 +31,20 @@ data class InvoiceEntity(
     val customerAddress: String? = null,
     val customerEmail: String? = null
 )
+
+val InvoiceEntity.formattedId: String
+    get() = "$serie-${correlative.toString().padStart(8, '0')}"
+
+val InvoiceEntity.documentName: String
+    get() = when (documentType) {
+        "01" -> "Factura"
+        "03" -> "Boleta"
+        else -> "Comprobante"
+    }
+
+val InvoiceEntity.fullDocumentName: String
+    get() = when (documentType) {
+        "01" -> "Factura Electrónica"
+        "03" -> "Boleta de Venta Electrónica"
+        else -> "Comprobante Electrónico"
+    }

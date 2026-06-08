@@ -47,7 +47,6 @@ fun HistoryInvoiceCard(
                 onDownloadPdf = { onEvent(HistoryEvent.OnDownloadPdf(invoice.id)) },
                 onSend = { onEvent(HistoryEvent.OnSendInvoice(invoice.id)) },
                 onCancel = { onEvent(HistoryEvent.OnCancelInvoice(invoice.id)) },
-                onCopyHash = { onEvent(HistoryEvent.OnCopyHash(it)) },
             )
         }
     }

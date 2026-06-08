@@ -2,19 +2,13 @@ package com.app.crowns.history.ui.components
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ContentCopy
-import androidx.compose.material.icons.filled.Verified
 import androidx.compose.material3.HorizontalDivider
-import androidx.compose.material3.Icon
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
@@ -29,9 +23,9 @@ import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import com.app.crowns.ui.components.InvoiceActionButtons
 
 @Composable
 fun HistoryInvoiceDetail(
@@ -39,7 +33,6 @@ fun HistoryInvoiceDetail(
     onDownloadPdf: () -> Unit,
     onSend: () -> Unit,
     onCancel: () -> Unit,
-    onCopyHash: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     Column(
@@ -168,62 +161,12 @@ fun HistoryInvoiceDetail(
             }
         }
 
-        // Hash CDR (Usando xmlDocument como placeholder de hash si no hay campo hash explícito en Entity)
-        val hashValue = if (invoice.xmlDocument.length > 20) "..." else null
-        hashValue?.let { hash ->
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(8.dp))
-                    .background(Color.White)
-                    .border(1.dp, OutlineVariant, RoundedCornerShape(8.dp))
-                    .padding(8.dp),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically,
-            ) {
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.weight(1f),
-                ) {
-                    Icon(
-                        imageVector = Icons.Filled.Verified,
-                        contentDescription = null,
-                        tint = Outline,
-                        modifier = Modifier.size(18.dp),
-                    )
-                    Text(
-                        text = "Hash: $hash",
-                        fontSize = 10.sp,
-                        color = Outline,
-                        maxLines = 1,
-                    )
-                }
-                Icon(
-                    imageVector = Icons.Filled.ContentCopy,
-                    contentDescription = "Copiar hash",
-                    tint = Primary,
-                    modifier = Modifier
-                        .size(18.dp)
-                        .clickable { onCopyHash(hash) },
-                )
-            }
-        }
-
         // Actions
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlineActionButton(
-                    label = "Descargar PDF",
-                    onClick = onDownloadPdf,
-                    modifier = Modifier.weight(1f),
-                )
-                OutlineActionButton(
-                    label = "Enviar",
-                    onClick = onSend,
-                    modifier = Modifier.weight(1f),
-                )
-            }
+            InvoiceActionButtons(
+                onDownloadPdf = onDownloadPdf,
+                onSend = onSend,
+            )
             TextButton(
                 onClick = onCancel,
                 modifier = Modifier.fillMaxWidth(),
@@ -251,26 +194,6 @@ private fun BreakdownRow(label: String, amount: Double) {
             color = Outline,
         )
     }
-}
-
-@Composable
-private fun OutlineActionButton(
-    label: String,
-    onClick: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Text(
-        text = label,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-        color = Primary,
-        modifier = modifier
-            .clip(RoundedCornerShape(12.dp))
-            .border(1.dp, Primary, RoundedCornerShape(12.dp))
-            .clickable { onClick() }
-            .padding(vertical = 10.dp),
-        textAlign = androidx.compose.ui.text.style.TextAlign.Center,
-    )
 }
 
 private fun formatDateTime(dateTime: String): String {

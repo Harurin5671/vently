@@ -25,6 +25,7 @@ import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import com.app.crowns.domain.invoice.entities.formattedId
 
 @Composable
 fun HistoryInvoiceItem(
@@ -68,7 +69,7 @@ fun HistoryInvoiceItem(
         // Info
         Column(modifier = Modifier.weight(1f)) {
             Text(
-                text = "${invoice.serie}-${invoice.correlative.toString().padStart(8, '0')}",
+                text = invoice.formattedId,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Medium,
                 color = OnSurface,

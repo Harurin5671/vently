@@ -9,5 +9,4 @@ sealed class HistoryEvent {
     data class OnDownloadPdf(val invoiceId: String) : HistoryEvent()
     data class OnSendInvoice(val invoiceId: String) : HistoryEvent()
     data class OnCancelInvoice(val invoiceId: String) : HistoryEvent()
-    data class OnCopyHash(val hash: String) : HistoryEvent()
 }

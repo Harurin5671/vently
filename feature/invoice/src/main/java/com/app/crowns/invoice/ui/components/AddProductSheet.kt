@@ -3,6 +3,8 @@ package com.app.crowns.invoice.ui.components
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
+import androidx.compose.foundation.interaction.PressInteraction
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -19,6 +21,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.ui.text.TextRange
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Inventory
@@ -38,7 +43,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
+import kotlinx.coroutines.launch
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -321,7 +328,7 @@ fun AddProductSheet(
                                                 .background(SurfaceContainerHigh)
                                                 .padding(4.dp),
                                             verticalAlignment = Alignment.CenterVertically,
-                                            horizontalArrangement = Arrangement.spacedBy(12.dp),
+                                            horizontalArrangement = Arrangement.spacedBy(8.dp),
                                         ) {
                                             IconButton(
                                                 onClick = { if (expandedQuantity > 1) expandedQuantity-- },
@@ -333,14 +340,46 @@ fun AddProductSheet(
                                                     tint = Primary,
                                                 )
                                             }
+
+                                            var textFieldValue by remember {
+                                                mutableStateOf(
+                                                    TextFieldValue(
+                                                        text = expandedQuantity.toString(),
+                                                        selection = TextRange(expandedQuantity.toString().length)
+                                                    )
+                                                )
+                                            }
+                                            val quantityInteractionSource = remember { MutableInteractionSource() }
+                                            var userTappedField by remember { mutableStateOf(false) }
+                                            val scope = rememberCoroutineScope()
+
+                                            // Sincronizar el texto cuando cambia externamente (botones +/-)
+                                            androidx.compose.runtime.LaunchedEffect(expandedQuantity) {
+                                                if (textFieldValue.text != expandedQuantity.toString()) {
+                                                    textFieldValue = textFieldValue.copy(
+                                                        text = expandedQuantity.toString(),
+                                                        selection = TextRange(expandedQuantity.toString().length)
+                                                    )
+                                                }
+                                            }
+
+                                            // Detectar tap del usuario para habilitar select-all en el siguiente foco
+                                            androidx.compose.runtime.LaunchedEffect(quantityInteractionSource) {
+                                                quantityInteractionSource.interactions.collect { interaction ->
+                                                    if (interaction is PressInteraction.Press) {
+                                                        userTappedField = true
+                                                    }
+                                                }
+                                            }
+
                                             BasicTextField(
-                                                value = expandedQuantity.toString(),
-                                                onValueChange = {
-                                                    if (it.isEmpty()) {
-                                                        expandedQuantity = 0
-                                                    } else {
-                                                        it.toIntOrNull()?.let { newValue ->
-                                                            expandedQuantity = newValue
+                                                value = textFieldValue,
+                                                onValueChange = { newValue ->
+                                                    if (newValue.text.all { it.isDigit() }) {
+                                                        textFieldValue = newValue
+                                                        val parsed = newValue.text.toIntOrNull() ?: 0
+                                                        if (parsed != expandedQuantity) {
+                                                            expandedQuantity = parsed
                                                         }
                                                     }
                                                 },
@@ -350,10 +389,33 @@ fun AddProductSheet(
                                                     color = OnSurface,
                                                     textAlign = TextAlign.Center,
                                                 ),
-                                                modifier = Modifier.width(36.dp),
+                                                interactionSource = quantityInteractionSource,
+                                                modifier = Modifier
+                                                    .width(42.dp)
+                                                    .clip(RoundedCornerShape(4.dp))
+                                                    .background(Color.White.copy(alpha = 0.5f))
+                                                    .border(1.dp, OutlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
+                                                    .padding(vertical = 4.dp)
+                                                    .onFocusChanged { focusState ->
+                                                        if (focusState.isFocused && userTappedField) {
+                                                            // Solo seleccionar todo cuando el usuario tocó explícitamente el campo
+                                                            userTappedField = false
+                                                            scope.launch {
+                                                                textFieldValue = textFieldValue.copy(
+                                                                    selection = TextRange(0, textFieldValue.text.length)
+                                                                )
+                                                            }
+                                                        } else if (focusState.isFocused) {
+                                                            // Foco automático: cursor al final sin seleccionar
+                                                            textFieldValue = textFieldValue.copy(
+                                                                selection = TextRange(textFieldValue.text.length)
+                                                            )
+                                                        }
+                                                    },
                                                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                                                 singleLine = true,
                                             )
+
                                             IconButton(
                                                 onClick = { expandedQuantity++ },
                                                 modifier = Modifier.size(32.dp),

@@ -1,5 +1,7 @@
 package com.app.crowns.history.ui
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -18,9 +20,14 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -29,13 +36,19 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.crowns.domain.util.shareInvoice
+import com.app.crowns.domain.util.openFile
+import com.app.crowns.domain.util.copyFileToUri
 import com.app.crowns.designsystem.color.Outline
 import com.app.crowns.designsystem.color.SurfaceContainerHigh
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import com.app.crowns.domain.invoice.entities.documentName
+import com.app.crowns.domain.invoice.entities.formattedId
 import com.app.crowns.history.ui.components.HistoryEmptyState
+import java.io.File
 import com.app.crowns.history.ui.components.HistoryInvoiceCard
 import com.app.crowns.history.ui.components.HistorySkeletonList
 import com.app.crowns.history.ui.components.HistoryTopBar
@@ -46,6 +59,46 @@ fun HistoryScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
+    val context = LocalContext.current
+
+    var pendingFileToDownload by remember { mutableStateOf<File?>(null) }
+    
+    val downloadLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let {
+            pendingFileToDownload?.let { file ->
+                context.copyFileToUri(file, it)
+                pendingFileToDownload = null
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        viewModel.effect.collect { effect ->
+            when (effect) {
+                is HistoryEffect.ShareInvoice -> {
+                    val company = state.companyInfo
+                    context.shareInvoice(
+                        companyName = company?.businessName ?: "Vently App",
+                        companyRuc = company?.documentNumber ?: "",
+                        documentName = effect.invoice.documentName,
+                        documentId = effect.invoice.formattedId,
+                        customerName = effect.invoice.customerLegalName,
+                        total = effect.invoice.total,
+                        pdfFile = effect.pdfFile
+                    )
+                }
+                is HistoryEffect.OpenPdf -> {
+                    context.openFile(effect.file)
+                }
+                is HistoryEffect.DownloadPdf -> {
+                    pendingFileToDownload = effect.file
+                    downloadLauncher.launch(effect.fileName)
+                }
+            }
+        }
+    }
 
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
