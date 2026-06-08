@@ -32,6 +32,10 @@ val CreateInvoiceUiState.igv: Double
     get() = items.sumOf { it.subtotal } - subtotal
 val CreateInvoiceUiState.total: Double
     get() = items.sumOf { it.subtotal }
+
+val CreateInvoiceUiState.showBoletaLimitWarning: Boolean
+    get() = invoiceType == InvoiceType.BOLETA && selectedDocumentType?.isNone == true && total >= 700.0
+
 val CreateInvoiceUiState.isFormValid: Boolean
     get() = items.isNotEmpty() && when (invoiceType) {
         InvoiceType.BOLETA -> {

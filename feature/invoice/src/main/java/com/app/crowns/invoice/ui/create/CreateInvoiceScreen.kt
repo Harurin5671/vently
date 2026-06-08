@@ -63,6 +63,8 @@ import com.app.crowns.invoice.ui.components.ClientSection
 import com.app.crowns.invoice.ui.components.InvoiceItemRow
 import com.app.crowns.invoice.ui.components.InvoiceSummary
 import com.app.crowns.invoice.ui.components.InvoiceTypeSelector
+import com.app.crowns.ui.components.BannerType
+import com.app.crowns.ui.components.VentlyInfoBanner
 
 @Composable
 fun CreateInvoiceScreen(
@@ -194,6 +196,13 @@ private fun CreateInvoiceContent(
             InvoiceTypeSelector(
                 selected = state.invoiceType,
                 onSelect = { onEvent(CreateInvoiceEvent.OnInvoiceTypeChanged(it)) },
+            )
+
+            VentlyInfoBanner(
+                message = if (state.showBoletaLimitWarning) 
+                    "Para boletas de S/ 700.00 o más, es obligatorio identificar al cliente." 
+                else null,
+                type = BannerType.ERROR
             )
 
             // Client section
