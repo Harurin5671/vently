@@ -88,6 +88,10 @@ fun AddProductScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarHostState = remember { SnackbarHostState() }
 
+    // Determinar si estamos cargando inicialmente un producto para editar
+    val isEditing = productId != null
+    val isInitialLoading = isEditing && state.editingProductId == null
+
     LaunchedEffect(productId) {
         if (!productId.isNullOrBlank()) {
             viewModel.onEvent(AddProductEvent.OnLoadProductForEdit(productId))
@@ -110,7 +114,7 @@ fun AddProductScreen(
     }
 
     AddProductContent(
-        state = state,
+        state = state.copy(isLoading = state.isLoading || isInitialLoading),
         snackbarHostState = snackbarHostState,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,

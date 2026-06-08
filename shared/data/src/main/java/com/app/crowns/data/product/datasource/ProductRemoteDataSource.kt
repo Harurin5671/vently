@@ -5,6 +5,7 @@ import com.app.crowns.data.product.dto.ProductEntity
 
 interface ProductRemoteDataSource {
     suspend fun getProducts(companyId: String): Result<List<ProductEntity>>
+    suspend fun getProductById(productId: String): Result<ProductEntity>
     suspend fun saveProduct(product: ProductEntity): Result<ProductEntity>
     suspend fun updateProduct(product: ProductEntity): Result<Unit>
     suspend fun getCategories(companyId: String): Result<List<CategoryEntity>>

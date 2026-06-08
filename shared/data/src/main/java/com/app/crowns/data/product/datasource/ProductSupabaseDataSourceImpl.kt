@@ -17,6 +17,12 @@ class ProductSupabaseDataSourceImpl @Inject constructor(
             .decodeList<ProductEntity>()
     }
 
+    override suspend fun getProductById(productId: String): Result<ProductEntity> = runCatching {
+        supabase.from("products")
+            .select { filter { eq("id", productId) } }
+            .decodeSingle<ProductEntity>()
+    }
+
     override suspend fun saveProduct(product: ProductEntity): Result<ProductEntity> = runCatching {
         supabase.from("products")
             .insert(product) {

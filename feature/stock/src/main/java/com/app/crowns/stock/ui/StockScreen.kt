@@ -256,6 +256,7 @@ private fun StockContent(
                 onDismiss = { onEvent(StockEvent.OnDismissProductDetail) },
                 onEdit = { productId -> onEvent(StockEvent.OnEditProduct(productId)) },
                 unitLabel = unitLabel,
+                isNavigating = state.isNavigatingToEdit,
             )
         }
     }
@@ -644,6 +645,7 @@ private fun ProductDetailSheet(
     onDismiss: () -> Unit,
     onEdit: (String) -> Unit,
     unitLabel: String,
+    isNavigating: Boolean = false,
 ) {
     val locale = LocalLocale.current.platformLocale
     val statusColor = when (product.stockStatus) {
@@ -755,6 +757,7 @@ private fun ProductDetailSheet(
         Spacer(Modifier.height(24.dp))
         Button(
             onClick = { onEdit(product.id ?: "") },
+            enabled = !isNavigating,
             modifier = Modifier
                 .fillMaxWidth()
                 .height(52.dp),
@@ -764,17 +767,25 @@ private fun ProductDetailSheet(
                 contentColor = OnPrimary,
             ),
         ) {
-            Icon(
-                imageVector = Icons.Filled.Edit,
-                contentDescription = null,
-                modifier = Modifier.size(18.dp),
-            )
-            Spacer(Modifier.width(8.dp))
-            Text(
-                text = "Editar producto",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Medium,
-            )
+            if (isNavigating) {
+                androidx.compose.material3.CircularProgressIndicator(
+                    modifier = Modifier.size(20.dp),
+                    color = OnPrimary,
+                    strokeWidth = 2.dp,
+                )
+            } else {
+                Icon(
+                    imageVector = Icons.Filled.Edit,
+                    contentDescription = null,
+                    modifier = Modifier.size(18.dp),
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    text = "Editar producto",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Medium,
+                )
+            }
         }
     }
 }

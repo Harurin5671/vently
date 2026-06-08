@@ -57,10 +57,15 @@ class StockViewModel @Inject constructor(
                 val resolved = resolveIgvType(event.product)
                 _state.update { it.copy(selectedProduct = resolved) }
             }
-            is StockEvent.OnDismissProductDetail -> _state.update { it.copy(selectedProduct = null) }
+            is StockEvent.OnDismissProductDetail -> _state.update { it.copy(selectedProduct = null, isNavigatingToEdit = false) }
             is StockEvent.OnEditProduct -> {
-                _state.update { it.copy(selectedProduct = null) }
-                emitNav(StockNavigationEvent.NavigateToEditProduct(event.productId))
+                viewModelScope.launch {
+                    _state.update { it.copy(isNavigatingToEdit = true) }
+                    // Pequeño delay para que el usuario vea el estado de carga en el botón
+                    kotlinx.coroutines.delay(200)
+                    _state.update { it.copy(selectedProduct = null, isNavigatingToEdit = false) }
+                    emitNav(StockNavigationEvent.NavigateToEditProduct(event.productId))
+                }
             }
             is StockEvent.OnAddProduct -> emitNav(StockNavigationEvent.NavigateToAddProduct)
         }

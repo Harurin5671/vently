@@ -17,6 +17,7 @@ data class StockUiState(
     val selectedProduct: Product? = null,
     val igvTypes: List<IgvTypeEntity> = emptyList(),
     val unitsOfMeasure: List<UnitOfMeasureEntity> = emptyList(),
+    val isNavigatingToEdit: Boolean = false,
 )
 
 enum class StockFilter(val label: String) {

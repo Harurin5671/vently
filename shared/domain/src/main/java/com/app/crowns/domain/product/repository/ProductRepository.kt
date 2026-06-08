@@ -7,6 +7,7 @@ import kotlinx.coroutines.flow.Flow
 interface ProductRepository {
     val productChanges: Flow<Unit>
     suspend fun getProducts(): Result<List<Product>>
+    suspend fun getProductById(productId: String): Result<Product>
     suspend fun saveProduct(product: Product, imageBytes: ByteArray? = null): Result<Unit>
     suspend fun getCategories(): Result<List<Category>>
     suspend fun saveCategory(category: Category): Result<Unit>

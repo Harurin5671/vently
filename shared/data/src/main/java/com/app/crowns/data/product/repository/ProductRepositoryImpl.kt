@@ -41,6 +41,14 @@ class ProductRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun getProductById(productId: String): Result<Product> = runCatching {
+        val companyId = getCompanyId()
+        val categories = remoteDataSource.getCategories(companyId).getOrDefault(emptyList())
+        val productEntity = remoteDataSource.getProductById(productId).getOrThrow()
+        val category = categories.find { it.id == productEntity.categoryId }?.toDomain()
+        productEntity.toDomain(category)
+    }
+
     override suspend fun saveProduct(product: Product, imageBytes: ByteArray?): Result<Unit> = runCatching {
         val companyId = getCompanyId()
 

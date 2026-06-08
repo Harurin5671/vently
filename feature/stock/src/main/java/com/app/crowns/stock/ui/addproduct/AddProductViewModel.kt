@@ -8,7 +8,7 @@ import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.domain.product.repository.ProductRepository
 import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
-import com.app.crowns.domain.product.usecase.GetProductsUseCase
+import com.app.crowns.domain.product.usecase.GetProductByIdUseCase
 import com.app.crowns.domain.catalog.usecase.GetIgvTypesUseCase
 import com.app.crowns.domain.catalog.usecase.GetUnitsOfMeasureUseCase
 import com.app.crowns.domain.product.usecase.SaveProductUseCase
@@ -27,7 +27,7 @@ import javax.inject.Inject
 @HiltViewModel
 class AddProductViewModel @Inject constructor(
     private val getCategories: GetCategoriesUseCase,
-    private val getProducts: GetProductsUseCase,
+    private val getProductById: GetProductByIdUseCase,
     private val getIgvTypes: GetIgvTypesUseCase,
     private val getUnitsOfMeasure: GetUnitsOfMeasureUseCase,
     private val saveProduct: SaveProductUseCase,
@@ -139,8 +139,7 @@ class AddProductViewModel @Inject constructor(
                 loadCategories()
             }
 
-            getProducts().onSuccess { products ->
-                val product = products.find { it.id == productId } ?: return@onSuccess
+            getProductById(productId).onSuccess { product ->
                 val skuRaw = product.sku ?: ""
 
                 // Match against catalog list by code to ensure dropdown equality works
