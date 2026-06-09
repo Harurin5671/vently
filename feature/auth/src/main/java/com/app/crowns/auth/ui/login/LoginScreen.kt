@@ -51,6 +51,7 @@ import io.github.jan.supabase.compose.auth.composeAuth
 fun LoginScreen(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToHome: () -> Unit,
+    onNavigateToAccessDenied: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -60,6 +61,7 @@ fun LoginScreen(
             when (event) {
                 is AuthNavigationEvent.NavigateToOnboarding -> onNavigateToOnboarding()
                 is AuthNavigationEvent.NavigateToHome -> onNavigateToHome()
+                is AuthNavigationEvent.NavigateToAccessDenied -> onNavigateToAccessDenied()
             }
         }
     }

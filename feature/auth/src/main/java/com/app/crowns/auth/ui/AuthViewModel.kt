@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.common.Result
 import com.app.crowns.domain.auth.model.AuthError
+import com.app.crowns.domain.auth.usecase.CheckSubscriptionUseCase
 import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
 import com.app.crowns.domain.auth.usecase.IsSessionActiveUseCase
 import com.app.crowns.domain.auth.usecase.LogoutUseCase
@@ -25,7 +26,8 @@ class AuthViewModel @Inject constructor(
     private val logout: LogoutUseCase,
     private val getCurrentUser: GetCurrentUserUseCase,
     private val isSessionActive: IsSessionActiveUseCase,
-    private val hasCompanyUseCase: HasCompanyUseCase
+    private val hasCompanyUseCase: HasCompanyUseCase,
+    private val checkSubscription: CheckSubscriptionUseCase,
 ): ViewModel() {
 
     private val _state = MutableStateFlow(AuthUiState())
@@ -52,6 +54,18 @@ class AuthViewModel @Inject constructor(
             if (active) {
                 val user = getCurrentUser()
                 _state.update { it.copy(user = user, isAuthenticated = true) }
+                navigateAfterAuth()
+            }
+        }
+    }
+
+    private suspend fun navigateAfterAuth() {
+        when (val result = checkSubscription()) {
+            is Result.Failure -> {
+                _state.update { it.copy(isLoading = false, isAuthenticated = false) }
+                _navigationEvent.send(AuthNavigationEvent.NavigateToAccessDenied)
+            }
+            is Result.Success -> {
                 if (hasCompanyUseCase()) {
                     _navigationEvent.send(AuthNavigationEvent.NavigateToHome)
                 } else {
@@ -71,11 +85,7 @@ class AuthViewModel @Inject constructor(
                     _state.update {
                         it.copy(isLoading = false, isAuthenticated = true, user = user)
                     }
-                    if (hasCompanyUseCase()) {
-                        _navigationEvent.send(AuthNavigationEvent.NavigateToHome)
-                    } else {
-                        _navigationEvent.send(AuthNavigationEvent.NavigateToOnboarding)
-                    }
+                    navigateAfterAuth()
                 }
 
                 is NativeSignInResult.Error -> {

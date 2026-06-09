@@ -13,6 +13,8 @@ import com.app.crowns.domain.company.usecase.UpdateCertificatePasswordUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
 import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesUseCase
 import com.app.crowns.domain.company.usecase.UpdateSolCredentialsUseCase
+import com.app.crowns.settings.domain.usecase.DeleteAccountUseCase
+import com.app.crowns.settings.domain.usecase.LogoutUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -31,6 +33,8 @@ class SettingsViewModel @Inject constructor(
     private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
     private val updateDocumentSeriesUseCase: UpdateDocumentSeriesUseCase,
     private val updateSolCredentialsUseCase: UpdateSolCredentialsUseCase,
+    private val logoutUseCase: LogoutUseCase,
+    private val deleteAccountUseCase: DeleteAccountUseCase,
 ) : ViewModel() {
 
     private val _state = MutableStateFlow(SettingsUiState())
@@ -43,6 +47,8 @@ class SettingsViewModel @Inject constructor(
     fun onEvent(event: SettingsEvent) {
         when (event) {
             is SettingsEvent.Refresh -> loadCompanyInfo()
+            is SettingsEvent.Logout -> logout()
+            is SettingsEvent.DeleteAccount -> deleteAccount()
             is SettingsEvent.UploadCertificate -> uploadCertificate(event.base64)
             is SettingsEvent.UpdateCertificatePassword -> updateCertificatePassword(event.password)
             is SettingsEvent.UpdateDocumentSeries -> updateDocumentSeries(
@@ -52,6 +58,28 @@ class SettingsViewModel @Inject constructor(
                 event.facturaCorrelative
             )
             is SettingsEvent.UpdateSolCredentials -> updateSolCredentials(event.username, event.password)
+        }
+    }
+
+    private fun logout() {
+        viewModelScope.launch {
+            _state.update { it.copy(isLoading = true) }
+            logoutUseCase().onSuccess {
+                _state.update { it.copy(navigateToAuth = true, isLoading = false) }
+            }.onFailure { e ->
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cerrar sesión"), isLoading = false) }
+            }
+        }
+    }
+
+    private fun deleteAccount() {
+        viewModelScope.launch {
+            _state.update { it.copy(isDeleting = true) }
+            deleteAccountUseCase().onSuccess {
+                _state.update { it.copy(navigateToAuth = true, isDeleting = false) }
+            }.onFailure { e ->
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al eliminar la cuenta"), isDeleting = false) }
+            }
         }
     }
 

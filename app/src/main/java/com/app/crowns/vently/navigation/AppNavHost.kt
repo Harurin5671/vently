@@ -13,6 +13,7 @@ import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.ui.NavDisplay
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import com.app.crowns.auth.ui.AccessDeniedScreen
 import com.app.crowns.auth.ui.login.LoginScreen
 import com.app.crowns.history.ui.HistoryScreen
 import com.app.crowns.home.ui.HomeScreen
@@ -55,6 +56,10 @@ fun AppNavHost(
                         onNavigateToHome = {
                             backStack.clear()
                             backStack.add(AppDestination.Home)
+                        },
+                        onNavigateToAccessDenied = {
+                            backStack.clear()
+                            backStack.add(AppDestination.AccessDenied)
                         }
                     )
                 }
@@ -68,6 +73,19 @@ fun AppNavHost(
                         onNavigateToHome = {
                             backStack.clear()
                             backStack.add(AppDestination.Home)
+                        },
+                        onNavigateToAccessDenied = {
+                            backStack.clear()
+                            backStack.add(AppDestination.AccessDenied)
+                        }
+                    )
+                }
+
+                is AppDestination.AccessDenied -> NavEntry(destination) {
+                    AccessDeniedScreen(
+                        onReturnToLogin = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Auth)
                         }
                     )
                 }
@@ -113,7 +131,15 @@ fun AppNavHost(
                             SettingsScreen(
                                 onNavigateToEditBusiness = {
                                     backStack.add(AppDestination.EditBusinessProfile)
-                                }
+                                },
+                                onLogout = {
+                                    backStack.clear()
+                                    backStack.add(AppDestination.Auth)
+                                },
+                                onDeleteAccount = {
+                                    backStack.clear()
+                                    backStack.add(AppDestination.Auth)
+                                },
                             )
                         },
                         onFabClick = { tabIndex ->

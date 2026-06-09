@@ -9,5 +9,7 @@ data class SettingsUiState(
     val userInfo: User? = null,
     val documentSeries: List<DocumentSeries> = emptyList(),
     val isLoading: Boolean = false,
-    val error: String? = null
+    val isDeleting: Boolean = false,
+    val error: String? = null,
+    val navigateToAuth: Boolean = false,
 )

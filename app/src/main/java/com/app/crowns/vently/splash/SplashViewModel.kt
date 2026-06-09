@@ -2,7 +2,9 @@ package com.app.crowns.vently.splash
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.common.Result
 import com.app.crowns.domain.auth.repository.AuthRepository
+import com.app.crowns.domain.auth.usecase.CheckSubscriptionUseCase
 import com.app.crowns.domain.company.usecase.HasCompanyUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
@@ -18,6 +20,7 @@ import javax.inject.Inject
 class SplashViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val hasCompanyUseCase: HasCompanyUseCase,
+    private val checkSubscription: CheckSubscriptionUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState.Idle)
@@ -34,9 +37,11 @@ class SplashViewModel @Inject constructor(
             val isAuthenticated = authRepository.observeSession().first()
 
             if (isAuthenticated) {
-                val hasCompany = hasCompanyUseCase()
+                val subscriptionResult = checkSubscription()
                 splashTimer.await()
-                if (hasCompany) {
+                if (subscriptionResult is Result.Failure) {
+                    _uiState.value = SplashUiState.NavigateToAccessDenied
+                } else if (hasCompanyUseCase()) {
                     _uiState.value = SplashUiState.NavigateToHome
                 } else {
                     _uiState.value = SplashUiState.NavigateToOnboarding
@@ -54,4 +59,5 @@ sealed class SplashUiState {
     object NavigateToLogin : SplashUiState()
     object NavigateToOnboarding : SplashUiState()
     object NavigateToHome : SplashUiState()
+    object NavigateToAccessDenied : SplashUiState()
 }

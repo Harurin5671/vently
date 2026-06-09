@@ -28,6 +28,9 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object EditBusinessProfile : AppDestination
+
+    @Serializable
+    data object AccessDenied : AppDestination
 }
 
 @Serializable

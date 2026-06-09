@@ -8,7 +8,9 @@ import kotlinx.coroutines.flow.Flow
 interface AuthRepository {
     suspend fun loginWithGoogle(): Result<User, AuthError>
     suspend fun logout(): Result<Unit, AuthError>
+    suspend fun deleteAccount(): Result<Unit, AuthError>
     suspend fun getCurrentUser(): User?
     suspend fun isSessionActive(): Boolean
     fun observeSession(): Flow<Boolean>
+    suspend fun checkSubscription(): Result<Unit, AuthError>
 }

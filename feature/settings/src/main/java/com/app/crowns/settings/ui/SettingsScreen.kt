@@ -35,12 +35,16 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
@@ -85,6 +89,21 @@ fun SettingsScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                viewModel.onEvent(SettingsEvent.Refresh)
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    LaunchedEffect(state.navigateToAuth) {
+        if (state.navigateToAuth) onLogout()
+    }
 
     val launcher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.GetContent()
@@ -106,6 +125,7 @@ fun SettingsScreen(
 
     SettingsContent(
         isLoading = state.isLoading,
+        isDeleting = state.isDeleting,
         companyInfo = state.companyInfo,
         userInfo = state.userInfo,
         documentSeries = state.documentSeries,
@@ -128,8 +148,8 @@ fun SettingsScreen(
         onNavigateToPlan = onNavigateToPlan,
         onNavigateToHelp = onNavigateToHelp,
         onNavigateToReport = onNavigateToReport,
-        onLogout = onLogout,
-        onDeleteAccount = onDeleteAccount,
+        onLogout = { viewModel.onEvent(SettingsEvent.Logout) },
+        onDeleteAccount = { viewModel.onEvent(SettingsEvent.DeleteAccount) },
     )
 }
 
@@ -141,6 +161,7 @@ fun SettingsScreen(
 @Composable
 private fun SettingsContent(
     isLoading: Boolean,
+    isDeleting: Boolean,
     companyInfo: CompanyInfo?,
     userInfo: com.app.crowns.domain.auth.model.User?,
     documentSeries: List<DocumentSeries>,
@@ -522,6 +543,7 @@ private fun SettingsContent(
                         showDeleteAccountDialog = false
                         onDeleteAccount()
                     },
+                    enabled = !isDeleting,
                     modifier = Modifier.fillMaxWidth(),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = MaterialTheme.colorScheme.error,
@@ -529,7 +551,7 @@ private fun SettingsContent(
                     shape = MaterialTheme.shapes.medium,
                 ) {
                     Text(
-                        text = "Sí, eliminar mi cuenta",
+                        text = if (isDeleting) "Eliminando cuenta..." else "Sí, eliminar mi cuenta",
                         color = OnPrimary,
                         fontWeight = FontWeight.SemiBold,
                     )

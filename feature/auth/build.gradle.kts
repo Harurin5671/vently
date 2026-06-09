@@ -49,6 +49,7 @@ dependencies {
     implementation(platform(libs.supabase.bom))
     implementation(libs.supabase.auth)
     implementation(libs.supabase.compose.auth)
+    implementation(libs.supabase.functions)
     implementation(project(":core:network"))
     implementation(project(":core:designsystem"))
     implementation(project(":core:ui"))
