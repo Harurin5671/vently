@@ -25,6 +25,9 @@ sealed interface AppDestination : NavKey {
 
     @Serializable
     data object InvoicePreview : AppDestination
+
+    @Serializable
+    data object EditBusinessProfile : AppDestination
 }
 
 @Serializable

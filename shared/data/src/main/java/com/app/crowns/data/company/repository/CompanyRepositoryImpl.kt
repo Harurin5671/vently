@@ -8,6 +8,7 @@ import com.app.crowns.data.company.mapper.toDomain
 import com.app.crowns.data.company.mapper.toEntity
 import com.app.crowns.data.customer.dto.PersonInfoDto
 import com.app.crowns.data.customer.dto.toDomain
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
 import com.app.crowns.domain.customer.model.PersonInfo
@@ -20,7 +21,7 @@ import com.app.crowns.network.map
 import io.github.jan.supabase.SupabaseClient
 import io.github.jan.supabase.auth.auth
 import io.github.jan.supabase.postgrest.from
-import io.github.jan.supabase.postgrest.query.Columns
+import io.github.jan.supabase.storage.storage
 import javax.inject.Inject
 
 class CompanyRepositoryImpl @Inject constructor(
@@ -149,5 +150,111 @@ class CompanyRepositoryImpl @Inject constructor(
                     onConflict = "company_id,document_type"
                 }
         }
+    }
+
+    override suspend fun updateCompany(company: CompanyInfo): Result<Unit> = runCatching {
+        Log.d("COMPANY_REPO", "Iniciando updateCompany...")
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: throw Exception("Usuario no autenticado")
+
+        // Para evitar problemas con el ID al actualizar, usamos un mapa de campos específicos
+        // o nos aseguramos de que el filtro sea correcto.
+        val entity = company.toEntity(userId)
+        
+        Log.d("COMPANY_REPO", "Actualizando compañía para usuario: $userId")
+        Log.d("COMPANY_REPO", "Datos a actualizar: tradeName=${entity.tradeName}, address=${entity.address}, logoUrl=${entity.logoUrl}")
+
+        supabase.from("companies").update(
+            {
+                entity.tradeName?.let { set("trade_name", it) }
+                entity.address?.let { set("address", it) }
+                entity.logoUrl?.let { set("logo_url", it) }
+                set("business_name", entity.businessName)
+                set("ruc", entity.ruc)
+            }
+        ) {
+            filter { eq("user_id", userId) }
+        }
+        Log.d("COMPANY_REPO", "updateCompany finalizado exitosamente")
+    }
+
+    override suspend fun saveCompany(
+        companyInfo: CompanyInfo,
+        logoUrl: String?
+    ): Result<Unit> = runCatching {
+        val userId = supabase.auth.currentUserOrNull()?.id ?: error("User not authenticated")
+        val entity = companyInfo.toEntity(
+            userId = userId,
+            logoUrl = logoUrl,
+        )
+
+        // Insertar la compañía y obtener el ID generado
+        val insertedCompany = supabase.from("companies").insert(entity) {
+            select()
+        }.decodeSingle<CompanyEntity>()
+
+        val companyId = insertedCompany.id ?: error("Error: No se pudo obtener el ID de la compañía")
+
+        // Crear las series por defecto para Facturas (01) y Boletas (03)
+        val series = listOf(
+            DocumentSeriesEntity(
+                companyId = companyId,
+                documentType = ElectronicDocumentTypeEntity.FACTURA,
+                serie = "F001",
+                lastCorrelative = 0,
+                isActive = true
+            ),
+            DocumentSeriesEntity(
+                companyId = companyId,
+                documentType = ElectronicDocumentTypeEntity.BOLETA,
+                serie = "B001",
+                lastCorrelative = 0,
+                isActive = true
+            )
+        )
+
+        supabase.from("document_series").insert(series)
+    }
+
+    override suspend fun uploadLogo(
+        imageBytes: ByteArray
+    ): Result<String> = runCatching {
+        Log.d("COMPANY_REPO", "Iniciando uploadLogo...")
+        val userId = supabase.auth.currentUserOrNull()?.id
+            ?: error("User not authenticated")
+
+        val bucket = supabase.storage.from("business-logos")
+
+        // 1. Listar y borrar TODOS los archivos existentes para este usuario
+        try {
+            Log.d("COMPANY_REPO", "Listando archivos para usuario: $userId")
+            val existingFiles = bucket.list(userId)
+            Log.d("COMPANY_REPO", "Archivos encontrados: ${existingFiles.size}")
+            if (existingFiles.isNotEmpty()) {
+                val pathsToDelete = existingFiles.map { file ->
+                    if (file.name.contains(userId)) file.name else "$userId/${file.name}"
+                }
+                Log.d("COMPANY_REPO", "Borrando archivos: $pathsToDelete")
+                bucket.delete(pathsToDelete)
+                Log.d("COMPANY_REPO", "Archivos borrados")
+            }
+        } catch (e: Exception) {
+            Log.w("COMPANY_REPO", "Error al limpiar logos anteriores: ${e.message}")
+        }
+
+        // 2. Subir con nombre fijo
+        val path = "$userId/logo.jpg"
+        Log.d("COMPANY_REPO", "Subiendo nuevo logo a: $path")
+
+        bucket.upload(path, imageBytes) {
+            upsert = true
+        }
+        Log.d("COMPANY_REPO", "Subida completada")
+
+        // 3. Devolver la URL con un timestamp para forzar la recarga en la UI
+        val publicUrl = bucket.publicUrl(path)
+        val finalUrl = "$publicUrl?t=${System.currentTimeMillis()}"
+        Log.d("COMPANY_REPO", "URL final generada: $finalUrl")
+        finalUrl
     }
 }

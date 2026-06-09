@@ -21,6 +21,7 @@ import com.app.crowns.invoice.ui.create.CreateInvoiceScreen
 import com.app.crowns.invoice.ui.preview.InvoicePreviewScreen
 import com.app.crowns.onboarding.ui.pages.OnboardingScreen
 import com.app.crowns.settings.ui.SettingsScreen
+import com.app.crowns.settings.ui.business.EditBusinessProfileScreen
 import com.app.crowns.stock.ui.StockScreen
 import com.app.crowns.stock.ui.addproduct.AddProductScreen
 import com.app.crowns.vently.navigation.transition.DefaultTransitions
@@ -108,7 +109,13 @@ fun AppNavHost(
                             )
                         },
                         historyContent = { HistoryScreen() },
-                        settingsContent = { SettingsScreen() },
+                        settingsContent = {
+                            SettingsScreen(
+                                onNavigateToEditBusiness = {
+                                    backStack.add(AppDestination.EditBusinessProfile)
+                                }
+                            )
+                        },
                         onFabClick = { tabIndex ->
                             when (tabIndex) {
                                 0 -> { /* Acción para Dashboard */ }
@@ -156,6 +163,12 @@ fun AppNavHost(
                             backStack.add(AppDestination.Home)
                             selectedHomeTab = 2
                         }
+                    )
+                }
+
+                is AppDestination.EditBusinessProfile -> NavEntry(destination) {
+                    EditBusinessProfileScreen(
+                        onNavigateBack = { backStack.removeLastOrNull() }
                     )
                 }
             }
