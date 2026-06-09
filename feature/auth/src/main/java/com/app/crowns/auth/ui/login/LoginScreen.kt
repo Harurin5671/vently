@@ -51,7 +51,6 @@ import io.github.jan.supabase.compose.auth.composeAuth
 fun LoginScreen(
     onNavigateToOnboarding: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToAccessDenied: () -> Unit,
     viewModel: AuthViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -61,7 +60,6 @@ fun LoginScreen(
             when (event) {
                 is AuthNavigationEvent.NavigateToOnboarding -> onNavigateToOnboarding()
                 is AuthNavigationEvent.NavigateToHome -> onNavigateToHome()
-                is AuthNavigationEvent.NavigateToAccessDenied -> onNavigateToAccessDenied()
             }
         }
     }
@@ -281,4 +279,5 @@ private fun AuthError.toMessage(): String = when (this) {
     is AuthError.UserNotFound -> "Usuario no encontrado"
     is AuthError.EmailAlreadyInUse -> "El correo ya está en uso"
     is AuthError.Unknown -> message
+    is AuthError.SubscriptionNotActive -> "Suscripción no activa"
 }

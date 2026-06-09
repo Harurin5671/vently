@@ -34,7 +34,6 @@ fun SplashScreen(
     onNavigateToAuth: () -> Unit,
     onNavigateToOnboarding: () -> Unit,
     onNavigateToHome: () -> Unit,
-    onNavigateToAccessDenied: () -> Unit,
     viewModel: SplashViewModel = hiltViewModel()
 ) {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -44,7 +43,6 @@ fun SplashScreen(
             SplashUiState.NavigateToLogin -> onNavigateToAuth()
             SplashUiState.NavigateToOnboarding -> onNavigateToOnboarding()
             SplashUiState.NavigateToHome -> onNavigateToHome()
-            SplashUiState.NavigateToAccessDenied -> onNavigateToAccessDenied()
             SplashUiState.Idle -> Unit
         }
     }
@@ -94,7 +92,6 @@ private fun SplashScreenPreview() {
             onNavigateToAuth = {},
             onNavigateToOnboarding = {},
             onNavigateToHome = {},
-            onNavigateToAccessDenied = {}
         )
     }
 }

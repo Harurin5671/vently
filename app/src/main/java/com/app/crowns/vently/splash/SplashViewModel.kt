@@ -2,10 +2,8 @@ package com.app.crowns.vently.splash
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.common.Result
-import com.app.crowns.domain.auth.repository.AuthRepository
-import com.app.crowns.domain.auth.usecase.CheckSubscriptionUseCase
 import com.app.crowns.domain.company.usecase.HasCompanyUseCase
+import com.app.crowns.domain.auth.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.async
 import kotlinx.coroutines.delay
@@ -20,7 +18,6 @@ import javax.inject.Inject
 class SplashViewModel @Inject constructor(
     private val authRepository: AuthRepository,
     private val hasCompanyUseCase: HasCompanyUseCase,
-    private val checkSubscription: CheckSubscriptionUseCase,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<SplashUiState>(SplashUiState.Idle)
@@ -33,21 +30,16 @@ class SplashViewModel @Inject constructor(
     private fun checkSession() {
         viewModelScope.launch {
             val splashTimer = async { delay(1500L) }
-
             val isAuthenticated = authRepository.observeSession().first()
+            splashTimer.await()
 
             if (isAuthenticated) {
-                val subscriptionResult = checkSubscription()
-                splashTimer.await()
-                if (subscriptionResult is Result.Failure) {
-                    _uiState.value = SplashUiState.NavigateToAccessDenied
-                } else if (hasCompanyUseCase()) {
+                if (hasCompanyUseCase()) {
                     _uiState.value = SplashUiState.NavigateToHome
                 } else {
                     _uiState.value = SplashUiState.NavigateToOnboarding
                 }
             } else {
-                splashTimer.await()
                 _uiState.value = SplashUiState.NavigateToLogin
             }
         }
@@ -59,5 +51,4 @@ sealed class SplashUiState {
     object NavigateToLogin : SplashUiState()
     object NavigateToOnboarding : SplashUiState()
     object NavigateToHome : SplashUiState()
-    object NavigateToAccessDenied : SplashUiState()
 }

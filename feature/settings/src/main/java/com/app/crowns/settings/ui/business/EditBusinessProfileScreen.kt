@@ -29,7 +29,6 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -69,8 +68,6 @@ fun EditBusinessProfileScreen(
         state = state,
         snackbarHostState = snackbarHostState,
         onNavigateBack = onNavigateBack,
-        onTradeNameChange = viewModel::onTradeNameChange,
-        onAddressChange = viewModel::onAddressChange,
         onLogoClick = { launcher.launch("image/*") },
         onSave = viewModel::onSave
     )
@@ -89,8 +86,6 @@ fun EditBusinessProfileContent(
     state: EditBusinessProfileUiState,
     snackbarHostState: SnackbarHostState,
     onNavigateBack: () -> Unit,
-    onTradeNameChange: (String) -> Unit,
-    onAddressChange: (String) -> Unit,
     onLogoClick: () -> Unit,
     onSave: () -> Unit
 ) {
@@ -262,26 +257,14 @@ fun EditBusinessProfileContent(
                         .padding(16.dp),
                     verticalArrangement = Arrangement.spacedBy(16.dp)
                 ) {
-                    // Nombre comercial
+                    // Nombre comercial (solo lectura — dato de SUNAT)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = "Nombre comercial",
                             fontSize = 12.sp,
                             color = OnSurfaceVariant
                         )
-                        OutlinedTextField(
-                            value = state.tradeName,
-                            onValueChange = onTradeNameChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = SurfaceContainerLow,
-                                unfocusedContainerColor = SurfaceContainerLow,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = OutlineVariant
-                            ),
-                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                        )
+                        ReadOnlyField(value = state.companyInfo?.businessName ?: "—")
                     }
 
                     // RUC (Read-only)
@@ -308,26 +291,14 @@ fun EditBusinessProfileContent(
                         }
                     }
 
-                    // Dirección legal
+                    // Dirección legal (solo lectura — dato de SUNAT)
                     Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
                         Text(
                             text = "Dirección legal",
                             fontSize = 12.sp,
                             color = OnSurfaceVariant
                         )
-                        OutlinedTextField(
-                            value = state.address,
-                            onValueChange = onAddressChange,
-                            modifier = Modifier.fillMaxWidth(),
-                            shape = RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedContainerColor = SurfaceContainerLow,
-                                unfocusedContainerColor = SurfaceContainerLow,
-                                focusedBorderColor = Primary,
-                                unfocusedBorderColor = OutlineVariant
-                            ),
-                            textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
-                        )
+                        ReadOnlyField(value = state.companyInfo?.address ?: "—")
                     }
                 }
             }
@@ -376,19 +347,34 @@ fun EditBusinessProfileContent(
     }
 }
 
+@Composable
+private fun ReadOnlyField(value: String) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .defaultMinSize(minHeight = 56.dp)
+            .background(SurfaceDim.copy(alpha = 0.2f), RoundedCornerShape(12.dp))
+            .border(1.dp, OutlineVariant.copy(alpha = 0.6f), RoundedCornerShape(12.dp))
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        contentAlignment = Alignment.CenterStart
+    ) {
+        Text(
+            text = value,
+            color = OnSurfaceVariant,
+            fontSize = 14.sp,
+        )
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun EditBusinessProfileScreenPreview() {
     EditBusinessProfileContent(
         state = EditBusinessProfileUiState(
-            tradeName = "Ferretería López",
-            address = "Av. Principal 123, Lima",
             companyInfo = null
         ),
         snackbarHostState = remember { SnackbarHostState() },
         onNavigateBack = {},
-        onTradeNameChange = {},
-        onAddressChange = {},
         onLogoClick = {},
         onSave = {}
     )

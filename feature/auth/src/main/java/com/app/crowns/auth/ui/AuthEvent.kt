@@ -11,5 +11,4 @@ sealed class AuthEvent {
 sealed class AuthNavigationEvent {
     data object NavigateToOnboarding : AuthNavigationEvent()
     data object NavigateToHome : AuthNavigationEvent()
-    data object NavigateToAccessDenied : AuthNavigationEvent()
 }
