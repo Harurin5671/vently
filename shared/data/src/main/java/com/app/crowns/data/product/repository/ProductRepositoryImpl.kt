@@ -18,17 +18,20 @@ class ProductRepositoryImpl @Inject constructor(
     private val companyRepository: CompanyRepository,
 ) : ProductRepository {
 
-    private val _productChanges = MutableSharedFlow<Unit>(extraBufferCapacity = 1)
+    private val _productChanges = MutableSharedFlow<Unit>(replay = 1)
     override val productChanges = _productChanges.asSharedFlow()
 
     override suspend fun notifyProductChanged() {
         _productChanges.emit(Unit)
     }
 
+    private var cachedCompanyId: String? = null
+
     private suspend fun getCompanyId(): String {
+        cachedCompanyId?.let { return it }
         val company = companyRepository.getCompany().getOrNull()
             ?: throw Exception("Empresa no encontrada")
-        return company.id
+        return company.id.also { cachedCompanyId = it }
     }
 
     override suspend fun getProducts(): Result<List<Product>> = runCatching {

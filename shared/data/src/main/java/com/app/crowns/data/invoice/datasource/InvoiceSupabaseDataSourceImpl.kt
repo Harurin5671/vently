@@ -1,7 +1,8 @@
 package com.app.crowns.data.invoice.datasource
 
-import android.util.Log
 import com.app.crowns.data.invoice.dto.GenerateXmlRequestDto
+import com.app.crowns.data.invoice.model.CancelInvoiceResponseModel
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.data.invoice.model.InvoiceItemSupabaseModel
 import com.app.crowns.data.invoice.model.InvoiceSupabaseModel
 import com.app.crowns.data.invoice.model.InvoiceXmlResponseModel
@@ -22,23 +23,26 @@ class InvoiceSupabaseDataSourceImpl @Inject constructor(
     private val httpClient: HttpClient,
     @param:ApiBaseUrl private val baseUrl: String,
 ) : InvoiceSupabaseDataSource {
-    override suspend fun getInvoicesHistory(companyId: String): Result<List<InvoiceSupabaseModel>> =
-        runCatching {
-            Log.d("INVOICE_DS", "Buscando facturas para companyId: $companyId")
-            val result = supabase
-                .from("invoices")
-                .select(Columns.raw("*, invoice_items(*)")) {
-                    filter { eq("company_id", companyId) }
+    override suspend fun getInvoicesHistory(
+        companyId: String,
+        startDate: String,
+        endDate: String,
+        offset: Int,
+        limit: Int,
+    ): Result<List<InvoiceSupabaseModel>> = runCatching {
+        supabase
+            .from("invoices")
+            .select(Columns.raw("*, invoice_items(*)")) {
+                filter {
+                    eq("company_id", companyId)
+                    gte("issue_date", startDate)
+                    lte("issue_date", endDate)
                 }
-                .decodeList<InvoiceSupabaseModel>()
-            Log.d("INVOICE_DS", "Facturas encontradas en Supabase: ${result.size}")
-            if (result.isNotEmpty()) {
-                Log.d("INVOICE_DS", "Primera factura: ${result.first()}")
+                order("issue_date", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                range(offset.toLong(), (offset + limit - 1).toLong())
             }
-            result
-        }.onFailure {
-            Log.e("INVOICE_DS", "Error al traer historial de facturas", it)
-        }
+            .decodeList<InvoiceSupabaseModel>()
+    }
 
     override suspend fun getInvoiceItems(invoiceId: String): Result<List<InvoiceItemSupabaseModel>> =
         runCatching {
@@ -52,53 +56,38 @@ class InvoiceSupabaseDataSourceImpl @Inject constructor(
 
     override suspend fun generateXml(request: GenerateXmlRequestDto): Result<InvoiceXmlResponseModel> =
         runCatching {
-            Log.d("Prueba_Generate_Xml", "DS: Iniciando invoke de la Edge Function 'generate-xml'")
-            Log.d("Prueba_Generate_Xml", "DS: Body del request: $request")
             val response = supabase.functions.invoke(
                 function = "generate-xml",
                 body = request
             )
-            Log.d("Prueba_Generate_Xml", "DS: Respuesta recibida de Supabase. Status: ${response.status}")
-            
-            val rawJson = response.bodyAsText()
-            Log.d("Prueba123123 Response Generate Xml", rawJson)
-            
-            val body = response.body<InvoiceXmlResponseModel>()
-            Log.d("Prueba_Generate_Xml", "DS: Cuerpo decodificado exitosamente")
-            
-            val postmanStyleXml = body.xml.replace("\n", "\\n").replace("\t", "\\t")
-            Log.d("Prueba123123 Body Generate Xml", "{\"xml\": \"$postmanStyleXml\"}")
-
-            body
-        }.onFailure {
-            Log.e("Prueba_Generate_Xml", "DS: Error crítico en la llamada a la función", it)
+            response.body<InvoiceXmlResponseModel>()
         }
 
     override suspend fun signInvoice(invoiceId: String): Result<SignInvoiceSupabaseModel> = runCatching {
-        Log.d("Prueba_Sign_Invoice", "DS: Iniciando invoke de la Edge Function 'sign-invoice'")
-        val response = supabase.functions.invoke(
+        supabase.functions.invoke(
             function = "sign-invoice",
             body = mapOf("invoice_id" to invoiceId)
-        )
-        Log.d("Prueba_Sign_Invoice", "DS: Respuesta recibida. Status: ${response.status}")
-        val body = response.body<SignInvoiceSupabaseModel>()
-        Log.d("Prueba_Sign_Invoice", "DS: Cuerpo decodificado exitosamente")
-        body
-    }.onFailure {
-        Log.e("Prueba_Sign_Invoice", "DS: Error en la firma", it)
+        ).body<SignInvoiceSupabaseModel>()
     }
 
     override suspend fun sendToSunat(invoiceId: String): Result<SendSunatInvoiceSupabaseModel> = runCatching {
-        Log.d("Prueba_Send_Sunat", "DS: Iniciando invoke de la Edge Function 'send-sunat'")
-        val response = supabase.functions.invoke(
+        supabase.functions.invoke(
             function = "send-sunat",
             body = mapOf("invoice_id" to invoiceId)
-        )
-        Log.d("Prueba_Send_Sunat", "DS: Respuesta recibida. Status: ${response.status}")
-        val body = response.body<SendSunatInvoiceSupabaseModel>()
-        Log.d("Prueba_Send_Sunat", "DS: Cuerpo decodificado exitosamente")
-        body
-    }.onFailure {
-        Log.e("Prueba_Send_Sunat", "DS: Error al enviar a SUNAT", it)
+        ).body<SendSunatInvoiceSupabaseModel>()
     }
+
+    override suspend fun cancelInvoice(invoiceId: String): Result<Unit> = runCatching {
+        supabase.from("invoices").update({ set("status", InvoiceStatusEntity.CANCELLED) }) {
+            filter { eq("id", invoiceId) }
+        }
+    }
+
+    override suspend fun cancelAcceptedInvoice(invoiceId: String, reason: String): Result<CancelInvoiceResponseModel> =
+        runCatching {
+            supabase.functions.invoke(
+                function = "cancel-invoice",
+                body = mapOf("invoice_id" to invoiceId, "reason" to reason)
+            ).body<CancelInvoiceResponseModel>()
+        }
 }

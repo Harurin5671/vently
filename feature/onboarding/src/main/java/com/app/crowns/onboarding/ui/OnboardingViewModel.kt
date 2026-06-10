@@ -1,6 +1,5 @@
 package com.app.crowns.onboarding.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.network.NetworkResult
@@ -103,7 +102,6 @@ class OnboardingViewModel @Inject constructor(
         viewModelScope.launch {
             _state.update { it.copy(isSearching = true, searchError = null) }
             val result = getCompanyInfoUseCase(ruc)
-            Log.d("OnboardingViewModel", "Search result for RUC $ruc: $result")
             when (result) {
                 is NetworkResult.Success -> _state.update {
                     it.copy(

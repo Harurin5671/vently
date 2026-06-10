@@ -14,4 +14,6 @@ data class InvoicePreviewUiState(
     val documentId: String? = null,
     val series: String? = null,
     val correlative: String? = null,
+    val invoiceId: String? = null,
+    val isSigned: Boolean = false,
 )

@@ -8,10 +8,6 @@ import javax.inject.Inject
 class SearchPersonUseCase @Inject constructor(
     private val repository: CompanyRepository,
 ) {
-    suspend operator fun invoke(dni: String): NetworkResult<PersonInfo> {
-        android.util.Log.d("SEARCH_PERSON_USECASE", "Ejecutando SearchPersonUseCase para DNI: $dni")
-        val result = repository.getPersonInfo(dni)
-        android.util.Log.d("SEARCH_PERSON_USECASE", "Resultado de SearchPersonUseCase: $result")
-        return result
-    }
+    suspend operator fun invoke(dni: String): NetworkResult<PersonInfo> =
+        repository.getPersonInfo(dni)
 }

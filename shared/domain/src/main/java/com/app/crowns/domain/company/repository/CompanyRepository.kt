@@ -13,6 +13,7 @@ interface CompanyRepository {
     suspend fun updateCertificatePassword(password: String): Result<Unit>
     suspend fun getDocumentSeries(companyId: String): Result<List<DocumentSeries>>
     suspend fun updateDocumentSeries(series: DocumentSeries): Result<Unit>
+    suspend fun updateDocumentSeriesBatch(series: List<DocumentSeries>): Result<Unit>
     suspend fun updateSolCredentials(username: String, password: String): Result<Unit>
     suspend fun updateCompany(company: CompanyInfo): Result<Unit>
     suspend fun saveCompany(companyInfo: CompanyInfo, logoUrl: String?): Result<Unit>

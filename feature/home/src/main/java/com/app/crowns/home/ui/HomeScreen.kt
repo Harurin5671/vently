@@ -48,7 +48,7 @@ fun HomeScreen(
     stockContent: @Composable () -> Unit,
     historyContent: @Composable () -> Unit,
     settingsContent: @Composable () -> Unit,
-    onFabClick: (tab: Int) -> Unit,
+    onFabClick: () -> Unit,
 ) {
     Scaffold(
         containerColor = Surface,
@@ -73,10 +73,9 @@ fun HomeScreen(
                 3 -> settingsContent()
             }
 
-            // FAB flotante sobre el bottom bar
-            if (selectedTab == 1) { // Solo mostrar en Stock por ahora
+            if (selectedTab == 1) {
                 IconButton(
-                    onClick = { onFabClick(selectedTab) },
+                    onClick = { onFabClick() },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(bottom = 16.dp, end = 16.dp)
@@ -123,7 +122,7 @@ fun HomeScreenPreview() {
                     Text(text = "Settings Content")
                 }
             },
-            onFabClick = {}
+            onFabClick = { }
         )
     }
 }

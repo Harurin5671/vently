@@ -4,10 +4,15 @@ import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.util.generateInvoicePdf
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.catalog.usecase.GetInvoiceStatusesUseCase
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import com.app.crowns.domain.invoice.usecase.CancelAcceptedInvoiceUseCase
+import com.app.crowns.domain.invoice.usecase.CancelInvoiceUseCase
 import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase
+import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase.Companion.PAGE_SIZE
+import java.time.YearMonth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -33,6 +38,8 @@ class HistoryViewModel @Inject constructor(
     private val getInvoiceStatusesUseCase: GetInvoiceStatusesUseCase,
     private val getInvoicesHistoryUseCase: GetInvoicesHistoryUseCase,
     private val getCompanyUseCase: GetCompanyUseCase,
+    private val cancelInvoiceUseCase: CancelInvoiceUseCase,
+    private val cancelAcceptedInvoiceUseCase: CancelAcceptedInvoiceUseCase,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -53,13 +60,18 @@ class HistoryViewModel @Inject constructor(
                 loadHistory(isSilent = false)
                 loadCompanyInfo()
             }
-            is HistoryEvent.PreviousMonth -> _state.update {
-                it.copy(currentMonth = it.currentMonth.minusMonths(1))
+            is HistoryEvent.PreviousMonth -> {
+                val newMonth = _state.value.currentMonth.minusMonths(1)
+                _state.update { it.copy(currentMonth = newMonth) }
+                loadHistory(month = newMonth)
             }
-            is HistoryEvent.NextMonth -> _state.update {
-                if (it.currentMonth < java.time.YearMonth.now()) {
-                    it.copy(currentMonth = it.currentMonth.plusMonths(1))
-                } else it
+            is HistoryEvent.NextMonth -> {
+                val current = _state.value.currentMonth
+                if (current < YearMonth.now()) {
+                    val newMonth = current.plusMonths(1)
+                    _state.update { it.copy(currentMonth = newMonth) }
+                    loadHistory(month = newMonth)
+                }
             }
             is HistoryEvent.OnFilterSelected -> _state.update {
                 it.copy(selectedFilter = event.filter)
@@ -90,7 +102,12 @@ class HistoryViewModel @Inject constructor(
                     }
                 }
             }
-            is HistoryEvent.OnCancelInvoice -> { /* implementar con lógica real */ }
+            is HistoryEvent.OnCancelInvoice -> cancelInvoice(event.invoiceId)
+            is HistoryEvent.OnDismissCancelError -> _state.update { it.copy(cancelError = null) }
+            is HistoryEvent.OnCancelReasonChanged -> _state.update { it.copy(cancelReasonInput = event.reason) }
+            is HistoryEvent.OnConfirmCancelAccepted -> confirmCancelAccepted()
+            is HistoryEvent.OnDismissCancelReason -> _state.update { it.copy(showCancelReasonDialog = false, pendingCancelInvoiceId = null, cancelReasonInput = "") }
+            is HistoryEvent.OnLoadMore -> loadMoreHistory()
         }
     }
 
@@ -102,24 +119,74 @@ class HistoryViewModel @Inject constructor(
         }
     }
 
-    private fun loadHistory(isSilent: Boolean = false) {
+    private fun cancelInvoice(invoiceId: String) {
+        val invoice = _state.value.invoices.find { it.id == invoiceId } ?: return
+        if (invoice.status == InvoiceStatusEntity.ACCEPTED || invoice.status == InvoiceStatusEntity.OBSERVED) {
+            _state.update { it.copy(showCancelReasonDialog = true, pendingCancelInvoiceId = invoiceId, cancelReasonInput = "") }
+            return
+        }
         viewModelScope.launch {
-            if (!isSilent) _state.update { it.copy(isLoading = true) }
-            
-            val statusesResult = getInvoiceStatusesUseCase()
-            val statuses = statusesResult.getOrDefault(emptyList())
-            
-            val invoicesResult = getInvoicesHistoryUseCase()
-            val rawInvoices = invoicesResult.getOrDefault(emptyList())
+            _state.update { it.copy(cancellingInvoiceId = invoiceId) }
+            cancelInvoiceUseCase(invoiceId)
+                .onSuccess { loadHistory(isSilent = true) }
+                .onFailure { _state.update { it.copy(cancelError = "No se pudo anular el comprobante. Intenta de nuevo.") } }
+            _state.update { it.copy(cancellingInvoiceId = null) }
+        }
+    }
 
-            val invoices = rawInvoices.map { inv ->
-                inv.copy(statusInfo = statuses.find { it.code == inv.status })
-            }
-            
+    private fun confirmCancelAccepted() {
+        val invoiceId = _state.value.pendingCancelInvoiceId ?: return
+        val reason = _state.value.cancelReasonInput.trim()
+        if (reason.isBlank()) {
+            _state.update { it.copy(cancelError = "Debes ingresar el motivo de anulación") }
+            return
+        }
+        viewModelScope.launch {
+            _state.update { it.copy(cancellingInvoiceId = invoiceId, showCancelReasonDialog = false, pendingCancelInvoiceId = null, cancelReasonInput = "") }
+            cancelAcceptedInvoiceUseCase(invoiceId, reason)
+                .onSuccess { response ->
+                    if (response.success) {
+                        loadHistory(isSilent = true)
+                    } else {
+                        _state.update { it.copy(cancelError = response.sunatDescription ?: "SUNAT rechazó la comunicación de baja") }
+                    }
+                }
+                .onFailure { e ->
+                    _state.update { it.copy(cancelError = e.message ?: "No se pudo enviar la comunicación de baja a SUNAT") }
+                }
+            _state.update { it.copy(cancellingInvoiceId = null) }
+        }
+    }
+
+    private fun loadHistory(isSilent: Boolean = false, month: YearMonth = _state.value.currentMonth) {
+        viewModelScope.launch {
+            if (!isSilent) _state.update { it.copy(isLoading = true, invoices = emptyList(), hasMorePages = false) }
+            val statuses = getInvoiceStatusesUseCase().getOrDefault(emptyList())
+            val rawInvoices = getInvoicesHistoryUseCase(month, offset = 0).getOrDefault(emptyList())
+            val invoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
             _state.update {
                 it.copy(
                     isLoading = false,
-                    invoices = invoices
+                    invoices = invoices,
+                    hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
+                )
+            }
+        }
+    }
+
+    private fun loadMoreHistory() {
+        if (_state.value.isLoadingMore || !_state.value.hasMorePages) return
+        viewModelScope.launch {
+            _state.update { it.copy(isLoadingMore = true) }
+            val offset = _state.value.invoices.size
+            val statuses = getInvoiceStatusesUseCase().getOrDefault(emptyList())
+            val rawInvoices = getInvoicesHistoryUseCase(_state.value.currentMonth, offset).getOrDefault(emptyList())
+            val newInvoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
+            _state.update {
+                it.copy(
+                    isLoadingMore = false,
+                    invoices = it.invoices + newInvoices,
+                    hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
                 )
             }
         }

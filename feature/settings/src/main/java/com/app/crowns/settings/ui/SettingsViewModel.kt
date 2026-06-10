@@ -1,6 +1,5 @@
 package com.app.crowns.settings.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
@@ -11,7 +10,7 @@ import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.GetDocumentSeriesUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificatePasswordUseCase
 import com.app.crowns.domain.company.usecase.UpdateCertificateUseCase
-import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesUseCase
+import com.app.crowns.domain.company.usecase.UpdateDocumentSeriesBatchUseCase
 import com.app.crowns.domain.company.usecase.UpdateSolCredentialsUseCase
 import com.app.crowns.settings.domain.usecase.DeleteAccountUseCase
 import com.app.crowns.settings.domain.usecase.LogoutUseCase
@@ -31,7 +30,7 @@ class SettingsViewModel @Inject constructor(
     private val updateCertificateUseCase: UpdateCertificateUseCase,
     private val updateCertificatePasswordUseCase: UpdateCertificatePasswordUseCase,
     private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
-    private val updateDocumentSeriesUseCase: UpdateDocumentSeriesUseCase,
+    private val updateDocumentSeriesBatchUseCase: UpdateDocumentSeriesBatchUseCase,
     private val updateSolCredentialsUseCase: UpdateSolCredentialsUseCase,
     private val logoutUseCase: LogoutUseCase,
     private val deleteAccountUseCase: DeleteAccountUseCase,
@@ -105,35 +104,31 @@ class SettingsViewModel @Inject constructor(
 
             _state.update { it.copy(isLoading = true) }
 
-            var success = true
-            
-            if (boletaHasChanged) {
-                val boleta = currentBoleta?.copy(serie = boletaSerie, lastCorrelative = boletaCorrelative)
-                    ?: DocumentSeries(
-                        companyId = companyId,
-                        documentType = ElectronicDocumentTypeEntity.BOLETA,
-                        serie = boletaSerie,
-                        lastCorrelative = boletaCorrelative
-                    )
-                if (updateDocumentSeriesUseCase(boleta).isFailure) success = false
+            val seriesToUpdate = buildList {
+                if (boletaHasChanged) add(
+                    currentBoleta?.copy(serie = boletaSerie, lastCorrelative = boletaCorrelative)
+                        ?: DocumentSeries(
+                            companyId = companyId,
+                            documentType = ElectronicDocumentTypeEntity.BOLETA,
+                            serie = boletaSerie,
+                            lastCorrelative = boletaCorrelative
+                        )
+                )
+                if (facturaHasChanged) add(
+                    currentFactura?.copy(serie = facturaSerie, lastCorrelative = facturaCorrelative)
+                        ?: DocumentSeries(
+                            companyId = companyId,
+                            documentType = ElectronicDocumentTypeEntity.FACTURA,
+                            serie = facturaSerie,
+                            lastCorrelative = facturaCorrelative
+                        )
+                )
             }
 
-            if (facturaHasChanged) {
-                val factura = currentFactura?.copy(serie = facturaSerie, lastCorrelative = facturaCorrelative)
-                    ?: DocumentSeries(
-                        companyId = companyId,
-                        documentType = ElectronicDocumentTypeEntity.FACTURA,
-                        serie = facturaSerie,
-                        lastCorrelative = facturaCorrelative
-                    )
-                if (updateDocumentSeriesUseCase(factura).isFailure) success = false
-            }
-
-            if (success) {
-                loadCompanyInfo()
-            } else {
-                _state.update { it.copy(error = "Error al actualizar las series", isLoading = false) }
-            }
+            updateDocumentSeriesBatchUseCase(seriesToUpdate).fold(
+                onSuccess = { loadCompanyInfo() },
+                onFailure = { _state.update { it.copy(error = "Error al actualizar las series", isLoading = false) } }
+            )
         }
     }
 
@@ -143,7 +138,6 @@ class SettingsViewModel @Inject constructor(
             updateSolCredentialsUseCase(username, password).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                Log.e("SETTINGS_DEBUG", "Error updating SOL credentials: ${e.javaClass.simpleName}: ${e.message}", e)
                 _state.update { it.copy(error = e.toUserFriendlyMessage("Error al actualizar credenciales SOL"), isLoading = false) }
             }
         }
@@ -155,7 +149,6 @@ class SettingsViewModel @Inject constructor(
             updateCertificatePasswordUseCase(password).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                Log.e("SETTINGS_DEBUG", "Error updating certificate password: ${e.javaClass.simpleName}: ${e.message}", e)
                 _state.update { it.copy(error = e.toUserFriendlyMessage("Error al actualizar contraseña"), isLoading = false) }
             }
         }
@@ -167,7 +160,6 @@ class SettingsViewModel @Inject constructor(
             updateCertificateUseCase(base64).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                Log.e("SETTINGS_DEBUG", "Error uploading certificate: ${e.javaClass.simpleName}: ${e.message}", e)
                 _state.update { it.copy(error = e.toUserFriendlyMessage("Error al subir certificado"), isLoading = false) }
             }
         }

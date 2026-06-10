@@ -1,7 +1,6 @@
 package com.app.crowns.stock.ui.addproduct
 
 import android.content.Context
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.product.model.Category
@@ -189,7 +188,6 @@ class AddProductViewModel @Inject constructor(
                 try {
                     context.contentResolver.openInputStream(uri)?.use { it.readBytes() }
                 } catch (e: Exception) {
-                    Log.e("AddProductViewModel", "Error reading image bytes", e)
                     null
                 }
             }
@@ -210,7 +208,6 @@ class AddProductViewModel @Inject constructor(
                 // Preserve existing image URL when no new image is selected
                 imageUrl = if (imageBytes == null) s.existingImageUrl else null,
             )
-            Log.d("AddProductViewModel", "product -> name: $product")
             saveProduct(product, imageBytes)
                 .onSuccess {
                     _state.update { it.copy(isSaving = false) }

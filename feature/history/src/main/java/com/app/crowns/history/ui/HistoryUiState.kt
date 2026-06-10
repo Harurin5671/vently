@@ -8,6 +8,7 @@ import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale
 
+
 data class HistoryUiState(
     val currentMonth: YearMonth = YearMonth.now(),
     val selectedFilter: HistoryFilter = HistoryFilter.ALL,
@@ -15,6 +16,13 @@ data class HistoryUiState(
     val companyInfo: CompanyInfo? = null,
     val expandedInvoiceId: String? = null,
     val isLoading: Boolean = false,
+    val isLoadingMore: Boolean = false,
+    val hasMorePages: Boolean = false,
+    val cancellingInvoiceId: String? = null,
+    val cancelError: String? = null,
+    val showCancelReasonDialog: Boolean = false,
+    val pendingCancelInvoiceId: String? = null,
+    val cancelReasonInput: String = "",
 )
 
 enum class HistoryFilter(val label: String) {
@@ -27,20 +35,13 @@ enum class HistoryFilter(val label: String) {
 
 val HistoryUiState.filteredInvoices: List<InvoiceEntity>
     get() = invoices.filter { invoice ->
-        // Parse date - handles ISO like "2023-10-27T10:00:00" or simple date "2023-10-27"
-        val dateStr = invoice.issueDate.take(10)
-        val date = try { LocalDate.parse(dateStr) } catch (e: Exception) { LocalDate.now() }
-        val month = YearMonth.from(date)
-        
-        val matchesMonth = month == currentMonth
-        val matchesFilter = when (selectedFilter) {
+        when (selectedFilter) {
             HistoryFilter.ALL -> true
             HistoryFilter.BOLETA -> invoice.documentType == "03"
             HistoryFilter.FACTURA -> invoice.documentType == "01"
             HistoryFilter.ACCEPTED -> invoice.status == InvoiceStatusEntity.ACCEPTED
             HistoryFilter.PENDING -> invoice.status == InvoiceStatusEntity.PENDING || invoice.status == InvoiceStatusEntity.DRAFT
         }
-        matchesMonth && matchesFilter
     }
 
 // Agrupa por fecha para mostrar HOY, AYER, etc.

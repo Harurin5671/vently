@@ -9,4 +9,9 @@ sealed class HistoryEvent {
     data class OnDownloadPdf(val invoiceId: String) : HistoryEvent()
     data class OnSendInvoice(val invoiceId: String) : HistoryEvent()
     data class OnCancelInvoice(val invoiceId: String) : HistoryEvent()
+    data object OnDismissCancelError : HistoryEvent()
+    data class OnCancelReasonChanged(val reason: String) : HistoryEvent()
+    data object OnConfirmCancelAccepted : HistoryEvent()
+    data object OnDismissCancelReason : HistoryEvent()
+    data object OnLoadMore : HistoryEvent()
 }

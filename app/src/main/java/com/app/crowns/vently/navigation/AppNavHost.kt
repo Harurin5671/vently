@@ -3,12 +3,10 @@ package com.app.crowns.vently.navigation
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.app.crowns.home.ui.HomeViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavEntry
 import androidx.navigation3.runtime.NavKey
@@ -35,7 +33,6 @@ fun AppNavHost(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier,
 ) {
-    var selectedHomeTab by rememberSaveable { mutableIntStateOf(0) }
     val subscriptionGate: SubscriptionGateViewModel = hiltViewModel()
     val showSubscriptionDialog by subscriptionGate.showDialog.collectAsStateWithLifecycle()
 
@@ -62,7 +59,7 @@ fun AppNavHost(
                         },
                         onNavigateToHome = {
                             backStack.clear()
-                            backStack.add(AppDestination.Home)
+                            backStack.add(AppDestination.Home())
                         },
                     )
                 }
@@ -75,7 +72,7 @@ fun AppNavHost(
                         },
                         onNavigateToHome = {
                             backStack.clear()
-                            backStack.add(AppDestination.Home)
+                            backStack.add(AppDestination.Home())
                         },
                     )
                 }
@@ -84,15 +81,17 @@ fun AppNavHost(
                     OnboardingScreen(
                         onFinished = {
                             backStack.clear()
-                            backStack.add(AppDestination.Home)
+                            backStack.add(AppDestination.Home())
                         }
                     )
                 }
 
                 is AppDestination.Home -> NavEntry(destination) {
+                    val homeViewModel: HomeViewModel = hiltViewModel()
+                    val homeState by homeViewModel.state.collectAsStateWithLifecycle()
                     HomeScreen(
-                        selectedTab = selectedHomeTab,
-                        onTabSelected = { selectedHomeTab = it },
+                        selectedTab = homeState.selectedTab,
+                        onTabSelected = { homeViewModel.onTabSelected(it) },
                         dashboardContent = {
                             DashboardScreen(
                                 onNavigateToNewBoleta = {
@@ -105,9 +104,9 @@ fun AppNavHost(
                                         backStack.add(AppDestination.CreateInvoice(isFactura = true, id = UUID.randomUUID().toString()))
                                     }
                                 },
-                                onNavigateToStock = { selectedHomeTab = 1 },
-                                onNavigateToHistory = { selectedHomeTab = 2 },
-                                onNavigateToSettings = { selectedHomeTab = 3 },
+                                onNavigateToStock = { homeViewModel.onTabSelected(1) },
+                                onNavigateToHistory = { homeViewModel.onTabSelected(2) },
+                                onNavigateToSettings = { homeViewModel.onTabSelected(3) },
                             )
                         },
                         stockContent = {
@@ -140,14 +139,9 @@ fun AppNavHost(
                                 },
                             )
                         },
-                        onFabClick = { tabIndex ->
-                            when (tabIndex) {
-                                0 -> { /* Acción para Dashboard */ }
-                                1 -> subscriptionGate.requireSubscription {
-                                    backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
-                                }
-                                2 -> { /* Acción para Historial */ }
-                                3 -> { /* Acción para Ajustes */ }
+                        onFabClick = {
+                            subscriptionGate.requireSubscription {
+                                backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
                             }
                         }
                     )
@@ -182,12 +176,11 @@ fun AppNavHost(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onInvoiceEmitted = {
                             backStack.clear()
-                            backStack.add(AppDestination.Home)
+                            backStack.add(AppDestination.Home())
                         },
                         onNavigateToHistory = {
                             backStack.clear()
-                            backStack.add(AppDestination.Home)
-                            selectedHomeTab = 2
+                            backStack.add(AppDestination.Home(initialTab = 2))
                         }
                     )
                 }

@@ -65,16 +65,13 @@ class DashboardViewModel @Inject constructor(
 
     private fun loadDashboard(isSilent: Boolean = false) {
         viewModelScope.launch {
-            android.util.Log.d("DASHBOARD_VM", "Cargando datos del Dashboard...")
             if (!isSilent) _state.update { it.copy(isLoading = true) }
 
             val companyResult = getCompanyUseCase()
             val companyInfo = companyResult.getOrNull()
-            android.util.Log.d("DASHBOARD_VM", "Empresa: ${companyInfo?.businessName}")
 
-            val invoicesResult = getInvoicesHistory()
+            val invoicesResult = getInvoicesHistory(java.time.YearMonth.now())
             val rawInvoices = invoicesResult.getOrDefault(emptyList())
-            android.util.Log.d("DASHBOARD_VM", "Facturas obtenidas: ${rawInvoices.size}")
 
             val statusesResult = getInvoiceStatusesUseCase()
             val statuses = statusesResult.getOrDefault(emptyList())
@@ -118,7 +115,6 @@ class DashboardViewModel @Inject constructor(
                     recentInvoices = invoices.take(5),
                 )
             }
-            android.util.Log.d("DASHBOARD_VM", "Estado actualizado. Recientes en state: ${_state.value.recentInvoices.size}")
         }
     }
 

@@ -25,6 +25,10 @@ import javax.inject.Inject
 class AuthRepositoryImpl @Inject constructor(
     private val supabase: SupabaseClient
 ) : AuthRepository {
+
+    companion object {
+        private const val SUBSCRIPTION_CACHE_TTL_MS = 5 * 60 * 1000L // 5 minutos
+    }
     override suspend fun loginWithGoogle(): Result<User, AuthError> = try {
         supabase.auth.signInWith(Google)
         val session = supabase.auth.currentSessionOrNull()
@@ -36,6 +40,8 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun logout(): Result<Unit, AuthError> = try {
         supabase.auth.signOut()
+        subscriptionCache = null
+        subscriptionCacheTime = 0L
         Result.Success(Unit)
     } catch (e: Exception) {
         Result.Failure(e.toAuthError())
@@ -68,21 +74,33 @@ class AuthRepositoryImpl @Inject constructor(
         }.filterNotNull()
     }
 
-    override suspend fun checkSubscription(): Result<Unit, AuthError> = try {
-        val row = supabase.postgrest
-            .from("subscriptions")
-            .select(Columns.list("status")) {
-                limit(1)
-            }
-            .decodeSingleOrNull<SubscriptionRow>()
+    private var subscriptionCache: Result<Unit, AuthError>? = null
+    private var subscriptionCacheTime: Long = 0L
 
-        if (row != null && SubscriptionStatus.valueOf(row.status.uppercase()).isAllowed) {
-            Result.Success(Unit)
-        } else {
-            Result.Failure(AuthError.SubscriptionNotActive)
+    override suspend fun checkSubscription(): Result<Unit, AuthError> {
+        val now = System.currentTimeMillis()
+        if (subscriptionCache != null && now - subscriptionCacheTime < SUBSCRIPTION_CACHE_TTL_MS) {
+            return subscriptionCache!!
         }
-    } catch (e: Exception) {
-        Result.Failure(e.toAuthError())
+        return try {
+            val row = supabase.postgrest
+                .from("subscriptions")
+                .select(Columns.list("status")) {
+                    limit(1)
+                }
+                .decodeSingleOrNull<SubscriptionRow>()
+
+            val result = if (row != null && SubscriptionStatus.valueOf(row.status.uppercase()).isAllowed) {
+                Result.Success(Unit)
+            } else {
+                Result.Failure(AuthError.SubscriptionNotActive)
+            }
+            subscriptionCache = result
+            subscriptionCacheTime = now
+            result
+        } catch (e: Exception) {
+            Result.Failure(e.toAuthError())
+        }
     }
 
     @Serializable

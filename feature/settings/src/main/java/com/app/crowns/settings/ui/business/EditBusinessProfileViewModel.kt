@@ -1,6 +1,5 @@
 package com.app.crowns.settings.ui.business
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.company.model.CompanyInfo
@@ -108,43 +107,28 @@ class EditBusinessProfileViewModel @Inject constructor(
 
     fun onSave() {
         val currentCompany = _state.value.companyInfo ?: return
-        Log.d("EDIT_PROFILE_VM", "Iniciando proceso de guardado...")
         viewModelScope.launch {
             _state.update { it.copy(isSaving = true, error = null) }
-            
+
             var finalLogoUrl = _state.value.logoUrl
-            
-            // 1. Subir logo si hay uno nuevo seleccionado
+
             _state.value.selectedLogoBytes?.let { bytes ->
-                Log.d("EDIT_PROFILE_VM", "Subiendo nuevo logo...")
                 repository.uploadLogo(bytes)
-                    .onSuccess { url ->
-                        Log.d("EDIT_PROFILE_VM", "Logo subido exitosamente: $url")
-                        finalLogoUrl = url
-                    }
+                    .onSuccess { url -> finalLogoUrl = url }
                     .onFailure { error ->
-                        Log.e("EDIT_PROFILE_VM", "Error al subir logo", error)
                         _state.update { it.copy(isSaving = false, error = "Error al subir logo: ${error.message}") }
                         return@launch
                     }
             }
 
-            // 2. Actualizar datos de la compañía
-            Log.d("EDIT_PROFILE_VM", "Actualizando datos de la compañía...")
             val updatedCompany = currentCompany.copy(
                 tradeName = _state.value.tradeName,
                 address = _state.value.address,
                 logoUrl = finalLogoUrl
             )
             repository.updateCompany(updatedCompany)
-                .onSuccess {
-                    Log.d("EDIT_PROFILE_VM", "Compañía actualizada exitosamente")
-                    _state.update { it.copy(isSaving = false, isSaved = true) }
-                }
-                .onFailure { error ->
-                    Log.e("EDIT_PROFILE_VM", "Error al actualizar compañía", error)
-                    _state.update { it.copy(isSaving = false, error = error.message) }
-                }
+                .onSuccess { _state.update { it.copy(isSaving = false, isSaved = true) } }
+                .onFailure { error -> _state.update { it.copy(isSaving = false, error = error.message) } }
         }
     }
 

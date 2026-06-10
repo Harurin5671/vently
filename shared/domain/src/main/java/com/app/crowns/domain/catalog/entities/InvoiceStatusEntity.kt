@@ -11,13 +11,16 @@ data class InvoiceStatusEntity(
         const val PENDING = "PENDIENTE"
         const val CANCELLED = "ANULADA"
         const val DRAFT = "BORRADOR"
+        const val OBSERVED = "OBSERVADA"
+        const val REJECTED = "RECHAZADA"
+        const val ERROR = "ERROR"
 
         private val COLOR_MAP = mapOf(
             DRAFT     to "#9E9E9E",
             PENDING   to "#FF9800",
             ACCEPTED  to "#4CAF50",
-            "OBSERVADA" to "#2196F3",
-            "RECHAZADA" to "#F44336",
+            OBSERVED  to "#2196F3",
+            REJECTED  to "#F44336",
             CANCELLED to "#607D8B",
             "ERROR"   to "#E91E63",
         )

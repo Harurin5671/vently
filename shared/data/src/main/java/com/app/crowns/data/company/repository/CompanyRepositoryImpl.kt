@@ -1,6 +1,5 @@
 package com.app.crowns.data.company.repository
 
-import android.util.Log
 import com.app.crowns.data.company.dto.CompanyInfoDto
 import com.app.crowns.data.company.entity.CompanyEntity
 import com.app.crowns.data.company.entity.DocumentSeriesEntity
@@ -49,36 +48,19 @@ class CompanyRepositoryImpl @Inject constructor(
     }
 
     override suspend fun getCompanyInfo(ruc: String): NetworkResult<CompanyInfo> {
-        Log.d("COMPANY_REPO", "Iniciando getCompanyInfo para RUC: $ruc")
-        Log.d("COMPANY_REPO", "URL base: $baseUrl")
-        Log.d("COMPANY_REPO", "URL completa: ${baseUrl}get-ruc")
-
-        val result = httpClient.get(
+        return httpClient.get(
             url = "${baseUrl}get-ruc",
             deserializer = CompanyInfoDto.serializer(),
             queryParams = mapOf("ruc" to ruc),
-        )
-
-        Log.d("COMPANY_REPO", "Resultado de red crudo: $result")
-
-        return result.map { dto ->
-            val domain = dto.toDomain()
-            Log.d("COMPANY_REPO", "DTO mapeado exitosamente a dominio: $domain")
-            domain
-        }
+        ).map { it.toDomain() }
     }
 
     override suspend fun getPersonInfo(dni: String): NetworkResult<PersonInfo> {
-        Log.d("COMPANY_REPO", "Iniciando getPersonInfo para DNI: $dni")
-        Log.d("COMPANY_REPO", "URL completa: ${baseUrl}get-dni")
-
-        val result = httpClient.get(
+        return httpClient.get(
             url = "${baseUrl}get-dni",
             deserializer = PersonInfoDto.serializer(),
             queryParams = mapOf("dni" to dni),
-        )
-
-        return result.map { it.toDomain() }
+        ).map { it.toDomain() }
     }
 
     override suspend fun updateCertificate(base64: String): Result<Unit> = runCatching {
@@ -152,17 +134,17 @@ class CompanyRepositoryImpl @Inject constructor(
         }
     }
 
+    override suspend fun updateDocumentSeriesBatch(series: List<DocumentSeries>): Result<Unit> = runCatching {
+        supabase.from("document_series").upsert(series.map { it.toEntity().copy(id = null) }) {
+            onConflict = "company_id,document_type"
+        }
+    }
+
     override suspend fun updateCompany(company: CompanyInfo): Result<Unit> = runCatching {
-        Log.d("COMPANY_REPO", "Iniciando updateCompany...")
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: throw Exception("Usuario no autenticado")
 
-        // Para evitar problemas con el ID al actualizar, usamos un mapa de campos específicos
-        // o nos aseguramos de que el filtro sea correcto.
         val entity = company.toEntity(userId)
-        
-        Log.d("COMPANY_REPO", "Actualizando compañía para usuario: $userId")
-        Log.d("COMPANY_REPO", "Datos a actualizar: tradeName=${entity.tradeName}, address=${entity.address}, logoUrl=${entity.logoUrl}")
 
         supabase.from("companies").update(
             {
@@ -175,7 +157,6 @@ class CompanyRepositoryImpl @Inject constructor(
         ) {
             filter { eq("user_id", userId) }
         }
-        Log.d("COMPANY_REPO", "updateCompany finalizado exitosamente")
     }
 
     override suspend fun saveCompany(
@@ -219,42 +200,27 @@ class CompanyRepositoryImpl @Inject constructor(
     override suspend fun uploadLogo(
         imageBytes: ByteArray
     ): Result<String> = runCatching {
-        Log.d("COMPANY_REPO", "Iniciando uploadLogo...")
         val userId = supabase.auth.currentUserOrNull()?.id
             ?: error("User not authenticated")
 
         val bucket = supabase.storage.from("business-logos")
 
-        // 1. Listar y borrar TODOS los archivos existentes para este usuario
+        // Limpiar logos anteriores antes de subir uno nuevo
         try {
-            Log.d("COMPANY_REPO", "Listando archivos para usuario: $userId")
             val existingFiles = bucket.list(userId)
-            Log.d("COMPANY_REPO", "Archivos encontrados: ${existingFiles.size}")
             if (existingFiles.isNotEmpty()) {
                 val pathsToDelete = existingFiles.map { file ->
                     if (file.name.contains(userId)) file.name else "$userId/${file.name}"
                 }
-                Log.d("COMPANY_REPO", "Borrando archivos: $pathsToDelete")
                 bucket.delete(pathsToDelete)
-                Log.d("COMPANY_REPO", "Archivos borrados")
             }
-        } catch (e: Exception) {
-            Log.w("COMPANY_REPO", "Error al limpiar logos anteriores: ${e.message}")
-        }
+        } catch (_: Exception) { }
 
-        // 2. Subir con nombre fijo
         val path = "$userId/logo.jpg"
-        Log.d("COMPANY_REPO", "Subiendo nuevo logo a: $path")
+        bucket.upload(path, imageBytes) { upsert = true }
 
-        bucket.upload(path, imageBytes) {
-            upsert = true
-        }
-        Log.d("COMPANY_REPO", "Subida completada")
-
-        // 3. Devolver la URL con un timestamp para forzar la recarga en la UI
+        // Timestamp en la URL para forzar recarga en la UI
         val publicUrl = bucket.publicUrl(path)
-        val finalUrl = "$publicUrl?t=${System.currentTimeMillis()}"
-        Log.d("COMPANY_REPO", "URL final generada: $finalUrl")
-        finalUrl
+        "$publicUrl?t=${System.currentTimeMillis()}"
     }
 }

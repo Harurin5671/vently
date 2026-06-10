@@ -7,9 +7,10 @@ import android.graphics.pdf.PdfRenderer
 import android.os.ParcelFileDescriptor
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import android.util.Log
 import com.app.crowns.domain.util.generateInvoicePdf
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.company.usecase.GetDocumentSeriesUseCase
 import com.app.crowns.domain.invoice.entities.GenerateXmlRequestEntity
 import com.app.crowns.domain.invoice.entities.GenerateXmlRequestItemEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
@@ -48,6 +49,7 @@ class InvoicePreviewViewModel @Inject constructor(
     private val signInvoiceUseCase: SignInvoiceUseCase,
     private val sendToSunatUseCase: SendToSunatUseCase,
     private val getCompanyUseCase: GetCompanyUseCase,
+    private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
     @param:ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -66,76 +68,76 @@ class InvoicePreviewViewModel @Inject constructor(
 
     fun onConfirmEmit() {
         val draft = draftStore.draft.value ?: return
-        Log.d("Prueba_Generate_Xml", "VM: Inicio de confirmación de emisión")
 
         viewModelScope.launch {
+            val existingInvoiceId = _state.value.invoiceId
+            val alreadySigned = _state.value.isSigned
             _state.update { it.copy(isEmitting = true, showEmitDialog = false, error = null) }
-            
+
             try {
-                // 1. Obtener la empresa
-                val company = getCompanyUseCase().getOrNull()
-                if (company == null) {
-                    _state.update { it.copy(isEmitting = false, error = "No se pudo obtener la información de tu empresa") }
-                    return@launch
-                }
+                val invoiceId: String
 
-                // 2. GENERAR XML
-                val series = "${draft.type.prefix}001"
-                Log.d("Prueba123123", series)
-                val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" else (draft.clientDocumentType ?: "1")
-                
-                val generateRequest = GenerateXmlRequestEntity(
-                    companyId = company.id,
-                    series = series,
-                    issueDate = LocalDate.now().toString(),
-                    currency = "PEN",
-                    paymentMethod = "Contado",
-                    customerDocType = customerDocType,
-                    customerDocNumber = draft.clientRuc ?: draft.clientName ?: "0",
-                    customerLegalName = draft.clientBusinessName ?: draft.clientName ?: "CLIENTE VARIOS",
-                    items = draft.items.map { 
-                        GenerateXmlRequestItemEntity(
-                            productId = it.productId,
-                            quantity = it.quantity.toDouble()
-                        )
+                if (existingInvoiceId == null) {
+                    val company = getCompanyUseCase().getOrNull()
+                    if (company == null) {
+                        _state.update { it.copy(isEmitting = false, error = "No se pudo obtener la información de tu empresa") }
+                        return@launch
                     }
-                )
 
-                val xmlResponse = generateXmlUseCase(generateRequest).getOrThrow()
-                Log.d("Prueba_Generate_Xml", "VM: XML Generado ID: ${xmlResponse.invoiceId}")
-                _state.update { it.copy(
-                    documentId = xmlResponse.documentId,
-                    series = series,
-                    correlative = xmlResponse.correlative.toString()
-                ) }
+                    val documentTypeCode = if (draft.type == InvoiceType.FACTURA)
+                        ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA
+                    val documentSeriesList = getDocumentSeriesUseCase(company.id).getOrNull()
+                    val matchingSeries = documentSeriesList?.find { it.documentType == documentTypeCode }
+                    val series = matchingSeries?.serie ?: "${draft.type.prefix}001"
+                    val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" else (draft.clientDocumentType ?: "1")
 
-                // 3. FIRMAR XML
-                Log.d("Prueba_Sign_Invoice", "VM: Iniciando firma para invoiceId: ${xmlResponse.invoiceId}")
-                val signResult = signInvoiceUseCase(xmlResponse.invoiceId).getOrThrow()
-                Log.d("Prueba_Sign_Invoice", "VM: Firma completada. Success: ${signResult.success}")
-                
-                if (!signResult.success) {
-                    _state.update { it.copy(isEmitting = false, error = "Error en firma: ${signResult.status}") }
-                    return@launch
+                    val xmlResponse = generateXmlUseCase(GenerateXmlRequestEntity(
+                        companyId = company.id,
+                        series = series,
+                        issueDate = LocalDate.now().toString(),
+                        currency = "PEN",
+                        paymentMethod = "Contado",
+                        customerDocType = customerDocType,
+                        customerDocNumber = draft.clientRuc ?: draft.clientName ?: "0",
+                        customerLegalName = draft.clientBusinessName ?: draft.clientName ?: "CLIENTE VARIOS",
+                        items = draft.items.map {
+                            GenerateXmlRequestItemEntity(
+                                productId = it.productId,
+                                quantity = it.quantity.toDouble()
+                            )
+                        }
+                    )).getOrThrow()
+
+                    invoiceId = xmlResponse.invoiceId
+                    _state.update { it.copy(
+                        invoiceId = invoiceId,
+                        documentId = xmlResponse.documentId,
+                        series = series,
+                        correlative = xmlResponse.correlative.toString()
+                    ) }
+                } else {
+                    invoiceId = existingInvoiceId
                 }
 
-                // 4. ENVIAR A SUNAT
-                Log.d("Prueba_Send_Sunat", "VM: Iniciando envío a SUNAT para invoiceId: ${xmlResponse.invoiceId}")
-                val sunatResult = sendToSunatUseCase(xmlResponse.invoiceId).getOrThrow()
-                Log.d("Prueba_Send_Sunat", "VM: Envío a SUNAT completado. Success: ${sunatResult.success}")
-                
+                if (!alreadySigned) {
+                    val signResult = signInvoiceUseCase(invoiceId).getOrThrow()
+                    if (!signResult.success) {
+                        _state.update { it.copy(isEmitting = false, error = "Error en firma: ${signResult.status}") }
+                        return@launch
+                    }
+                    _state.update { it.copy(isSigned = true) }
+                }
+
+                val sunatResult = sendToSunatUseCase(invoiceId).getOrThrow()
                 _state.update { it.copy(
                     isEmitting = false,
                     showResultScreen = true,
                     sunatResponse = sunatResult
                 ) }
-                
-                if (sunatResult.isSuccess) {
-                    draftStore.clear()
-                }
+
+                if (sunatResult.isSuccess) draftStore.clear()
 
             } catch (e: Exception) {
-                Log.e("Prueba_Generate_Xml", "VM: Error en flujo", e)
                 _state.update { it.copy(isEmitting = false, error = "Error: ${e.message}") }
             }
         }
@@ -144,7 +146,9 @@ class InvoicePreviewViewModel @Inject constructor(
     private fun generatePdfPreview() {
         val draft = draftStore.draft.value
         if (draft == null) {
-            _state.update { it.copy(isGeneratingPdf = false, error = "No hay datos para la vista previa") }
+            viewModelScope.launch {
+                _navigationEvent.send(InvoicePreviewNavigationEvent.NavigateBack)
+            }
             return
         }
 
@@ -152,7 +156,11 @@ class InvoicePreviewViewModel @Inject constructor(
             _state.update { it.copy(isGeneratingPdf = true, error = null) }
             try {
                 val company = getCompanyUseCase().getOrNull()
-                val invoiceEntity = draft.toEntity()
+                val documentTypeCode = if (draft.type == InvoiceType.FACTURA)
+                    ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA
+                val seriesList = company?.let { getDocumentSeriesUseCase(it.id).getOrNull() }
+                val serie = seriesList?.find { it.documentType == documentTypeCode }?.serie
+                val invoiceEntity = draft.toEntity(serie ?: if (draft.type == InvoiceType.FACTURA) "F001" else "B001")
                 val pages = withContext(Dispatchers.IO) {
                     val pdfFile = generateInvoicePdf(context, invoiceEntity, company)
                     renderPdfToPages(pdfFile)
@@ -164,11 +172,11 @@ class InvoicePreviewViewModel @Inject constructor(
         }
     }
 
-    private fun Invoice.toEntity() = InvoiceEntity(
+    private fun Invoice.toEntity(serie: String = if (type == InvoiceType.FACTURA) "F001" else "B001") = InvoiceEntity(
         id = "",
         companyId = "",
         documentType = if (type == InvoiceType.FACTURA) "01" else "03",
-        serie = if (type == InvoiceType.FACTURA) "F001" else "B001",
+        serie = serie,
         correlative = 1,
         total = total.toString(),
         status = "BORRADOR",

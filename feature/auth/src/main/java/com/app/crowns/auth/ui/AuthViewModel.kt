@@ -1,6 +1,5 @@
 package com.app.crowns.auth.ui
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.common.Result
@@ -66,12 +65,10 @@ class AuthViewModel @Inject constructor(
     }
 
     private fun handleGoogleResult(result: NativeSignInResult) {
-        Log.d("AuthViewModel", "Google result received: $result")
         viewModelScope.launch {
             when (result) {
                 is NativeSignInResult.Success -> {
                     val user = getCurrentUser()
-                    Log.d("AuthViewModel", "Login Success. User: $user")
                     _state.update {
                         it.copy(isLoading = false, isAuthenticated = true, user = user)
                     }
@@ -79,21 +76,18 @@ class AuthViewModel @Inject constructor(
                 }
 
                 is NativeSignInResult.Error -> {
-                    Log.e("AuthViewModel", "Login Error: ${result.message}")
                     _state.update {
                         it.copy(isLoading = false, error = AuthError.Unknown(result.message))
                     }
                 }
 
                 is NativeSignInResult.NetworkError -> {
-                    Log.e("AuthViewModel", "Network Error")
                     _state.update {
                         it.copy(isLoading = false, error = AuthError.NetworkError)
                     }
                 }
 
                 NativeSignInResult.ClosedByUser -> {
-                    Log.d("AuthViewModel", "Closed by user")
                     _state.update {
                         it.copy(isLoading = false)
                     }
