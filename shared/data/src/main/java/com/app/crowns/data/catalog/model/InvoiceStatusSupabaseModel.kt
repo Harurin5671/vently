@@ -7,5 +7,4 @@ data class InvoiceStatusSupabaseModel(
     val code: String,
     val name: String,
     val description: String,
-    val color: String
 )

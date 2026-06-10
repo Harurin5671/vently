@@ -33,5 +33,4 @@ fun InvoiceStatusSupabaseModel.toDomain(): InvoiceStatusEntity = InvoiceStatusEn
     code = code,
     name = name,
     description = description,
-    color = color
 )
