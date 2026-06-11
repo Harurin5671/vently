@@ -21,10 +21,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil3.compose.AsyncImage
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.company.model.CompanyInfo
 
 @OptIn(ExperimentalMaterial3Api::class)

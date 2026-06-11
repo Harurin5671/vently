@@ -142,14 +142,14 @@ fun ClientSection(
                                 colors = OutlinedTextFieldDefaults.colors(
                                     focusedBorderColor = if (hasValue) Success else Primary,
                                     unfocusedBorderColor = if (hasValue) Success else OutlineVariant,
-                                    errorBorderColor = Color(0xFFEF4444),
+                                    errorBorderColor = ErrorBright,
                                 ),
                             )
                             rucError?.let {
                                 Text(
                                     text = it,
                                     fontSize = 11.sp,
-                                    color = Color(0xFFEF4444),
+                                    color = ErrorBright,
                                 )
                             }
                         }
@@ -263,14 +263,14 @@ fun ClientSection(
                             colors = OutlinedTextFieldDefaults.colors(
                                 focusedBorderColor = if (clientBusinessName.isNotBlank()) Success else Primary,
                                 unfocusedBorderColor = if (clientBusinessName.isNotBlank()) Success else OutlineVariant,
-                                errorBorderColor = Color(0xFFEF4444),
+                                errorBorderColor = ErrorBright,
                             ),
                         )
                         rucError?.let {
                             Text(
                                 text = it,
                                 fontSize = 11.sp,
-                                color = Color(0xFFEF4444),
+                                color = ErrorBright,
                             )
                         }
                         if (clientBusinessName.isNotBlank()) {

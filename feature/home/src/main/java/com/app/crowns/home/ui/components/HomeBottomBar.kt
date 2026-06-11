@@ -8,8 +8,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.unit.dp
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.color.*
 
 data class BottomNavItem(
     val label: String,

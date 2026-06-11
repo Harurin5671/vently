@@ -14,9 +14,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
+import com.app.crowns.designsystem.color.*
 import java.time.YearMonth
 import java.time.format.DateTimeFormatter
 import java.util.Locale

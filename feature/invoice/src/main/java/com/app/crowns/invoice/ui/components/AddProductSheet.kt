@@ -57,15 +57,7 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnPrimary
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.SurfaceContainerHigh
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.product.model.Category
 import com.app.crowns.domain.product.model.Product
 import com.app.crowns.invoice.domain.model.InvoiceItem
@@ -216,7 +208,7 @@ fun AddProductSheet(
                                     width = if (isExpanded) 2.dp else 1.dp,
                                     color = when {
                                         isExpanded -> Primary
-                                        product.currentStock in 1..3 -> Color(0xFFF59E0B)
+                                        product.currentStock in 1..3 -> StockLow
                                         else -> OutlineVariant
                                     },
                                     shape = RoundedCornerShape(12.dp),
@@ -286,9 +278,9 @@ fun AddProductSheet(
                                     )
                                     // Stock badge
                                     val (badgeText, badgeBg, badgeFg) = when {
-                                        product.currentStock == 0 -> Triple("SIN STOCK", Color(0xFFF1F5F9), Color(0xFF64748B))
-                                        product.currentStock <= 3 -> Triple("BAJO STOCK (${product.currentStock})", Color(0xFFFFFBEB), Color(0xFFF59E0B))
-                                        else -> Triple("STOCK (${product.currentStock})", Color(0xFFECFDF5), Color(0xFF10B981))
+                                        product.currentStock == 0 -> Triple("SIN STOCK", SurfaceNeutral, TextMuted)
+                                        product.currentStock <= 3 -> Triple("BAJO STOCK (${product.currentStock})", StockLowBg, StockLow)
+                                        else -> Triple("STOCK (${product.currentStock})", SuccessBg, Success)
                                     }
                                     Text(
                                         text = badgeText,
@@ -393,7 +385,7 @@ fun AddProductSheet(
                                                 modifier = Modifier
                                                     .width(42.dp)
                                                     .clip(RoundedCornerShape(4.dp))
-                                                    .background(Color.White.copy(alpha = 0.5f))
+                                                    .background(SurfaceLowest.copy(alpha = 0.5f))
                                                     .border(1.dp, OutlineVariant.copy(alpha = 0.5f), RoundedCornerShape(4.dp))
                                                     .padding(vertical = 4.dp)
                                                     .onFocusChanged { focusState ->
@@ -470,23 +462,4 @@ fun AddProductSheet(
             }
         }
     }
-}
-
-@Composable
-private fun CategoryChip(
-    label: String,
-    isSelected: Boolean,
-    onClick: () -> Unit,
-) {
-    Text(
-        text = label,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.Medium,
-        color = if (isSelected) OnPrimary else OnSurfaceVariant,
-        modifier = Modifier
-            .clip(RoundedCornerShape(999.dp))
-            .background(if (isSelected) Primary else SurfaceContainerHigh)
-            .clickable { onClick() }
-            .padding(horizontal = 16.dp, vertical = 8.dp),
-    )
 }

@@ -23,11 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.Error
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.SurfaceContainerHigh
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import java.util.Locale
 import androidx.compose.ui.platform.LocalLocale

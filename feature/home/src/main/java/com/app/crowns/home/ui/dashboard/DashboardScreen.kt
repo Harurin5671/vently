@@ -33,7 +33,6 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
-import androidx.compose.material3.pulltorefresh.rememberPullToRefreshState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -57,11 +56,9 @@ import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.QuickActionCard
 import com.app.crowns.home.ui.components.RecentInvoiceItem
 import com.app.crowns.home.ui.components.StatCard
+import com.app.crowns.home.ui.dashboard.components.DashboardSkeleton
+import com.app.crowns.home.ui.dashboard.components.GreetingSection
 import com.app.crowns.ui.components.VentlyModalBottomSheet
-import com.app.crowns.ui.components.shimmerEffect
-import java.time.LocalDateTime
-import java.time.format.DateTimeFormatter
-import java.util.Locale
 
 @Composable
 fun DashboardScreen(
@@ -208,9 +205,8 @@ private fun DashboardContent(
                     QuickActionCard(
                         label = "Mi stock",
                         icon = Icons.Filled.Inventory2,
-                        iconTint = androidx.compose.ui.graphics.Color(0xFF00C2CB),
-                        iconBackground = androidx.compose.ui.graphics.Color(0xFF00C2CB)
-                            .copy(alpha = 0.12f),
+                        iconTint = Teal,
+                        iconBackground = Teal.copy(alpha = 0.12f),
                         onClick = { onEvent(DashboardEvent.OnStockClick) },
                         modifier = Modifier.weight(1f),
                     )
@@ -369,88 +365,6 @@ private fun DashboardContent(
         }
     }
 }
-}
-
-@Composable
-private fun GreetingSection(userName: String) {
-    val now = LocalDateTime.now()
-    val greeting = when (now.hour) {
-        in 0..11 -> "Buenos días"
-        in 12..17 -> "Buenas tardes"
-        else -> "Buenas noches"
-    }
-    val dayFormat = DateTimeFormatter.ofPattern("EEEE, d 'de' MMMM", Locale("es", "PE"))
-
-    Column {
-        Text(
-            text = "$greeting, $userName",
-            fontSize = 20.sp,
-            fontWeight = FontWeight.SemiBold,
-            color = OnSurface,
-        )
-        Text(
-            text = now.format(dayFormat).replaceFirstChar { it.uppercase() },
-            fontSize = 14.sp,
-            color = TextMuted,
-        )
-    }
-}
-
-@Composable
-private fun DashboardSkeleton(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .padding(horizontal = 16.dp),
-    ) {
-        Spacer(Modifier.height(16.dp))
-        
-        // Greeting Skeleton
-        Column {
-            Box(modifier = Modifier.width(200.dp).height(24.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
-            Spacer(Modifier.height(8.dp))
-            Box(modifier = Modifier.width(150.dp).height(16.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
-        }
-
-        Spacer(Modifier.height(16.dp))
-
-        // Stats Skeleton
-        Row(
-            horizontalArrangement = Arrangement.spacedBy(12.dp),
-            modifier = Modifier.fillMaxWidth(),
-        ) {
-            Box(modifier = Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-            Box(modifier = Modifier.weight(1f).height(100.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Quick Actions Skeleton
-        Box(modifier = Modifier.width(120.dp).height(20.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-        }
-        Spacer(Modifier.height(12.dp))
-        Row(horizontalArrangement = Arrangement.spacedBy(12.dp), modifier = Modifier.fillMaxWidth()) {
-            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-            Box(modifier = Modifier.weight(1f).height(80.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-        }
-
-        Spacer(Modifier.height(24.dp))
-
-        // Recent Invoices Skeleton
-        Box(modifier = Modifier.width(100.dp).height(20.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
-        Spacer(Modifier.height(12.dp))
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(200.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .shimmerEffect()
-        )
-    }
 }
 
 @ThemePreviews

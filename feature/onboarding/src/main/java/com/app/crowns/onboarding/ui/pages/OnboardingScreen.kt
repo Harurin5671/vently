@@ -45,7 +45,7 @@ fun OnboardingScreen(
         label = "onboarding_page"
     ) { page ->
         when (page) {
-            0 -> VincularRucScreen(
+            0 -> OnboardingFirstPage(
                 currentStep = 1,
                 totalSteps = state.totalPages,
                 onBack = { viewModel.onEvent(OnboardingEvent.PreviousPage) },

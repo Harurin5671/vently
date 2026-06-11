@@ -92,8 +92,8 @@ fun BusinessProfileCard(
                 )
                 StatusBadge(
                     text = "ACTIVO · SUNAT",
-                    textColor = Color(0xFF10B981),
-                    backgroundColor = Color(0xFFECFDF5),
+                    textColor = Success,
+                    backgroundColor = SuccessBg,
                 )
             }
             Text(

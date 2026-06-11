@@ -46,14 +46,7 @@ import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.OnPrimary
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Surface
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.invoice.domain.model.InvoiceItem
@@ -63,6 +56,7 @@ import com.app.crowns.invoice.ui.components.ClientSection
 import com.app.crowns.invoice.ui.components.InvoiceItemRow
 import com.app.crowns.invoice.ui.components.InvoiceSummary
 import com.app.crowns.invoice.ui.components.InvoiceTypeSelector
+import com.app.crowns.invoice.ui.components.Section
 import com.app.crowns.ui.components.BannerType
 import com.app.crowns.ui.components.VentlyInfoBanner
 
@@ -72,7 +66,7 @@ fun CreateInvoiceScreen(
     onNavigateToPreview: () -> Unit,
     onNavigateToAddProduct: () -> Unit,
     viewModel: CreateInvoiceViewModel = hiltViewModel(),
-    isFactura: Boolean,
+    isFacture: Boolean,
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -90,7 +84,7 @@ fun CreateInvoiceScreen(
     }
 
     LaunchedEffect(Unit) {
-        val initialType = if (isFactura) InvoiceType.FACTURA else InvoiceType.BOLETA
+        val initialType = if (isFacture) InvoiceType.FACTURA else InvoiceType.BOLETA
         viewModel.onEvent(CreateInvoiceEvent.OnInvoiceTypeChanged(initialType))
         
         viewModel.navigationEvent.collect { event ->
@@ -206,8 +200,7 @@ private fun CreateInvoiceContent(
             )
 
             // Client section
-            SectionLabel("CLIENTE")
-            SectionCard {
+            Section("CLIENTE") {
                 ClientSection(
                     invoiceType = state.invoiceType,
                     clientName = state.clientName,
@@ -226,8 +219,7 @@ private fun CreateInvoiceContent(
             }
 
             // Items section
-            SectionLabel("ÍTEMS${if (state.items.isNotEmpty()) " (${state.items.size})" else ""}")
-            SectionCard {
+            Section("ÍTEMS${if (state.items.isNotEmpty()) " (${state.items.size})" else ""}") {
                 if (state.items.isEmpty()) {
                     Box(
                         modifier = Modifier
@@ -296,8 +288,7 @@ private fun CreateInvoiceContent(
 
             // Summary section
             if (state.items.isNotEmpty()) {
-                SectionLabel("RESUMEN")
-                SectionCard {
+                Section("RESUMEN") {
                     InvoiceSummary(
                         subtotal = state.subtotal,
                         igv = state.igv,
@@ -324,36 +315,6 @@ private fun CreateInvoiceContent(
             onNavigateToAddProduct = onNavigateToAddProduct,
             onDismiss = { onEvent(CreateInvoiceEvent.OnDismissAddProductSheet) },
         )
-    }
-}
-
-// ─────────────────────────────────────────────
-// Helpers
-// ─────────────────────────────────────────────
-
-@Composable
-private fun SectionLabel(text: String) {
-    Text(
-        text = text,
-        fontSize = 12.sp,
-        fontWeight = FontWeight.SemiBold,
-        color = Outline,
-        letterSpacing = 0.8.sp,
-    )
-}
-
-@Composable
- fun SectionCard(content: @Composable () -> Unit) {
-    Column(
-        modifier = Modifier
-            .fillMaxWidth()
-            .clip(RoundedCornerShape(12.dp))
-            .background(SurfaceContainerLowest)
-            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-            .padding(16.dp),
-        verticalArrangement = Arrangement.spacedBy(12.dp),
-    ) {
-        content()
     }
 }
 

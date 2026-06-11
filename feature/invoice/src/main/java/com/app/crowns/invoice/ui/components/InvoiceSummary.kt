@@ -12,11 +12,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import java.util.Locale
+import com.app.crowns.designsystem.color.*
+import androidx.compose.ui.platform.LocalLocale
 
 @Composable
 fun InvoiceSummary(
@@ -33,11 +30,11 @@ fun InvoiceSummary(
     ) {
         SummaryRow(
             label = "Subtotal",
-            value = "S/ ${String.format(Locale.getDefault(), "%.2f", subtotal)}",
+            value = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", subtotal)}",
         )
         SummaryRow(
             label = "IGV (18%)",
-            value = "S/ ${String.format(Locale.getDefault(), "%.2f", igv)}",
+            value = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", igv)}",
         )
         HorizontalDivider(color = OutlineVariant, thickness = 0.5.dp)
         Row(
@@ -51,22 +48,11 @@ fun InvoiceSummary(
                 color = OnSurface,
             )
             Text(
-                text = "S/ ${String.format(Locale.getDefault(), "%.2f", total)}",
+                text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", total)}",
                 fontSize = 20.sp,
                 fontWeight = FontWeight.Bold,
                 color = Primary,
             )
         }
-    }
-}
-
-@Composable
-private fun SummaryRow(label: String, value: String) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(text = label, fontSize = 14.sp, color = OnSurfaceVariant)
-        Text(text = value, fontSize = 14.sp, fontWeight = FontWeight.Medium, color = OnSurface)
     }
 }

@@ -22,12 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.LinkAnnotation
-import androidx.compose.ui.text.SpanStyle
-import androidx.compose.ui.text.TextLinkStyles
-import androidx.compose.ui.text.buildAnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.withLink
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -38,8 +33,10 @@ import com.app.crowns.auth.ui.AuthEvent
 import com.app.crowns.auth.ui.AuthNavigationEvent
 import com.app.crowns.auth.ui.AuthUiState
 import com.app.crowns.auth.ui.AuthViewModel
+import com.app.crowns.auth.ui.toMessage
+import com.app.crowns.auth.ui.login.components.TextRegister
+import com.app.crowns.auth.ui.login.components.TextTermsAndConditions
 import com.app.crowns.designsystem.R
-import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.ui.components.VentlyLoadingScreen
@@ -170,70 +167,6 @@ fun LoginContent(
     }
 }
 
-@Composable
-fun TextTermsAndConditions(
-    onClickTerms: () -> Unit = {},
-    onClickPrivacy: () -> Unit = {}
-) {
-    val text = buildAnnotatedString {
-        append("Al continuar, aceptas nuestros ")
-        withLink(
-            LinkAnnotation.Clickable(
-                tag = "terminos",
-                linkInteractionListener = { onClickTerms() },
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = Primary)
-                )
-            )
-        ) {
-            append("Términos y Condiciones")
-        }
-        append(" y ")
-        withLink(
-            LinkAnnotation.Clickable(
-                tag = "privacidad",
-                linkInteractionListener = { onClickPrivacy() },
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = Primary)
-                )
-            )
-        ) {
-            append("Política de Privacidad")
-        }
-    }
-
-    Text(
-        text = text,
-        style = MaterialTheme.typography.bodySmall,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        textAlign = TextAlign.Center
-    )
-}
-
-@Composable
-fun TextRegister(onClickRegister: () -> Unit) {
-
-    val text = buildAnnotatedString {
-        append("No tienes cuenta? ")
-
-        withLink(
-            LinkAnnotation.Clickable(
-                tag = "registro",
-                linkInteractionListener = {
-                    onClickRegister()
-                },
-                styles = TextLinkStyles(
-                    style = SpanStyle(color = Primary)
-                )
-            )
-        ) {
-            append("Regístrate")
-        }
-    }
-
-    Text(text = text)
-}
-
 @ThemePreviews
 @Composable
 private fun LoginScreenPreview() {
@@ -271,13 +204,4 @@ private fun LoginScreenErrorPreview() {
             )
         }
     }
-}
-
-private fun AuthError.toMessage(): String = when (this) {
-    is AuthError.NetworkError -> "Sin conexión a internet"
-    is AuthError.InvalidCredentials -> "Credenciales inválidas"
-    is AuthError.UserNotFound -> "Usuario no encontrado"
-    is AuthError.EmailAlreadyInUse -> "El correo ya está en uso"
-    is AuthError.Unknown -> message
-    is AuthError.SubscriptionNotActive -> "Suscripción no activa"
 }

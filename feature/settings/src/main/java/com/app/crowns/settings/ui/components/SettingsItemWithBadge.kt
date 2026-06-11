@@ -16,7 +16,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
@@ -32,13 +31,8 @@ fun SettingsItemWithBadge(
     onClick: () -> Unit,
     showDivider: Boolean,
 ) {
-    val badgeTextColor = if (badgeGreen) Color(0xFF10B981)
-    else
-        Primary
-
-    val badgeBgColor = if (badgeGreen) Color(0xFFECFDF5)
-    else
-        PrimaryContainer.copy(alpha = 0.15f)
+    val badgeTextColor = if (badgeGreen) Success else Primary
+    val badgeBgColor = if (badgeGreen) SuccessBg else PrimaryContainer.copy(alpha = 0.15f)
 
     Column {
         Row(

@@ -15,17 +15,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.SurfaceContainerHigh
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.ui.components.InvoiceActionButtons
+import com.app.crowns.ui.utils.formatDateTime
 
 @Composable
 fun HistoryInvoiceDetail(
@@ -173,43 +170,10 @@ fun HistoryInvoiceDetail(
             ) {
                 Text(
                     text = "Anular Documento",
-                    color = Color(0xFFBA1A1A),
+                    color = Error,
                     fontSize = 14.sp,
                 )
             }
         }
     }
-}
-
-@Composable
-private fun BreakdownRow(label: String, amount: Double) {
-    Row(
-        modifier = Modifier.fillMaxWidth(),
-        horizontalArrangement = Arrangement.SpaceBetween,
-    ) {
-        Text(text = label, fontSize = 12.sp, color = Outline)
-        Text(
-            text = "S/ ${String.format(LocalLocale.current.platformLocale, "%.2f", amount)}",
-            fontSize = 12.sp,
-            color = Outline,
-        )
-    }
-}
-
-private fun formatDateTime(dateTime: String): String {
-    return try {
-        val date = dateTime.take(10)
-        val time = dateTime.substring(11, 16)
-        val parts = date.split("-")
-        "${parts[2]} ${monthName(parts[1].toInt())} ${parts[0]}, $time"
-    } catch (_: Exception) {
-        dateTime
-    }
-}
-
-private fun monthName(month: Int): String = when (month) {
-    1 -> "Ene"; 2 -> "Feb"; 3 -> "Mar"; 4 -> "Abr"
-    5 -> "May"; 6 -> "Jun"; 7 -> "Jul"; 8 -> "Ago"
-    9 -> "Sep"; 10 -> "Oct"; 11 -> "Nov"; 12 -> "Dic"
-    else -> ""
 }

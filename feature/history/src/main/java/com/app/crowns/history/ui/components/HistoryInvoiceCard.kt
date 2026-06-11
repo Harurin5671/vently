@@ -12,8 +12,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.history.ui.HistoryEvent
 

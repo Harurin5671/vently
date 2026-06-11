@@ -25,9 +25,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.app.crowns.designsystem.color.OnPrimary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.home.ui.components.BottomNavItem

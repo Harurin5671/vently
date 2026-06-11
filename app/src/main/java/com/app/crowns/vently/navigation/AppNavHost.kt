@@ -166,7 +166,7 @@ fun AppNavHost(
                         onNavigateToAddProduct = {
                             backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
                         },
-                        isFactura = destination.isFactura,
+                        isFacture = destination.isFactura,
                         viewModel = hiltViewModel(key = destination.id)
                     )
                 }

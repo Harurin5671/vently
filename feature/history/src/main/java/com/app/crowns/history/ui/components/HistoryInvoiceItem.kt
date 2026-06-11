@@ -21,11 +21,10 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.domain.invoice.entities.formattedId
+import androidx.core.graphics.toColorInt
 
 @Composable
 fun HistoryInvoiceItem(
@@ -43,8 +42,8 @@ fun HistoryInvoiceItem(
     ) {
         // Info del estado desde la BD
         val statusColor = invoice.statusInfo?.color?.let {
-            try { Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
-        } ?: Color(0xFF64748B)
+            try { Color(it.toColorInt()) } catch (e: Exception) { null }
+        } ?: TextMuted
 
         // Avatar: Usamos el color de la BD con transparencia para el fondo
         val isBoleta = invoice.documentType == "03"

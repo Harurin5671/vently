@@ -121,7 +121,7 @@ fun EditBusinessProfileContent(
                     Icon(
                         imageVector = Icons.Default.Close,
                         contentDescription = "Cerrar",
-                        tint = Color.White,
+                        tint = OnPrimary,
                         modifier = Modifier.size(28.dp)
                     )
                 }

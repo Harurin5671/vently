@@ -55,12 +55,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import com.app.crowns.designsystem.color.OnPrimary
-import com.app.crowns.designsystem.color.OnSurfaceVariant
-import com.app.crowns.designsystem.color.Outline
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.Surface
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries

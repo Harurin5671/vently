@@ -20,8 +20,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.unit.dp
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.ui.components.shimmerEffect

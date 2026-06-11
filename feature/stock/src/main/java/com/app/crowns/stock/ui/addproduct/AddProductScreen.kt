@@ -2,7 +2,6 @@ package com.app.crowns.stock.ui.addproduct
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -11,12 +10,9 @@ import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
@@ -24,23 +20,13 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.AccountBalance
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Inventory2
-import androidx.compose.material.icons.filled.KeyboardArrowDown
-import androidx.compose.material.icons.filled.Remove
-import androidx.compose.material.icons.filled.Save
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
@@ -64,20 +50,22 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
-import com.app.crowns.domain.product.model.Category
-import com.app.crowns.domain.catalog.entities.IgvTypeEntity
-import com.app.crowns.domain.catalog.entities.UnitOfMeasureEntity
 import com.app.crowns.ui.components.VentlyImageSelector
-import com.app.crowns.ui.components.VentlyModalBottomSheet
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import com.app.crowns.ui.components.shimmerEffect
+import com.app.crowns.stock.ui.addproduct.components.AddProductSkeleton
+import com.app.crowns.stock.ui.addproduct.components.CategoryDropdown
+import com.app.crowns.stock.ui.addproduct.components.IgvTypeSelector
+import com.app.crowns.stock.ui.addproduct.components.PriceTextField
+import com.app.crowns.stock.ui.addproduct.components.SectionCard
+import com.app.crowns.stock.ui.addproduct.components.StockStepper
+import com.app.crowns.stock.ui.addproduct.components.UnitOfMeasureDropdown
+import com.app.crowns.stock.ui.addproduct.components.VentlyTextField
 
 @Composable
 fun AddProductScreen(
@@ -170,13 +158,13 @@ private fun AddProductContent(
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = Primary,
-                        contentColor = Color.White,
+                        contentColor = OnPrimary,
                     ),
                 ) {
                     if (state.isSaving) {
                         CircularProgressIndicator(
                             modifier = Modifier.size(20.dp),
-                            color = Color.White,
+                            color = OnPrimary,
                             strokeWidth = 2.dp,
                         )
                     } else {
@@ -259,13 +247,13 @@ private fun AddProductContent(
                         val isSkuFieldActive = state.sku.isNotEmpty()
                         val isSkuCorrect = state.sku.matches(Regex("^[A-Z]{3}-[0-9]{3}$"))
                         val skuColor = when {
-                            isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
-                            isSkuCorrect -> Color(0xFF10B981)
+                            isSkuFieldActive && !isSkuCorrect -> ErrorBright
+                            isSkuCorrect -> Success
                             else -> OnSurface
                         }
                         val borderColor = when {
-                            isSkuFieldActive && !isSkuCorrect -> Color(0xFFEF4444)
-                            isSkuCorrect -> Color(0xFF10B981)
+                            isSkuFieldActive && !isSkuCorrect -> ErrorBright
+                            isSkuCorrect -> Success
                             else -> OutlineVariant
                         }
 
@@ -333,12 +321,12 @@ private fun AddProductContent(
                             Text(
                                 text = "Formato: 3 letras y 3 números (Ej. ABC-123)",
                                 fontSize = 11.sp,
-                                color = Color(0xFFEF4444),
+                                color = ErrorBright,
                                 modifier = Modifier.padding(start = 4.dp, top = 4.dp)
                             )
                         }
                     }
-                    
+
                     CategoryDropdown(
                         categories = state.categories,
                         selected = state.selectedCategory,
@@ -395,7 +383,7 @@ private fun AddProductContent(
                         text = String.format(LocalLocale.current.platformLocale, "%.2f%%", state.profitMargin),
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold,
-                        color = if (state.profitMargin >= 0) Color(0xFF10B981) else Color(0xFFEF4444),
+                        color = if (state.profitMargin >= 0) Success else ErrorBright,
                     )
                 }
             }
@@ -403,7 +391,7 @@ private fun AddProductContent(
             // SUNAT
             SectionCard(
                 title = "CONFIGURACIÓN SUNAT",
-                accentColor = Color(0xFFF59E0B),
+                accentColor = StockLow,
             ) {
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
@@ -412,14 +400,14 @@ private fun AddProductContent(
                     Icon(
                         imageVector = Icons.Filled.AccountBalance,
                         contentDescription = null,
-                        tint = Color(0xFFF59E0B),
+                        tint = StockLow,
                         modifier = Modifier.size(20.dp),
                     )
                     Text(
                         text = "CUMPLIMIENTO FISCAL",
                         fontSize = 12.sp,
                         fontWeight = FontWeight.SemiBold,
-                        color = Color(0xFFF59E0B),
+                        color = StockLow,
                         letterSpacing = 0.8.sp,
                     )
                 }
@@ -525,750 +513,4 @@ private fun AddProductContent(
         }
     }
 
-}
-
-// ─────────────────────────────────────────────
-// Components
-// ─────────────────────────────────────────────
-
-@Composable
-private fun AddProductSkeleton(modifier: Modifier = Modifier) {
-    Column(
-        modifier = modifier
-            .fillMaxSize()
-            .verticalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp),
-        verticalArrangement = Arrangement.spacedBy(16.dp),
-    ) {
-        Spacer(Modifier.height(4.dp))
-
-        // Image avatar skeleton
-        Box(modifier = Modifier.align(Alignment.CenterHorizontally)) {
-            Box(
-                modifier = Modifier
-                    .size(100.dp)
-                    .clip(RoundedCornerShape(16.dp))
-                    .shimmerEffect()
-            )
-        }
-
-        // Section skeleton helper
-        @Composable
-        fun sectionSkeleton(rows: Int) {
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Box(modifier = Modifier.width(120.dp).height(14.dp).clip(RoundedCornerShape(4.dp)).shimmerEffect())
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .shimmerEffect()
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp),
-                ) {
-                    repeat(rows) {
-                        Box(modifier = Modifier.fillMaxWidth().height(56.dp).clip(RoundedCornerShape(12.dp)).shimmerEffect())
-                    }
-                }
-            }
-        }
-
-        sectionSkeleton(rows = 3) // Información básica
-        sectionSkeleton(rows = 2) // Precios
-        sectionSkeleton(rows = 2) // SUNAT
-        sectionSkeleton(rows = 1) // Control de stock
-
-        Spacer(Modifier.height(80.dp))
-    }
-}
-
-@Composable
-private fun SectionCard(
-    title: String,
-    accentColor: Color? = null,
-    content: @Composable () -> Unit,
-) {
-    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-        Text(
-            text = title,
-            fontSize = 12.sp,
-            fontWeight = FontWeight.Medium,
-            color = Outline,
-            letterSpacing = 0.5.sp,
-        )
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .clip(RoundedCornerShape(12.dp))
-                .background(SurfaceContainerLowest)
-                .then(
-                    if (accentColor != null)
-                        Modifier.border(
-                            width = 1.dp,
-                            color = OutlineVariant,
-                            shape = RoundedCornerShape(12.dp),
-                        )
-                    else
-                        Modifier.border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-                )
-                .padding(16.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp),
-        ) {
-            content()
-        }
-    }
-}
-
-@Composable
-private fun VentlyTextField(
-    modifier: Modifier = Modifier,
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    placeholder: String = "",
-    keyboardType: KeyboardType = KeyboardType.Text,
-    minLines: Int = 1,
-    supportingText: String? = null,
-    isError: Boolean = false,
-    isSuccess: Boolean = false,
-    enabled: Boolean = true,
-    visualTransformation: VisualTransformation = VisualTransformation.None,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = when {
-                isError -> Color(0xFFEF4444)
-                isSuccess -> Color(0xFF10B981)
-                !enabled -> OnSurfaceVariant.copy(alpha = 0.38f)
-                else -> OnSurfaceVariant
-            },
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = value,
-            onValueChange = { newValue ->
-                if (keyboardType == KeyboardType.Number) {
-                    if (newValue.all { it.isDigit() }) onValueChange(newValue)
-                } else {
-                    onValueChange(newValue)
-                }
-            },
-            placeholder = { Text(placeholder, color = Outline) },
-            supportingText = supportingText?.let {
-                {
-                    Text(
-                        text = it,
-                        fontSize = 11.sp,
-                        color = if (isError) Color(0xFFEF4444) else Outline,
-                    )
-                }
-            },
-            isError = isError,
-            enabled = enabled,
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            minLines = minLines,
-            keyboardOptions = KeyboardOptions(keyboardType = keyboardType),
-            visualTransformation = visualTransformation,
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = if (isSuccess) Color(0xFF10B981) else Primary,
-                unfocusedBorderColor = when {
-                    isError -> Color(0xFFEF4444)
-                    isSuccess -> Color(0xFF10B981)
-                    else -> OutlineVariant
-                },
-                errorBorderColor = Color(0xFFEF4444),
-                errorSupportingTextColor = Color(0xFFEF4444),
-                disabledBorderColor = OutlineVariant.copy(alpha = 0.38f),
-                disabledTextColor = OnSurface.copy(alpha = 0.38f),
-                disabledPlaceholderColor = Outline.copy(alpha = 0.38f),
-            ),
-        )
-    }
-}
-
-@Composable
-private fun PriceTextField(
-    label: String,
-    value: String,
-    onValueChange: (String) -> Unit,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = value,
-            onValueChange = { newValue ->
-                if (newValue.isEmpty() || newValue.count { it == '.' } <= 1 && newValue.all { it.isDigit() || it == '.' }) {
-                    onValueChange(newValue)
-                }
-            },
-            placeholder = { Text("0.00", color = Outline) },
-            prefix = { Text("S/  ", color = Outline) },
-            modifier = Modifier.fillMaxWidth(),
-            shape = RoundedCornerShape(12.dp),
-            isError = isError,
-            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Decimal),
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = if (isError) Color(0xFFEF4444) else Primary,
-                unfocusedBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-            ),
-        )
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CategoryDropdown(
-    categories: List<Category>,
-    selected: Category?,
-    onSelect: (Category?) -> Unit,
-    onEditCategory: (Category) -> Unit,
-    newCategoryName: String,
-    editingCategoryId: String?,
-    onNewCategoryNameChange: (String) -> Unit,
-    onSaveCategory: () -> Unit,
-    onDismissNewCategory: () -> Unit,
-    isSavingCategory: Boolean,
-    categoryError: String?,
-    modifier: Modifier = Modifier,
-    isError: Boolean = false,
-) {
-    var showSheet by remember { mutableStateOf(false) }
-    var showForm by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredCategories = remember(searchQuery, categories) {
-        if (searchQuery.isBlank()) categories
-        else categories.filter { it.name.contains(searchQuery, ignoreCase = true) }
-    }
-
-    // Vuelve a la lista cuando el guardado termina sin error
-    val previouslySaving = remember { mutableStateOf(false) }
-    LaunchedEffect(isSavingCategory, categoryError) {
-        if (previouslySaving.value && !isSavingCategory && categoryError == null) {
-            showForm = false
-            onNewCategoryNameChange("")
-        }
-        previouslySaving.value = isSavingCategory
-    }
-
-    Column(modifier = modifier) {
-        Text(
-            text = "Categoría *",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = selected?.name ?: "Seleccionar",
-            onValueChange = {},
-            readOnly = true,
-            isError = isError,
-            singleLine = true,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showSheet = true },
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                disabledTextColor = OnSurface,
-                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-            ),
-        )
-    }
-
-    if (showSheet) {
-        VentlyModalBottomSheet(
-            onDismiss = {
-                if (!isSavingCategory) {
-                    showSheet = false
-                    showForm = false
-                    searchQuery = ""
-                    if (showForm) {
-                        onDismissNewCategory()
-                        onNewCategoryNameChange("")
-                    }
-                }
-            },
-            title = if (showForm) (if (editingCategoryId != null) "Editar categoría" else "Nueva categoría") else "Categoría",
-            onBack = if (showForm) {
-                {
-                    showForm = false
-                    onNewCategoryNameChange("")
-                    onDismissNewCategory()
-                }
-            } else null,
-            searchQuery = if (!showForm) searchQuery else null,
-            onSearchQueryChange = if (!showForm) ({ searchQuery = it }) else null,
-            searchPlaceholder = "Buscar categoría...",
-        ) {
-            if (showForm) {
-                VentlyTextField(
-                    label = "Nombre de la categoría",
-                    value = newCategoryName,
-                    onValueChange = onNewCategoryNameChange,
-                    placeholder = "Ej. Calzado, Electrónica...",
-                    enabled = !isSavingCategory,
-                    isError = categoryError != null,
-                    supportingText = categoryError,
-                )
-                Spacer(Modifier.height(16.dp))
-                Button(
-                    onClick = onSaveCategory,
-                    enabled = !isSavingCategory && newCategoryName.isNotBlank(),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(52.dp),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = Primary,
-                        contentColor = Color.White,
-                        disabledContainerColor = Primary.copy(alpha = 0.38f),
-                        disabledContentColor = Color.White,
-                    ),
-                ) {
-                    if (isSavingCategory) {
-                        CircularProgressIndicator(
-                            modifier = Modifier.size(20.dp),
-                            color = Color.White,
-                            strokeWidth = 2.dp,
-                        )
-                    } else {
-                        Text(
-                            text = if (editingCategoryId != null) "Guardar cambios" else "Guardar categoría",
-                            fontSize = 15.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                }
-                Spacer(Modifier.height(4.dp))
-            } else {
-                LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
-                    items(filteredCategories) { category ->
-                        val isSelected = category.id == selected?.id
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable {
-                                    onSelect(category)
-                                    showSheet = false
-                                    searchQuery = ""
-                                }
-                                .background(
-                                    if (isSelected) PrimaryContainer.copy(alpha = 0.15f) else Color.Transparent
-                                )
-                                .padding(start = 4.dp, top = 4.dp, bottom = 4.dp, end = 0.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                        ) {
-                            Text(
-                                text = category.name,
-                                fontSize = 14.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Primary else OnSurface,
-                                modifier = Modifier.weight(1f),
-                            )
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                if (isSelected) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Check,
-                                        contentDescription = null,
-                                        tint = Primary,
-                                        modifier = Modifier
-                                            .padding(end = 4.dp)
-                                            .size(18.dp),
-                                    )
-                                }
-                                IconButton(
-                                    onClick = {
-                                        onEditCategory(category)
-                                        showForm = true
-                                    },
-                                    modifier = Modifier.size(40.dp),
-                                ) {
-                                    Icon(
-                                        imageVector = Icons.Filled.Edit,
-                                        contentDescription = "Editar categoría",
-                                        tint = OnSurfaceVariant,
-                                        modifier = Modifier.size(17.dp),
-                                    )
-                                }
-                            }
-                        }
-                        HorizontalDivider(color = OutlineVariant.copy(alpha = 0.4f))
-                    }
-                    item {
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clickable { showForm = true }
-                                .padding(horizontal = 4.dp, vertical = 14.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(10.dp),
-                        ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(28.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(Primary.copy(alpha = 0.10f)),
-                                contentAlignment = Alignment.Center,
-                            ) {
-                                Icon(
-                                    imageVector = Icons.Filled.Add,
-                                    contentDescription = null,
-                                    tint = Primary,
-                                    modifier = Modifier.size(16.dp),
-                                )
-                            }
-                            Text(
-                                text = "Nueva categoría",
-                                fontSize = 14.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = Primary,
-                            )
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun UnitOfMeasureDropdown(
-    selected: String,
-    units: List<UnitOfMeasureEntity>,
-    onSelect: (String) -> Unit,
-    isError: Boolean = false,
-) {
-    var showSheet by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    val selectedUnit = units.find { it.code == selected }
-    val selectedLabel = selectedUnit?.let { "${it.code} - ${it.name}" } ?: "Seleccionar unidad"
-    val filteredUnits = remember(searchQuery, units) {
-        if (searchQuery.isBlank()) units
-        else units.filter {
-            it.name.contains(searchQuery, ignoreCase = true) ||
-                it.code.contains(searchQuery, ignoreCase = true)
-        }
-    }
-
-    Column {
-        Text(
-            text = "Unidad de medida *",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = selectedLabel,
-            onValueChange = {},
-            readOnly = true,
-            isError = isError,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showSheet = true },
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                disabledTextColor = OnSurface,
-                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-            ),
-        )
-    }
-
-    if (showSheet) {
-        VentlyModalBottomSheet(
-            onDismiss = {
-                showSheet = false
-                searchQuery = ""
-            },
-            title = "Unidad de medida",
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            searchPlaceholder = "Buscar por nombre o código...",
-        ) {
-            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
-                items(filteredUnits) { unit ->
-                    val isSelected = unit.code == selected
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onSelect(unit.code)
-                                showSheet = false
-                            }
-                            .background(
-                                if (isSelected) Primary.copy(alpha = 0.08f) else Color.Transparent
-                            )
-                            .padding(horizontal = 4.dp, vertical = 14.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(modifier = Modifier.weight(1f)) {
-                            Text(
-                                text = unit.name,
-                                fontSize = 15.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Primary else OnSurface,
-                            )
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                horizontalArrangement = Arrangement.spacedBy(6.dp),
-                            ) {
-                                Box(
-                                    modifier = Modifier
-                                        .clip(RoundedCornerShape(4.dp))
-                                        .background(Primary.copy(alpha = 0.10f))
-                                        .padding(horizontal = 6.dp, vertical = 2.dp),
-                                ) {
-                                    Text(
-                                        text = unit.code,
-                                        fontSize = 11.sp,
-                                        fontWeight = FontWeight.Medium,
-                                        color = Primary,
-                                    )
-                                }
-                                if (unit.description.isNotBlank()) {
-                                    Text(
-                                        text = unit.description,
-                                        fontSize = 12.sp,
-                                        color = OnSurfaceVariant,
-                                    )
-                                }
-                            }
-                        }
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                tint = Primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
-                    HorizontalDivider(color = OutlineVariant.copy(alpha = 0.5f))
-                }
-                item { Spacer(Modifier.height(8.dp)) }
-            }
-        }
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun IgvTypeSelector(
-    selected: IgvTypeEntity?,
-    types: List<IgvTypeEntity>,
-    onSelect: (IgvTypeEntity) -> Unit,
-    isError: Boolean = false,
-) {
-    var showSheet by remember { mutableStateOf(false) }
-    var searchQuery by remember { mutableStateOf("") }
-    val filteredTypes = remember(searchQuery, types) {
-        if (searchQuery.isBlank()) types
-        else types.filter { it.name.contains(searchQuery, ignoreCase = true) }
-    }
-
-    Column {
-        Text(
-            text = "Tipo de IGV *",
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        OutlinedTextField(
-            value = selected?.name ?: "Seleccionar tipo",
-            onValueChange = {},
-            readOnly = true,
-            isError = isError,
-            trailingIcon = {
-                Icon(
-                    imageVector = Icons.Filled.KeyboardArrowDown,
-                    contentDescription = null,
-                    tint = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-                )
-            },
-            modifier = Modifier
-                .fillMaxWidth()
-                .clickable { showSheet = true },
-            enabled = false,
-            shape = RoundedCornerShape(12.dp),
-            colors = OutlinedTextFieldDefaults.colors(
-                disabledBorderColor = if (isError) Color(0xFFEF4444) else OutlineVariant,
-                disabledTextColor = OnSurface,
-                disabledTrailingIconColor = if (isError) Color(0xFFEF4444) else OnSurfaceVariant,
-            ),
-        )
-    }
-
-    if (showSheet) {
-        VentlyModalBottomSheet(
-            onDismiss = {
-                showSheet = false
-                searchQuery = ""
-            },
-            title = "Tipo de IGV",
-            searchQuery = searchQuery,
-            onSearchQueryChange = { searchQuery = it },
-            searchPlaceholder = "Buscar tipo de IGV...",
-        ) {
-            LazyColumn(modifier = Modifier.heightIn(max = 420.dp)) {
-                items(filteredTypes) { type ->
-                    val isSelected = type.code == selected?.code
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                onSelect(type)
-                                showSheet = false
-                            }
-                            .background(
-                                if (isSelected) PrimaryContainer.copy(alpha = 0.15f) else Color.Transparent
-                            )
-                            .padding(horizontal = 4.dp, vertical = 12.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Column(
-                            modifier = Modifier.weight(1f),
-                            verticalArrangement = Arrangement.spacedBy(4.dp),
-                        ) {
-                            Text(
-                                text = type.name,
-                                fontSize = 14.sp,
-                                fontWeight = if (isSelected) FontWeight.SemiBold else FontWeight.Normal,
-                                color = if (isSelected) Primary else OnSurface,
-                            )
-                            Box(
-                                modifier = Modifier
-                                    .clip(RoundedCornerShape(6.dp))
-                                    .background(
-                                        if (isSelected) Primary.copy(alpha = 0.12f)
-                                        else OutlineVariant.copy(alpha = 0.4f)
-                                    )
-                                    .padding(horizontal = 8.dp, vertical = 3.dp),
-                            ) {
-                                Text(
-                                    text = "${type.percentage}% de IGV",
-                                    fontSize = 11.sp,
-                                    fontWeight = FontWeight.Medium,
-                                    color = if (isSelected) Primary else OnSurfaceVariant,
-                                )
-                            }
-                        }
-                        if (isSelected) {
-                            Icon(
-                                imageVector = Icons.Filled.Check,
-                                contentDescription = null,
-                                tint = Primary,
-                                modifier = Modifier.size(20.dp),
-                            )
-                        }
-                    }
-                    HorizontalDivider(color = OutlineVariant.copy(alpha = 0.4f))
-                }
-                item { Spacer(Modifier.height(8.dp)) }
-            }
-        }
-    }
-}
-
-@Composable
-private fun StockStepper(
-    label: String,
-    value: Int,
-    onValueChange: (Int) -> Unit,
-    onDecrement: () -> Unit,
-    onIncrement: () -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    Column(modifier = modifier) {
-        Text(
-            text = label,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.Medium,
-            color = OnSurfaceVariant,
-        )
-        Spacer(Modifier.height(4.dp))
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .height(56.dp)
-                .clip(RoundedCornerShape(12.dp))
-                .border(1.5.dp, OutlineVariant, RoundedCornerShape(12.dp)),
-            verticalAlignment = Alignment.CenterVertically,
-        ) {
-            IconButton(
-                onClick = onDecrement,
-                modifier = Modifier.size(56.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Remove,
-                    contentDescription = "Reducir",
-                    tint = OnSurfaceVariant,
-                )
-            }
-            BasicTextField(
-                value = value.toString(),
-                onValueChange = {
-                    if (it.isEmpty()) {
-                        onValueChange(0)
-                    } else {
-                        it.toIntOrNull()?.let { newValue ->
-                            onValueChange(newValue)
-                        }
-                    }
-                },
-                textStyle = TextStyle(
-                    fontSize = 16.sp,
-                    fontWeight = FontWeight.Medium,
-                    color = OnSurface,
-                    textAlign = TextAlign.Center,
-                ),
-                modifier = Modifier.weight(1f),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                singleLine = true,
-            )
-            IconButton(
-                onClick = onIncrement,
-                modifier = Modifier.size(56.dp),
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Add,
-                    contentDescription = "Aumentar",
-                    tint = OnSurfaceVariant,
-                )
-            }
-        }
-    }
 }

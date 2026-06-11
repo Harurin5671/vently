@@ -25,6 +25,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.SurfaceContainerLowest
+import com.app.crowns.designsystem.color.TextMuted
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
 import com.app.crowns.vently.R
@@ -72,7 +73,7 @@ fun SplashScreen(
             Text(
                 text = "Facturación Electrónica Simple",
                 style = MaterialTheme.typography.bodyLarge,
-                color = Color(0xFF64748B),
+                color = TextMuted,
             )
             Spacer(modifier = Modifier.height(48.dp))
             CircularProgressIndicator(

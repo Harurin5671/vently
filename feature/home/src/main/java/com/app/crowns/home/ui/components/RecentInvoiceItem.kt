@@ -22,17 +22,8 @@ import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.app.crowns.designsystem.color.OnSurface
-import com.app.crowns.designsystem.color.OutlineVariant
-import com.app.crowns.designsystem.color.Primary
-import com.app.crowns.designsystem.color.PrimaryContainer
-import com.app.crowns.designsystem.color.Secondary
-import com.app.crowns.designsystem.color.SecondaryContainer
-import com.app.crowns.designsystem.color.Success
-import com.app.crowns.designsystem.color.TextMuted
+import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
-import com.app.crowns.home.ui.dashboard.InvoiceStatus
-import com.app.crowns.home.ui.dashboard.InvoiceType
 
 @Composable
 fun RecentInvoiceItem(
@@ -54,7 +45,7 @@ fun RecentInvoiceItem(
         val isBoleta = invoice.documentType == "03"
         val statusColor = invoice.statusInfo?.color?.let {
             try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
-        } ?: androidx.compose.ui.graphics.Color(0xFF64748B)
+        } ?: TextMuted
 
         Box(
             modifier = Modifier
