@@ -135,6 +135,7 @@ fun SettingsScreen(
         companyInfo = state.companyInfo,
         userInfo = state.userInfo,
         documentSeries = state.documentSeries,
+        isSubscriptionActive = state.isSubscriptionActive,
         snackbarHostState = snackbarHostState,
         onNavigateToEditBusiness = onNavigateToEditBusiness,
         onSelectCertificate = { launcher.launch("*/*") },
@@ -166,6 +167,7 @@ private fun SettingsContent(
     companyInfo: CompanyInfo?,
     userInfo: com.app.crowns.domain.auth.model.User?,
     documentSeries: List<DocumentSeries>,
+    isSubscriptionActive: Boolean?,
     snackbarHostState: SnackbarHostState,
     onNavigateToEditBusiness: () -> Unit,
     onSelectCertificate: () -> Unit,
@@ -280,6 +282,18 @@ private fun SettingsContent(
                     }
 
                     SettingsSection(title = "Cuenta") {
+                        SettingsItemWithBadge(
+                            title = "Suscripción",
+                            badgeText = when (isSubscriptionActive) {
+                                true -> "ACTIVA"
+                                false -> "PENDIENTE"
+                                null -> "..."
+                            },
+                            badgeGreen = isSubscriptionActive == true,
+                            trailingIcon = null,
+                            onClick = {},
+                            showDivider = true,
+                        )
                         SettingsItem(
                             title = "Correo electrónico",
                             subtitle = userInfo?.email ?: "Cargando...",

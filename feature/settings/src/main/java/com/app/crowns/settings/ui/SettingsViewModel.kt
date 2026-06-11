@@ -2,7 +2,9 @@ package com.app.crowns.settings.ui
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.app.crowns.domain.auth.usecase.CheckSubscriptionUseCase
 import com.app.crowns.domain.auth.usecase.GetCurrentUserUseCase
+import com.app.crowns.common.Result
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
@@ -27,6 +29,7 @@ import javax.inject.Inject
 class SettingsViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
     private val getCurrentUserUseCase: GetCurrentUserUseCase,
+    private val checkSubscriptionUseCase: CheckSubscriptionUseCase,
     private val updateCertificateUseCase: UpdateCertificateUseCase,
     private val updateCertificatePasswordUseCase: UpdateCertificatePasswordUseCase,
     private val getDocumentSeriesUseCase: GetDocumentSeriesUseCase,
@@ -171,25 +174,27 @@ class SettingsViewModel @Inject constructor(
     private fun loadCompanyInfo(isSilent: Boolean = false) {
         viewModelScope.launch {
             if (!isSilent) _state.update { it.copy(isLoading = true) }
-            
+
             val user = getCurrentUserUseCase()
-            
+            val isSubscriptionActive = checkSubscriptionUseCase() is Result.Success
+
             getCompanyUseCase().onSuccess { company ->
                 if (company != null) {
                     val seriesResult = getDocumentSeriesUseCase(company.id)
-                    _state.update { 
+                    _state.update {
                         it.copy(
                             companyInfo = company,
                             userInfo = user,
                             documentSeries = seriesResult.getOrDefault(emptyList()),
-                            isLoading = false 
-                        ) 
+                            isSubscriptionActive = isSubscriptionActive,
+                            isLoading = false
+                        )
                     }
                 } else {
-                    _state.update { it.copy(companyInfo = null, userInfo = user, isLoading = false) }
+                    _state.update { it.copy(companyInfo = null, userInfo = user, isSubscriptionActive = isSubscriptionActive, isLoading = false) }
                 }
             }.onFailure { e ->
-                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cargar información"), userInfo = user, isLoading = false) }
+                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al cargar información"), userInfo = user, isSubscriptionActive = isSubscriptionActive, isLoading = false) }
             }
         }
     }

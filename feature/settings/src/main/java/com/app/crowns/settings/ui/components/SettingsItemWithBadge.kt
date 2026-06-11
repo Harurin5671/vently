@@ -27,7 +27,7 @@ fun SettingsItemWithBadge(
     title: String,
     badgeText: String,
     badgeGreen: Boolean,
-    trailingIcon: ImageVector,
+    trailingIcon: ImageVector?,
     onClick: () -> Unit,
     showDivider: Boolean,
 ) {
@@ -64,12 +64,14 @@ fun SettingsItemWithBadge(
                         .background(badgeBgColor)
                         .padding(horizontal = 8.dp, vertical = 2.dp),
                 )
-                Icon(
-                    imageVector = trailingIcon,
-                    contentDescription = null,
-                    tint = Outline,
-                    modifier = Modifier.size(20.dp),
-                )
+                if (trailingIcon != null) {
+                    Icon(
+                        imageVector = trailingIcon,
+                        contentDescription = null,
+                        tint = Outline,
+                        modifier = Modifier.size(20.dp),
+                    )
+                }
             }
         }
         if (showDivider) {

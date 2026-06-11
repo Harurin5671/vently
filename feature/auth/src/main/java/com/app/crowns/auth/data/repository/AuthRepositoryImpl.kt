@@ -3,7 +3,6 @@ package com.app.crowns.auth.data.repository
 import com.app.crowns.auth.data.mapper.toAuthError
 import com.app.crowns.auth.data.mapper.toUser
 import com.app.crowns.domain.auth.model.AuthError
-import com.app.crowns.domain.auth.model.Subscription
 import com.app.crowns.domain.auth.model.SubscriptionStatus
 import com.app.crowns.domain.auth.model.User
 import com.app.crowns.domain.auth.repository.AuthRepository
@@ -18,8 +17,10 @@ import io.github.jan.supabase.postgrest.query.Columns
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.filterNotNull
 import kotlinx.coroutines.flow.map
-import kotlinx.serialization.SerialName
-import kotlinx.serialization.Serializable
+import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.jsonArray
+import kotlinx.serialization.json.jsonObject
+import kotlinx.serialization.json.jsonPrimitive
 import javax.inject.Inject
 
 class AuthRepositoryImpl @Inject constructor(
@@ -79,18 +80,30 @@ class AuthRepositoryImpl @Inject constructor(
 
     override suspend fun checkSubscription(): Result<Unit, AuthError> {
         val now = System.currentTimeMillis()
-        if (subscriptionCache != null && now - subscriptionCacheTime < SUBSCRIPTION_CACHE_TTL_MS) {
+        if (subscriptionCache is Result.Success && now - subscriptionCacheTime < SUBSCRIPTION_CACHE_TTL_MS) {
             return subscriptionCache!!
         }
         return try {
-            val row = supabase.postgrest
+            val userId = supabase.auth.currentSessionOrNull()?.user?.id
+                ?: return Result.Failure(AuthError.SubscriptionNotActive)
+
+            val rawJson = supabase.postgrest
                 .from("subscriptions")
                 .select(Columns.list("status")) {
+                    filter { eq("user_id", userId) }
                     limit(1)
                 }
-                .decodeSingleOrNull<SubscriptionRow>()
+                .data
 
-            val result = if (row != null && SubscriptionStatus.valueOf(row.status.uppercase()).isAllowed) {
+            val status = Json.parseToJsonElement(rawJson)
+                .jsonArray
+                .firstOrNull()
+                ?.jsonObject
+                ?.get("status")
+                ?.jsonPrimitive
+                ?.content
+
+            val result = if (status != null && SubscriptionStatus.valueOf(status.uppercase()).isAllowed) {
                 Result.Success(Unit)
             } else {
                 Result.Failure(AuthError.SubscriptionNotActive)
@@ -103,6 +116,4 @@ class AuthRepositoryImpl @Inject constructor(
         }
     }
 
-    @Serializable
-    private data class SubscriptionRow(@SerialName("status") val status: String)
 }

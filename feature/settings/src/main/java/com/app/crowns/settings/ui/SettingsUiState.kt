@@ -8,6 +8,7 @@ data class SettingsUiState(
     val companyInfo: CompanyInfo? = null,
     val userInfo: User? = null,
     val documentSeries: List<DocumentSeries> = emptyList(),
+    val isSubscriptionActive: Boolean? = null,
     val isLoading: Boolean = false,
     val isDeleting: Boolean = false,
     val error: String? = null,
