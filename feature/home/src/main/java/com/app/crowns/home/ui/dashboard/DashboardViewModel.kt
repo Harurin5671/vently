@@ -36,6 +36,7 @@ class DashboardViewModel @Inject constructor(
     fun onEvent(event: DashboardEvent) {
         when (event) {
             is DashboardEvent.Refresh -> loadDashboard(isSilent = false)
+            is DashboardEvent.SilentRefresh -> loadDashboard(isSilent = true)
             is DashboardEvent.OnInvoiceClick -> navigateToDetail(event.invoiceId)
             is DashboardEvent.OnNewBoleta -> checkCredentialsAndEmit(DashboardNavigationEvent.NavigateToNewBoleta)
             is DashboardEvent.OnNewFactura -> checkCredentialsAndEmit(DashboardNavigationEvent.NavigateToNewFactura)

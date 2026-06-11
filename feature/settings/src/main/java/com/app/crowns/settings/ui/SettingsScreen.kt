@@ -100,7 +100,7 @@ fun SettingsScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onEvent(SettingsEvent.Refresh)
+                viewModel.onEvent(SettingsEvent.SilentRefresh)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

@@ -50,6 +50,7 @@ class StockViewModel @Inject constructor(
     fun onEvent(event: StockEvent) {
         when (event) {
             is StockEvent.Refresh -> loadStock()
+            is StockEvent.SilentRefresh -> loadStock(isSilent = true)
             is StockEvent.OnFilterSelected -> applyFilter(event.filter)
             is StockEvent.OnSearchChanged -> applySearch(event.query)
             is StockEvent.OnProductClick -> navigateToDetail(event.productId)
@@ -71,9 +72,9 @@ class StockViewModel @Inject constructor(
         }
     }
 
-    private fun loadStock() {
+    private fun loadStock(isSilent: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            if (!isSilent) _state.update { it.copy(isLoading = true) }
 
             getProductsUseCase().onSuccess { domainProducts ->
                 _state.update { state ->

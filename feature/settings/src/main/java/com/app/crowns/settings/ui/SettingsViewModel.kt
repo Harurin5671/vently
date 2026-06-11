@@ -46,6 +46,7 @@ class SettingsViewModel @Inject constructor(
     fun onEvent(event: SettingsEvent) {
         when (event) {
             is SettingsEvent.Refresh -> loadCompanyInfo()
+            is SettingsEvent.SilentRefresh -> loadCompanyInfo(isSilent = true)
             is SettingsEvent.Logout -> logout()
             is SettingsEvent.DeleteAccount -> deleteAccount()
             is SettingsEvent.UploadCertificate -> uploadCertificate(event.base64)
@@ -167,9 +168,9 @@ class SettingsViewModel @Inject constructor(
         }
     }
 
-    private fun loadCompanyInfo() {
+    private fun loadCompanyInfo(isSilent: Boolean = false) {
         viewModelScope.launch {
-            _state.update { it.copy(isLoading = true) }
+            if (!isSilent) _state.update { it.copy(isLoading = true) }
             
             val user = getCurrentUserUseCase()
             

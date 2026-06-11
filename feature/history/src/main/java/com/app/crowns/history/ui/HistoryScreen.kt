@@ -110,7 +110,7 @@ fun HistoryScreen(
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
-                viewModel.onEvent(HistoryEvent.Refresh)
+                viewModel.onEvent(HistoryEvent.SilentRefresh)
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)

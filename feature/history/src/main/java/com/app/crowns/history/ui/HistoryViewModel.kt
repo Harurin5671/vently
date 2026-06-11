@@ -60,6 +60,10 @@ class HistoryViewModel @Inject constructor(
                 loadHistory(isSilent = false)
                 loadCompanyInfo()
             }
+            is HistoryEvent.SilentRefresh -> {
+                loadHistory(isSilent = true)
+                loadCompanyInfo()
+            }
             is HistoryEvent.PreviousMonth -> {
                 val newMonth = _state.value.currentMonth.minusMonths(1)
                 _state.update { it.copy(currentMonth = newMonth) }

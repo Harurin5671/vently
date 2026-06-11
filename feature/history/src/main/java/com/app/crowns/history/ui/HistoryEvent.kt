@@ -2,6 +2,7 @@ package com.app.crowns.history.ui
 
 sealed class HistoryEvent {
     data object Refresh : HistoryEvent()
+    data object SilentRefresh : HistoryEvent()
     data object PreviousMonth : HistoryEvent()
     data object NextMonth : HistoryEvent()
     data class OnFilterSelected(val filter: HistoryFilter) : HistoryEvent()

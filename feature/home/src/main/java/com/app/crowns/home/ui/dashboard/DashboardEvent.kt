@@ -2,6 +2,7 @@ package com.app.crowns.home.ui.dashboard
 
 sealed class DashboardEvent {
     data object Refresh : DashboardEvent()
+    data object SilentRefresh : DashboardEvent()
     data class OnInvoiceClick(val invoiceId: String) : DashboardEvent()
     data object OnNewBoleta : DashboardEvent()
     data object OnNewFactura : DashboardEvent()
