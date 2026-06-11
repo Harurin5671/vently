@@ -9,6 +9,7 @@ sealed class DashboardEvent {
     data object OnHistoryClick : DashboardEvent()
     data object DismissMissingDataDialog : DashboardEvent()
     data object OnGoToSettings : DashboardEvent()
+    data object DismissError : DashboardEvent()
 }
 
 sealed class DashboardNavigationEvent {

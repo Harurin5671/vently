@@ -108,6 +108,7 @@ class HistoryViewModel @Inject constructor(
             is HistoryEvent.OnConfirmCancelAccepted -> confirmCancelAccepted()
             is HistoryEvent.OnDismissCancelReason -> _state.update { it.copy(showCancelReasonDialog = false, pendingCancelInvoiceId = null, cancelReasonInput = "") }
             is HistoryEvent.OnLoadMore -> loadMoreHistory()
+            is HistoryEvent.OnDismissLoadError -> _state.update { it.copy(loadError = null) }
         }
     }
 
@@ -160,16 +161,20 @@ class HistoryViewModel @Inject constructor(
 
     private fun loadHistory(isSilent: Boolean = false, month: YearMonth = _state.value.currentMonth) {
         viewModelScope.launch {
-            if (!isSilent) _state.update { it.copy(isLoading = true, invoices = emptyList(), hasMorePages = false) }
+            if (!isSilent) _state.update { it.copy(isLoading = true, invoices = emptyList(), hasMorePages = false, loadError = null) }
             val statuses = getInvoiceStatusesUseCase().getOrDefault(emptyList())
-            val rawInvoices = getInvoicesHistoryUseCase(month, offset = 0).getOrDefault(emptyList())
-            val invoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
-            _state.update {
-                it.copy(
-                    isLoading = false,
-                    invoices = invoices,
-                    hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
-                )
+            val invoicesResult = getInvoicesHistoryUseCase(month, offset = 0)
+            invoicesResult.onSuccess { rawInvoices ->
+                val invoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
+                _state.update {
+                    it.copy(
+                        isLoading = false,
+                        invoices = invoices,
+                        hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
+                    )
+                }
+            }.onFailure { e ->
+                _state.update { it.copy(isLoading = false, loadError = e.message ?: "Error al cargar el historial") }
             }
         }
     }
@@ -180,14 +185,18 @@ class HistoryViewModel @Inject constructor(
             _state.update { it.copy(isLoadingMore = true) }
             val offset = _state.value.invoices.size
             val statuses = getInvoiceStatusesUseCase().getOrDefault(emptyList())
-            val rawInvoices = getInvoicesHistoryUseCase(_state.value.currentMonth, offset).getOrDefault(emptyList())
-            val newInvoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
-            _state.update {
-                it.copy(
-                    isLoadingMore = false,
-                    invoices = it.invoices + newInvoices,
-                    hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
-                )
+            val invoicesResult = getInvoicesHistoryUseCase(_state.value.currentMonth, offset)
+            invoicesResult.onSuccess { rawInvoices ->
+                val newInvoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
+                _state.update {
+                    it.copy(
+                        isLoadingMore = false,
+                        invoices = it.invoices + newInvoices,
+                        hasMorePages = rawInvoices.size == GetInvoicesHistoryUseCase.PAGE_SIZE,
+                    )
+                }
+            }.onFailure { e ->
+                _state.update { it.copy(isLoadingMore = false, loadError = e.message ?: "Error al cargar más comprobantes") }
             }
         }
     }

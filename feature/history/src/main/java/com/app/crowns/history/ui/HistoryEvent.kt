@@ -14,4 +14,5 @@ sealed class HistoryEvent {
     data object OnConfirmCancelAccepted : HistoryEvent()
     data object OnDismissCancelReason : HistoryEvent()
     data object OnLoadMore : HistoryEvent()
+    data object OnDismissLoadError : HistoryEvent()
 }

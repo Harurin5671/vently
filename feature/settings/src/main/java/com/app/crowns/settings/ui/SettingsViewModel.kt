@@ -57,6 +57,8 @@ class SettingsViewModel @Inject constructor(
                 event.facturaCorrelative
             )
             is SettingsEvent.UpdateSolCredentials -> updateSolCredentials(event.username, event.password)
+            is SettingsEvent.SetError -> _state.update { it.copy(error = event.message) }
+            is SettingsEvent.DismissError -> _state.update { it.copy(error = null) }
         }
     }
 

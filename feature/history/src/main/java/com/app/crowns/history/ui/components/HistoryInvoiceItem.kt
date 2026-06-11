@@ -22,9 +22,10 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.*
+import androidx.core.graphics.toColorInt
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.domain.invoice.entities.formattedId
-import androidx.core.graphics.toColorInt
 
 @Composable
 fun HistoryInvoiceItem(
@@ -46,7 +47,7 @@ fun HistoryInvoiceItem(
         } ?: TextMuted
 
         // Avatar: Usamos el color de la BD con transparencia para el fondo
-        val isBoleta = invoice.documentType == "03"
+        val isBoleta = invoice.documentType == ElectronicDocumentTypeEntity.BOLETA
         val avatarBg = statusColor.copy(alpha = 0.1f)
         val avatarTextColor = statusColor
 

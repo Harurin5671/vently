@@ -1,5 +1,8 @@
 package com.app.crowns.invoice.domain.model
 
+import kotlinx.serialization.Serializable
+
+@Serializable
 data class Invoice(
     val id: String? = null,
     val type: InvoiceType,

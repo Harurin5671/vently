@@ -32,9 +32,10 @@ class ProductSupabaseDataSourceImpl @Inject constructor(
     }
 
     override suspend fun updateProduct(product: ProductEntity): Result<Unit> = runCatching {
+        val id = requireNotNull(product.id) { "No se puede actualizar un producto sin ID" }
         supabase.from("products")
             .update(product) {
-                filter { eq("id", product.id!!) }
+                filter { eq("id", id) }
             }
     }
 
@@ -49,9 +50,10 @@ class ProductSupabaseDataSourceImpl @Inject constructor(
     }
 
     override suspend fun updateCategory(category: CategoryEntity): Result<Unit> = runCatching {
+        val id = requireNotNull(category.id) { "No se puede actualizar una categoría sin ID" }
         supabase.from("categories")
             .update(category) {
-                filter { eq("id", category.id!!) }
+                filter { eq("id", id) }
             }
     }
 

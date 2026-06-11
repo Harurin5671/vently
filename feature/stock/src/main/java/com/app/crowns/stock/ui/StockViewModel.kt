@@ -76,18 +76,6 @@ class StockViewModel @Inject constructor(
             _state.update { it.copy(isLoading = true) }
 
             getProductsUseCase().onSuccess { domainProducts ->
-//                val uiProducts = domainProducts.map { p ->
-//                    Product(
-//                        id = p.id ?: "",
-//                        name = p.name,
-//                        sku = p.sku ?: "S/SKU",
-//                        category = p.category?.name ?: "Sin categoría",
-//                        quantity = p.currentStock,
-//                        price = p.salePrice,
-//                        colorHex = "#3B82F6"
-//                    )
-//                }
-
                 _state.update { state ->
                     state.copy(
                         isLoading = false,

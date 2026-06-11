@@ -2,9 +2,9 @@ package com.app.crowns.home.ui.dashboard
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.catalog.usecase.GetInvoiceStatusesUseCase
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.invoice.usecase.CalculateDashboardStatsUseCase
 import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
@@ -14,7 +14,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
-import java.time.LocalDate
 import javax.inject.Inject
 
 @HiltViewModel
@@ -22,6 +21,7 @@ class DashboardViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
     private val getInvoicesHistory: GetInvoicesHistoryUseCase,
     private val getInvoiceStatusesUseCase: GetInvoiceStatusesUseCase,
+    private val calculateDashboardStats: CalculateDashboardStatsUseCase,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
@@ -46,6 +46,7 @@ class DashboardViewModel @Inject constructor(
                 _state.update { it.copy(showMissingDataDialog = false) }
                 emitNav(DashboardNavigationEvent.NavigateToSettings)
             }
+            is DashboardEvent.DismissError -> _state.update { it.copy(error = null) }
         }
     }
 
@@ -71,6 +72,9 @@ class DashboardViewModel @Inject constructor(
             val companyInfo = companyResult.getOrNull()
 
             val invoicesResult = getInvoicesHistory(java.time.YearMonth.now())
+            if (invoicesResult.isFailure) {
+                _state.update { it.copy(error = invoicesResult.exceptionOrNull()?.message ?: "Error al cargar datos") }
+            }
             val rawInvoices = invoicesResult.getOrDefault(emptyList())
 
             val statusesResult = getInvoiceStatusesUseCase()
@@ -80,39 +84,19 @@ class DashboardViewModel @Inject constructor(
                 inv.copy(statusInfo = statuses.find { it.code == inv.status })
             }
 
-            val now = LocalDate.now()
-            val todayStr = now.toString() // "yyyy-MM-dd"
-            val monthStr = todayStr.substring(0, 7) // "yyyy-MM"
-
-            val thisMonthInvoices = invoices.filter { it.issueDate.startsWith(monthStr) }
-            val todayInvoices = thisMonthInvoices.filter { it.issueDate.startsWith(todayStr) }
-            val previousMonthInvoices = thisMonthInvoices.filter { !it.issueDate.startsWith(todayStr) }
-
-            val todaySales = todayInvoices.sumOf { it.total.toDoubleOrNull() ?: 0.0 }
-            val previousMonthSales = previousMonthInvoices.sumOf { it.total.toDoubleOrNull() ?: 0.0 }
-            
-            val growth = if (previousMonthSales > 0) {
-                ((todaySales - previousMonthSales) / previousMonthSales) * 100
-            } else if (todaySales > 0) {
-                100.0 // Si es el primer día con ventas del mes
-            } else {
-                0.0
-            }
+            val stats = calculateDashboardStats(invoices)
 
             _state.update {
                 it.copy(
                     isLoading = false,
                     userName = companyInfo?.businessName ?: "Usuario",
                     companyInfo = companyInfo,
-                    todaySales = todaySales,
-                    salesGrowthPercent = growth,
-                    totalInvoices = thisMonthInvoices.size,
-                    acceptedInvoices = thisMonthInvoices.count { inv -> inv.status == InvoiceStatusEntity.ACCEPTED },
-                    pendingInvoices = thisMonthInvoices.count { inv ->
-                        inv.status == InvoiceStatusEntity.PENDING || 
-                        inv.status == InvoiceStatusEntity.DRAFT
-                    },
-                    recentInvoices = invoices.take(5),
+                    todaySales = stats.todaySales,
+                    salesGrowthPercent = stats.salesGrowthPercent,
+                    totalInvoices = stats.totalInvoices,
+                    acceptedInvoices = stats.acceptedInvoices,
+                    pendingInvoices = stats.pendingInvoices,
+                    recentInvoices = stats.recentInvoices,
                 )
             }
         }

@@ -1,5 +1,6 @@
 package com.app.crowns.history.ui
 
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
@@ -19,6 +20,7 @@ data class HistoryUiState(
     val isLoadingMore: Boolean = false,
     val hasMorePages: Boolean = false,
     val cancellingInvoiceId: String? = null,
+    val loadError: String? = null,
     val cancelError: String? = null,
     val showCancelReasonDialog: Boolean = false,
     val pendingCancelInvoiceId: String? = null,
@@ -37,8 +39,8 @@ val HistoryUiState.filteredInvoices: List<InvoiceEntity>
     get() = invoices.filter { invoice ->
         when (selectedFilter) {
             HistoryFilter.ALL -> true
-            HistoryFilter.BOLETA -> invoice.documentType == "03"
-            HistoryFilter.FACTURA -> invoice.documentType == "01"
+            HistoryFilter.BOLETA -> invoice.documentType == ElectronicDocumentTypeEntity.BOLETA
+            HistoryFilter.FACTURA -> invoice.documentType == ElectronicDocumentTypeEntity.FACTURA
             HistoryFilter.ACCEPTED -> invoice.status == InvoiceStatusEntity.ACCEPTED
             HistoryFilter.PENDING -> invoice.status == InvoiceStatusEntity.PENDING || invoice.status == InvoiceStatusEntity.DRAFT
         }

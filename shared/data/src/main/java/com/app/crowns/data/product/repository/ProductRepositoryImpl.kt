@@ -1,6 +1,7 @@
 package com.app.crowns.data.product.repository
 
 import com.app.crowns.data.product.datasource.ProductRemoteDataSource
+import com.app.crowns.data.product.dto.CategoryEntity
 import com.app.crowns.data.product.mapper.toDomain
 import com.app.crowns.data.product.mapper.toEntity
 import com.app.crowns.domain.company.repository.CompanyRepository
@@ -26,6 +27,7 @@ class ProductRepositoryImpl @Inject constructor(
     }
 
     private var cachedCompanyId: String? = null
+    private var cachedCategories: List<CategoryEntity>? = null
 
     private suspend fun getCompanyId(): String {
         cachedCompanyId?.let { return it }
@@ -34,10 +36,15 @@ class ProductRepositoryImpl @Inject constructor(
         return company.id.also { cachedCompanyId = it }
     }
 
+    private suspend fun getCachedCategories(companyId: String): List<CategoryEntity> {
+        cachedCategories?.let { return it }
+        return remoteDataSource.getCategories(companyId).getOrDefault(emptyList())
+            .also { cachedCategories = it }
+    }
+
     override suspend fun getProducts(): Result<List<Product>> = runCatching {
         val companyId = getCompanyId()
-
-        val categories = remoteDataSource.getCategories(companyId).getOrDefault(emptyList())
+        val categories = getCachedCategories(companyId)
         remoteDataSource.getProducts(companyId).getOrThrow().map { entity ->
             val category = categories.find { it.id == entity.categoryId }?.toDomain()
             entity.toDomain(category)
@@ -46,9 +53,8 @@ class ProductRepositoryImpl @Inject constructor(
 
     override suspend fun getProductById(productId: String): Result<Product> = runCatching {
         val companyId = getCompanyId()
-        val categories = remoteDataSource.getCategories(companyId).getOrDefault(emptyList())
         val productEntity = remoteDataSource.getProductById(productId).getOrThrow()
-        val category = categories.find { it.id == productEntity.categoryId }?.toDomain()
+        val category = getCachedCategories(companyId).find { it.id == productEntity.categoryId }?.toDomain()
         productEntity.toDomain(category)
     }
 
@@ -56,10 +62,11 @@ class ProductRepositoryImpl @Inject constructor(
         val companyId = getCompanyId()
 
         val productId: String
-        if (product.id != null) {
+        val existingId = product.id
+        if (existingId != null) {
             // Actualizar producto existente
             remoteDataSource.updateProduct(product.toEntity(companyId)).getOrThrow()
-            productId = product.id!!
+            productId = existingId
         } else {
             // Insertar nuevo producto
             val saved = remoteDataSource.saveProduct(product.toEntity(companyId)).getOrThrow()
@@ -86,12 +93,14 @@ class ProductRepositoryImpl @Inject constructor(
     override suspend fun saveCategory(category: Category): Result<Unit> = runCatching {
         val companyId = getCompanyId()
         remoteDataSource.saveCategory(category.toEntity(companyId)).getOrThrow()
+        cachedCategories = null
         notifyProductChanged()
     }
 
     override suspend fun updateCategory(category: Category): Result<Unit> = runCatching {
         val companyId = getCompanyId()
         remoteDataSource.updateCategory(category.toEntity(companyId)).getOrThrow()
+        cachedCategories = null
         notifyProductChanged()
     }
 }

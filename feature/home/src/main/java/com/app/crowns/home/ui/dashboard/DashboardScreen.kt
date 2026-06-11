@@ -30,6 +30,8 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -37,6 +39,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -100,9 +103,20 @@ fun DashboardScreen(
         }
     }
 
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(state.error) {
+        val error = state.error
+        if (error != null) {
+            snackbarHostState.showSnackbar(error)
+            viewModel.onEvent(DashboardEvent.DismissError)
+        }
+    }
+
     DashboardContent(
         state = state,
         onEvent = viewModel::onEvent,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -111,11 +125,13 @@ fun DashboardScreen(
 private fun DashboardContent(
     state: DashboardUiState,
     onEvent: (DashboardEvent) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val locale = LocalConfiguration.current.locales[0]
 
     Scaffold(
         containerColor = Surface,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
 //            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }
@@ -174,51 +190,7 @@ private fun DashboardContent(
                 )
                 Spacer(Modifier.height(12.dp))
 
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    QuickActionCard(
-                        label = "Nueva boleta",
-                        icon = Icons.AutoMirrored.Filled.ReceiptLong,
-                        iconTint = Primary,
-                        iconBackground = PrimaryContainer.copy(alpha = 0.12f),
-                        onClick = { onEvent(DashboardEvent.OnNewBoleta) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickActionCard(
-                        label = "Nueva factura",
-                        icon = Icons.Filled.Business,
-                        iconTint = Primary,
-                        iconBackground = PrimaryContainer.copy(alpha = 0.12f),
-                        onClick = { onEvent(DashboardEvent.OnNewFactura) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
-
-                Spacer(Modifier.height(12.dp))
-
-                Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    QuickActionCard(
-                        label = "Mi stock",
-                        icon = Icons.Filled.Inventory2,
-                        iconTint = Teal,
-                        iconBackground = Teal.copy(alpha = 0.12f),
-                        onClick = { onEvent(DashboardEvent.OnStockClick) },
-                        modifier = Modifier.weight(1f),
-                    )
-                    QuickActionCard(
-                        label = "Historial",
-                        icon = Icons.Filled.History,
-                        iconTint = OnSurfaceVariant,
-                        iconBackground = OutlineVariant.copy(alpha = 0.2f),
-                        onClick = { onEvent(DashboardEvent.OnHistoryClick) },
-                        modifier = Modifier.weight(1f),
-                    )
-                }
+                QuickActionsSection(onEvent = onEvent)
 
                 Spacer(Modifier.height(24.dp))
 
@@ -253,42 +225,7 @@ private fun DashboardContent(
                 Spacer(Modifier.height(8.dp))
 
                 // Invoice list card
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clip(RoundedCornerShape(12.dp))
-                        .background(SurfaceContainerLowest)
-                        .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
-                ) {
-                    if (state.recentInvoices.isEmpty()) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(24.dp),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text(
-                                text = "No hay comprobantes recientes",
-                                fontSize = 14.sp,
-                                color = Outline,
-                                fontWeight = FontWeight.Normal
-                            )
-                        }
-                    } else {
-                        state.recentInvoices.forEachIndexed { index, invoice ->
-                            RecentInvoiceItem(
-                                invoice = invoice,
-                                onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
-                            )
-                            if (index < state.recentInvoices.lastIndex) {
-                                HorizontalDivider(
-                                    color = OutlineVariant.copy(alpha = 0.5f),
-                                    thickness = 0.5.dp,
-                                )
-                            }
-                        }
-                    }
-                }
+                RecentInvoicesCard(invoices = state.recentInvoices, onEvent = onEvent)
 
                 Spacer(Modifier.height(80.dp)) // espacio para el FAB
             }
@@ -296,75 +233,168 @@ private fun DashboardContent(
     }
 
     if (state.showMissingDataDialog) {
-        VentlyModalBottomSheet(
-            onDismiss = { onEvent(DashboardEvent.DismissMissingDataDialog) },
-            title = "Información pendiente",
+        MissingDataDialog(companyInfo = state.companyInfo, onEvent = onEvent)
+    }
+}
+}
+
+@Composable
+private fun QuickActionsSection(onEvent: (DashboardEvent) -> Unit) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
         ) {
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.spacedBy(16.dp)
-            ) {
-                Text(
-                    text = "Para emitir comprobantes electrónicos, necesitas configurar tus credenciales en Ajustes.",
-                    style = MaterialTheme.typography.bodyLarge,
-                    textAlign = TextAlign.Center,
-                    color = OnSurface
-                )
-
-                Column(
-                    verticalArrangement = Arrangement.spacedBy(8.dp),
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    val missingItems = mutableListOf<String>()
-                    if (state.companyInfo?.certificateBase64 == null) missingItems.add("Certificado digital")
-                    if (state.companyInfo?.certificatePassword == null) missingItems.add("Contraseña del certificado")
-                    if (state.companyInfo?.solUsername == null || state.companyInfo.solPassword == null) missingItems.add("Usuario y contraseña SOL")
-
-                    missingItems.forEach { item ->
-                        Row(
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Close,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(16.dp)
-                            )
-                            Text(
-                                text = item,
-                                style = MaterialTheme.typography.bodyMedium,
-                                color = OnSurfaceVariant
-                            )
-                        }
-                    }
-                }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                Button(
-                    onClick = { onEvent(DashboardEvent.OnGoToSettings) },
-                    modifier = Modifier.fillMaxWidth(),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                    shape = MaterialTheme.shapes.medium
-                ) {
-                    Text("Configurar ahora", color = OnPrimary, fontWeight = FontWeight.SemiBold)
-                }
-
-                TextButton(
-                    onClick = { onEvent(DashboardEvent.DismissMissingDataDialog) },
-                    modifier = Modifier.fillMaxWidth()
-                ) {
-                    Text("Ahora no", color = OnSurfaceVariant)
-                }
-            }
-            Spacer(modifier = Modifier.height(16.dp))
+            QuickActionCard(
+                label = "Nueva boleta",
+                icon = Icons.AutoMirrored.Filled.ReceiptLong,
+                iconTint = Primary,
+                iconBackground = PrimaryContainer.copy(alpha = 0.12f),
+                onClick = { onEvent(DashboardEvent.OnNewBoleta) },
+                modifier = Modifier.weight(1f),
+            )
+            QuickActionCard(
+                label = "Nueva factura",
+                icon = Icons.Filled.Business,
+                iconTint = Primary,
+                iconBackground = PrimaryContainer.copy(alpha = 0.12f),
+                onClick = { onEvent(DashboardEvent.OnNewFactura) },
+                modifier = Modifier.weight(1f),
+            )
+        }
+        Row(
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            QuickActionCard(
+                label = "Mi stock",
+                icon = Icons.Filled.Inventory2,
+                iconTint = Teal,
+                iconBackground = Teal.copy(alpha = 0.12f),
+                onClick = { onEvent(DashboardEvent.OnStockClick) },
+                modifier = Modifier.weight(1f),
+            )
+            QuickActionCard(
+                label = "Historial",
+                icon = Icons.Filled.History,
+                iconTint = OnSurfaceVariant,
+                iconBackground = OutlineVariant.copy(alpha = 0.2f),
+                onClick = { onEvent(DashboardEvent.OnHistoryClick) },
+                modifier = Modifier.weight(1f),
+            )
         }
     }
 }
+
+@Composable
+private fun RecentInvoicesCard(
+    invoices: List<com.app.crowns.domain.invoice.entities.InvoiceEntity>,
+    onEvent: (DashboardEvent) -> Unit,
+) {
+    Column(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(SurfaceContainerLowest)
+            .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp)),
+    ) {
+        if (invoices.isEmpty()) {
+            Box(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                contentAlignment = Alignment.Center,
+            ) {
+                Text(
+                    text = "No hay comprobantes recientes",
+                    fontSize = 14.sp,
+                    color = Outline,
+                    fontWeight = FontWeight.Normal,
+                )
+            }
+        } else {
+            invoices.forEachIndexed { index, invoice ->
+                RecentInvoiceItem(
+                    invoice = invoice,
+                    onClick = { onEvent(DashboardEvent.OnInvoiceClick(invoice.id)) },
+                )
+                if (index < invoices.lastIndex) {
+                    HorizontalDivider(
+                        color = OutlineVariant.copy(alpha = 0.5f),
+                        thickness = 0.5.dp,
+                    )
+                }
+            }
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun MissingDataDialog(
+    companyInfo: com.app.crowns.domain.company.model.CompanyInfo?,
+    onEvent: (DashboardEvent) -> Unit,
+) {
+    val missingItems = buildList {
+        if (companyInfo?.certificateBase64 == null) add("Certificado digital")
+        if (companyInfo?.certificatePassword == null) add("Contraseña del certificado")
+        if (companyInfo?.solUsername == null || companyInfo.solPassword == null) add("Usuario y contraseña SOL")
+    }
+
+    VentlyModalBottomSheet(
+        onDismiss = { onEvent(DashboardEvent.DismissMissingDataDialog) },
+        title = "Información pendiente",
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Text(
+                text = "Para emitir comprobantes electrónicos, necesitas configurar tus credenciales en Ajustes.",
+                style = MaterialTheme.typography.bodyLarge,
+                textAlign = TextAlign.Center,
+                color = OnSurface,
+            )
+            Column(
+                verticalArrangement = Arrangement.spacedBy(8.dp),
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                missingItems.forEach { item ->
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = null,
+                            tint = MaterialTheme.colorScheme.error,
+                            modifier = Modifier.size(16.dp),
+                        )
+                        Text(text = item, style = MaterialTheme.typography.bodyMedium, color = OnSurfaceVariant)
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+            Button(
+                onClick = { onEvent(DashboardEvent.OnGoToSettings) },
+                modifier = Modifier.fillMaxWidth(),
+                colors = ButtonDefaults.buttonColors(containerColor = Primary),
+                shape = MaterialTheme.shapes.medium,
+            ) {
+                Text("Configurar ahora", color = OnPrimary, fontWeight = FontWeight.SemiBold)
+            }
+            TextButton(
+                onClick = { onEvent(DashboardEvent.DismissMissingDataDialog) },
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                Text("Ahora no", color = OnSurfaceVariant)
+            }
+        }
+        Spacer(modifier = Modifier.height(16.dp))
+    }
 }
 
 @ThemePreviews

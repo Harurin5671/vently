@@ -1,5 +1,6 @@
 package com.app.crowns.domain.invoice.entities
 
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.Contextual
@@ -37,14 +38,14 @@ val InvoiceEntity.formattedId: String
 
 val InvoiceEntity.documentName: String
     get() = when (documentType) {
-        "01" -> "Factura"
-        "03" -> "Boleta"
+        ElectronicDocumentTypeEntity.FACTURA -> "Factura"
+        ElectronicDocumentTypeEntity.BOLETA -> "Boleta"
         else -> "Comprobante"
     }
 
 val InvoiceEntity.fullDocumentName: String
     get() = when (documentType) {
-        "01" -> "Factura Electrónica"
-        "03" -> "Boleta de Venta Electrónica"
+        ElectronicDocumentTypeEntity.FACTURA -> "Factura Electrónica"
+        ElectronicDocumentTypeEntity.BOLETA -> "Boleta de Venta Electrónica"
         else -> "Comprobante Electrónico"
     }

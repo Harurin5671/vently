@@ -218,128 +218,127 @@ private fun InvoicePreviewContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp),
         ) {
-            // Warning banner
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(12.dp))
-                    .background(StockLowBg)
-                    .border(
-                        width = 3.dp,
-                        color = StockLow,
-                        shape = RoundedCornerShape(
-                            topStart = 12.dp,
-                            bottomStart = 12.dp,
-                            topEnd = 0.dp,
-                            bottomEnd = 0.dp,
-                        )
-                    )
-                    .padding(12.dp),
-                horizontalArrangement = Arrangement.spacedBy(8.dp),
-                verticalAlignment = Alignment.Top,
-            ) {
-                Icon(
-                    imageVector = Icons.Filled.Warning,
-                    contentDescription = null,
-                    tint = StockLow,
-                    modifier = Modifier.size(20.dp),
-                )
-                Text(
-                    text = "Revisa el comprobante antes de emitir. Una vez enviado a SUNAT no podrá modificarse.",
-                    fontSize = 12.sp,
-                    color = WarningDark,
-                    fontWeight = FontWeight.Medium,
-                    lineHeight = 16.sp,
-                )
-            }
-
-            // PDF preview
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .clip(RoundedCornerShape(16.dp))
-                    .background(SurfaceContainerLowest)
-                    .border(1.dp, BorderSubtle, RoundedCornerShape(16.dp)),
-                contentAlignment = Alignment.Center,
-            ) {
-                when {
-                    state.isGeneratingPdf -> {
-                        Column(
-                            modifier = Modifier.padding(48.dp),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.spacedBy(12.dp),
-                        ) {
-                            CircularProgressIndicator(color = Primary)
-                            Text(
-                                text = "Generando vista previa...",
-                                fontSize = 14.sp,
-                                color = Outline,
-                            )
-                        }
-                    }
-                    state.pdfPages.isNotEmpty() -> {
-                        Column {
-                            state.pdfPages.forEach { bitmap ->
-                                Image(
-                                    bitmap = bitmap.asImageBitmap(),
-                                    contentDescription = "Vista previa del comprobante",
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentScale = ContentScale.FillWidth,
-                                )
-                            }
-                        }
-                    }
-                    else -> {
-                        Text(
-                            text = state.error ?: "No se pudo generar la vista previa",
-                            fontSize = 14.sp,
-                            color = ErrorBright,
-                            modifier = Modifier.padding(48.dp),
-                            textAlign = TextAlign.Center,
-                        )
-                    }
-                }
-            }
+            PreviewWarningBanner()
+            PdfPreviewBox(state = state)
         }
     }
 
-    // Emit confirmation dialog
     if (state.showEmitDialog) {
-        AlertDialog(
-            onDismissRequest = onDismissEmitDialog,
-            title = {
-                Text(
-                    text = "¿Emitir este comprobante?",
-                    fontWeight = FontWeight.SemiBold,
-                )
-            },
-            text = {
-                Text(
-                    text = "Se enviará a SUNAT y tendrá validez legal inmediata. No podrás anularlo directamente una vez emitido.",
-                    fontSize = 14.sp,
-                    color = OnSurfaceVariant,
-                )
-            },
-            confirmButton = {
-                Button(
-                    onClick = onConfirmEmit,
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = Primary),
-                ) {
-                    Text("Confirmar emisión", color = OnPrimary)
-                }
-            },
-            dismissButton = {
-                TextButton(
-                    onClick = onDismissEmitDialog,
-                    modifier = Modifier.fillMaxWidth(),
-                ) {
-                    Text("Cancelar", color = Outline)
-                }
-            },
-            containerColor = Surface,
-            shape = RoundedCornerShape(20.dp),
+        EmitConfirmationDialog(onConfirm = onConfirmEmit, onDismiss = onDismissEmitDialog)
+    }
+}
+
+@Composable
+private fun PreviewWarningBanner() {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(12.dp))
+            .background(StockLowBg)
+            .border(
+                width = 3.dp,
+                color = StockLow,
+                shape = RoundedCornerShape(
+                    topStart = 12.dp,
+                    bottomStart = 12.dp,
+                    topEnd = 0.dp,
+                    bottomEnd = 0.dp,
+                ),
+            )
+            .padding(12.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.Top,
+    ) {
+        Icon(
+            imageVector = Icons.Filled.Warning,
+            contentDescription = null,
+            tint = StockLow,
+            modifier = Modifier.size(20.dp),
+        )
+        Text(
+            text = "Revisa el comprobante antes de emitir. Una vez enviado a SUNAT no podrá modificarse.",
+            fontSize = 12.sp,
+            color = WarningDark,
+            fontWeight = FontWeight.Medium,
+            lineHeight = 16.sp,
         )
     }
+}
+
+@Composable
+private fun PdfPreviewBox(state: InvoicePreviewUiState) {
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clip(RoundedCornerShape(16.dp))
+            .background(SurfaceContainerLowest)
+            .border(1.dp, BorderSubtle, RoundedCornerShape(16.dp)),
+        contentAlignment = Alignment.Center,
+    ) {
+        when {
+            state.isGeneratingPdf -> {
+                Column(
+                    modifier = Modifier.padding(48.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                ) {
+                    CircularProgressIndicator(color = Primary)
+                    Text(text = "Generando vista previa...", fontSize = 14.sp, color = Outline)
+                }
+            }
+            state.pdfPages.isNotEmpty() -> {
+                Column {
+                    state.pdfPages.forEach { bitmap ->
+                        Image(
+                            bitmap = bitmap.asImageBitmap(),
+                            contentDescription = "Vista previa del comprobante",
+                            modifier = Modifier.fillMaxWidth(),
+                            contentScale = ContentScale.FillWidth,
+                        )
+                    }
+                }
+            }
+            else -> {
+                Text(
+                    text = state.error ?: "No se pudo generar la vista previa",
+                    fontSize = 14.sp,
+                    color = ErrorBright,
+                    modifier = Modifier.padding(48.dp),
+                    textAlign = TextAlign.Center,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmitConfirmationDialog(onConfirm: () -> Unit, onDismiss: () -> Unit) {
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text(text = "¿Emitir este comprobante?", fontWeight = FontWeight.SemiBold) },
+        text = {
+            Text(
+                text = "Se enviará a SUNAT y tendrá validez legal inmediata. No podrás anularlo directamente una vez emitido.",
+                fontSize = 14.sp,
+                color = OnSurfaceVariant,
+            )
+        },
+        confirmButton = {
+            Button(
+                onClick = onConfirm,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Primary),
+            ) {
+                Text("Confirmar emisión", color = OnPrimary)
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
+                Text("Cancelar", color = Outline)
+            }
+        },
+        containerColor = Surface,
+        shape = RoundedCornerShape(20.dp),
+    )
 }

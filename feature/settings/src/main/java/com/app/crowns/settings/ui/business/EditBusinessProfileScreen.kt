@@ -93,40 +93,10 @@ fun EditBusinessProfileContent(
     val hasLogo = state.logoUrl != null || state.selectedLogoBytes != null
 
     if (showLogoFullscreen && hasLogo) {
-        Dialog(
-            onDismissRequest = { showLogoFullscreen = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black.copy(alpha = 0.92f))
-                    .clickable { showLogoFullscreen = false },
-                contentAlignment = Alignment.Center
-            ) {
-                AsyncImage(
-                    model = state.selectedLogoBytes ?: state.logoUrl,
-                    contentDescription = "Logo ampliado",
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(32.dp),
-                    contentScale = ContentScale.Fit
-                )
-                IconButton(
-                    onClick = { showLogoFullscreen = false },
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(16.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Close,
-                        contentDescription = "Cerrar",
-                        tint = OnPrimary,
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
-            }
-        }
+        LogoFullscreenDialog(
+            logoModel = state.selectedLogoBytes ?: state.logoUrl,
+            onDismiss = { showLogoFullscreen = false },
+        )
     }
 
     Scaffold(
@@ -174,134 +144,15 @@ fun EditBusinessProfileContent(
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(24.dp),
         ) {
-            // 1. LOGO SECTION
-            Column(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                Text(
-                    text = "LOGO DEL NEGOCIO",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextMuted,
-                    modifier = Modifier.fillMaxWidth(),
-                    letterSpacing = 1.sp
-                )
-                Spacer(modifier = Modifier.height(12.dp))
-                Box(contentAlignment = Alignment.BottomEnd) {
-                    Box(
-                        modifier = Modifier
-                            .size(80.dp)
-                            .clip(CircleShape)
-                            .background(SurfaceContainerLowest)
-                            .border(2.dp, PrimaryFixed, CircleShape)
-                            .then(
-                                if (hasLogo) Modifier.clickable { showLogoFullscreen = true }
-                                else Modifier
-                            ),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        if (state.logoUrl != null || state.selectedLogoBytes != null) {
-                            AsyncImage(
-                                model = state.selectedLogoBytes ?: state.logoUrl,
-                                contentDescription = "Logo",
-                                modifier = Modifier.fillMaxSize(),
-                                contentScale = ContentScale.Crop
-                            )
-                        } else {
-                            Text("V", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Primary)
-                        }
-                    }
-                    Box(
-                        modifier = Modifier
-                            .size(28.dp)
-                            .clip(CircleShape)
-                            .background(PrimaryContainer)
-                            .border(2.dp, Surface, CircleShape),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        IconButton(onClick = onLogoClick, modifier = Modifier.size(28.dp)) {
-                            Icon(
-                                imageVector = Icons.Default.Edit,
-                                contentDescription = "Editar logo",
-                                modifier = Modifier.size(14.dp),
-                                tint = OnPrimary
-                            )
-                        }
-                    }
-                }
-                TextButton(onClick = onLogoClick) {
-                    Text(
-                        text = "Cambiar logo",
-                        color = Primary,
-                        fontSize = 13.sp,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-            }
+            LogoSection(
+                logoUrl = state.logoUrl,
+                selectedLogoBytes = state.selectedLogoBytes,
+                hasLogo = hasLogo,
+                onLogoClick = onLogoClick,
+                onShowFullscreen = { showLogoFullscreen = true },
+            )
 
-            // 2. BUSINESS DATA SECTION
-            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                Text(
-                    text = "DATOS GENERALES",
-                    fontSize = 12.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    color = TextMuted,
-                    letterSpacing = 1.sp
-                )
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .background(SurfaceContainerLowest, RoundedCornerShape(12.dp))
-                        .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-                        .padding(16.dp),
-                    verticalArrangement = Arrangement.spacedBy(16.dp)
-                ) {
-                    // Nombre comercial (solo lectura — dato de SUNAT)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Nombre comercial",
-                            fontSize = 12.sp,
-                            color = OnSurfaceVariant
-                        )
-                        ReadOnlyField(value = state.companyInfo?.businessName ?: "—")
-                    }
-
-                    // RUC (Read-only)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "RUC",
-                            fontSize = 12.sp,
-                            color = OnSurfaceVariant
-                        )
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .background(SurfaceDim.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
-                                .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
-                                .padding(horizontal = 16.dp),
-                            contentAlignment = Alignment.CenterStart
-                        ) {
-                            Text(
-                                text = state.companyInfo?.documentNumber ?: "...",
-                                color = TextMuted,
-                                fontSize = 14.sp
-                            )
-                        }
-                    }
-
-                    // Dirección legal (solo lectura — dato de SUNAT)
-                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text(
-                            text = "Dirección legal",
-                            fontSize = 12.sp,
-                            color = OnSurfaceVariant
-                        )
-                        ReadOnlyField(value = state.companyInfo?.address ?: "—")
-                    }
-                }
-            }
+            BusinessDataSection(companyInfo = state.companyInfo)
 
             // UX Enhancement Info
             Row(
@@ -363,6 +214,155 @@ private fun ReadOnlyField(value: String) {
             color = OnSurfaceVariant,
             fontSize = 14.sp,
         )
+    }
+}
+
+@Composable
+private fun LogoFullscreenDialog(logoModel: Any?, onDismiss: () -> Unit) {
+    Dialog(
+        onDismissRequest = onDismiss,
+        properties = DialogProperties(usePlatformDefaultWidth = false),
+    ) {
+        Box(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxSize()
+                .background(Color.Black),
+            contentAlignment = Alignment.Center,
+        ) {
+            AsyncImage(
+                model = logoModel,
+                contentDescription = "Logo a tamaño completo",
+                modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                contentScale = ContentScale.Fit,
+            )
+            IconButton(
+                onClick = onDismiss,
+                modifier = androidx.compose.ui.Modifier
+                    .align(Alignment.TopEnd)
+                    .padding(16.dp),
+            ) {
+                Icon(
+                    imageVector = Icons.Default.Close,
+                    contentDescription = "Cerrar",
+                    tint = Color.White,
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun LogoSection(
+    logoUrl: String?,
+    selectedLogoBytes: ByteArray?,
+    hasLogo: Boolean,
+    onLogoClick: () -> Unit,
+    onShowFullscreen: () -> Unit,
+) {
+    Column(
+        modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+    ) {
+        Text(
+            text = "LOGO DEL NEGOCIO",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextMuted,
+            modifier = androidx.compose.ui.Modifier.fillMaxWidth(),
+            letterSpacing = 1.sp,
+        )
+        Spacer(modifier = androidx.compose.ui.Modifier.height(12.dp))
+        Box(contentAlignment = Alignment.BottomEnd) {
+            Box(
+                modifier = androidx.compose.ui.Modifier
+                    .size(80.dp)
+                    .clip(CircleShape)
+                    .background(SurfaceContainerLowest)
+                    .border(2.dp, PrimaryFixed, CircleShape)
+                    .then(if (hasLogo) androidx.compose.ui.Modifier.clickable { onShowFullscreen() } else androidx.compose.ui.Modifier),
+                contentAlignment = Alignment.Center,
+            ) {
+                if (logoUrl != null || selectedLogoBytes != null) {
+                    AsyncImage(
+                        model = selectedLogoBytes ?: logoUrl,
+                        contentDescription = "Logo",
+                        modifier = androidx.compose.ui.Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop,
+                    )
+                } else {
+                    Text("V", fontSize = 24.sp, fontWeight = FontWeight.Bold, color = Primary)
+                }
+            }
+            Box(
+                modifier = androidx.compose.ui.Modifier
+                    .size(28.dp)
+                    .clip(CircleShape)
+                    .background(PrimaryContainer)
+                    .border(2.dp, Surface, CircleShape),
+                contentAlignment = Alignment.Center,
+            ) {
+                IconButton(onClick = onLogoClick, modifier = androidx.compose.ui.Modifier.size(28.dp)) {
+                    Icon(
+                        imageVector = Icons.Default.Edit,
+                        contentDescription = "Editar logo",
+                        modifier = androidx.compose.ui.Modifier.size(14.dp),
+                        tint = OnPrimary,
+                    )
+                }
+            }
+        }
+        TextButton(onClick = onLogoClick) {
+            Text(
+                text = "Cambiar logo",
+                color = Primary,
+                fontSize = 13.sp,
+                fontWeight = FontWeight.SemiBold,
+            )
+        }
+    }
+}
+
+@Composable
+private fun BusinessDataSection(companyInfo: com.app.crowns.domain.company.model.CompanyInfo?) {
+    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+        Text(
+            text = "DATOS GENERALES",
+            fontSize = 12.sp,
+            fontWeight = FontWeight.SemiBold,
+            color = TextMuted,
+            letterSpacing = 1.sp,
+        )
+        Column(
+            modifier = androidx.compose.ui.Modifier
+                .fillMaxWidth()
+                .background(SurfaceContainerLowest, RoundedCornerShape(12.dp))
+                .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
+                .padding(16.dp),
+            verticalArrangement = Arrangement.spacedBy(16.dp),
+        ) {
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "Nombre comercial", fontSize = 12.sp, color = OnSurfaceVariant)
+                ReadOnlyField(value = companyInfo?.businessName ?: "—")
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "RUC", fontSize = 12.sp, color = OnSurfaceVariant)
+                Box(
+                    modifier = androidx.compose.ui.Modifier
+                        .fillMaxWidth()
+                        .height(56.dp)
+                        .background(SurfaceDim.copy(alpha = 0.3f), RoundedCornerShape(12.dp))
+                        .border(1.dp, OutlineVariant, RoundedCornerShape(12.dp))
+                        .padding(horizontal = 16.dp),
+                    contentAlignment = Alignment.CenterStart,
+                ) {
+                    Text(text = companyInfo?.documentNumber ?: "...", color = TextMuted, fontSize = 14.sp)
+                }
+            }
+            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                Text(text = "Dirección legal", fontSize = 12.sp, color = OnSurfaceVariant)
+                ReadOnlyField(value = companyInfo?.address ?: "—")
+            }
+        }
     }
 }
 

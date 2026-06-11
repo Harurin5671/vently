@@ -30,17 +30,3 @@ sealed interface AppDestination : NavKey {
     data object EditBusinessProfile : AppDestination
 }
 
-@Serializable
-sealed interface HomeTab : NavKey {
-    @Serializable
-    data object Dashboard : HomeTab
-
-    @Serializable
-    data object Stock : HomeTab
-
-    @Serializable
-    data object History : HomeTab
-
-    @Serializable
-    data object Settings : HomeTab
-}

@@ -23,6 +23,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 
 @Composable
@@ -42,7 +43,7 @@ fun RecentInvoiceItem(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         // Avatar con letra del tipo y color del estado
-        val isBoleta = invoice.documentType == "03"
+        val isBoleta = invoice.documentType == ElectronicDocumentTypeEntity.BOLETA
         val statusColor = invoice.statusInfo?.color?.let {
             try { androidx.compose.ui.graphics.Color(android.graphics.Color.parseColor(it)) } catch (e: Exception) { null }
         } ?: TextMuted

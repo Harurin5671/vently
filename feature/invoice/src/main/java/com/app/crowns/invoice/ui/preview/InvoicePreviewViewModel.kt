@@ -9,6 +9,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.util.generateInvoicePdf
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
+import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.company.usecase.GetDocumentSeriesUseCase
 import com.app.crowns.domain.invoice.entities.GenerateXmlRequestEntity
@@ -89,7 +90,7 @@ class InvoicePreviewViewModel @Inject constructor(
                     val documentSeriesList = getDocumentSeriesUseCase(company.id).getOrNull()
                     val matchingSeries = documentSeriesList?.find { it.documentType == documentTypeCode }
                     val series = matchingSeries?.serie ?: "${draft.type.prefix}001"
-                    val customerDocType = if (draft.type == InvoiceType.FACTURA) "6" else (draft.clientDocumentType ?: "1")
+                    val customerDocType = if (draft.type == InvoiceType.FACTURA) IdentityDocumentTypeEntity.Type.RUC.code else (draft.clientDocumentType ?: IdentityDocumentTypeEntity.Type.DNI.code)
 
                     val xmlResponse = generateXmlUseCase(GenerateXmlRequestEntity(
                         companyId = company.id,
@@ -160,7 +161,7 @@ class InvoicePreviewViewModel @Inject constructor(
                     ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA
                 val seriesList = company?.let { getDocumentSeriesUseCase(it.id).getOrNull() }
                 val serie = seriesList?.find { it.documentType == documentTypeCode }?.serie
-                val invoiceEntity = draft.toEntity(serie ?: if (draft.type == InvoiceType.FACTURA) "F001" else "B001")
+                val invoiceEntity = draft.toPreviewEntity(serie ?: if (draft.type == InvoiceType.FACTURA) "F001" else "B001")
                 val pages = withContext(Dispatchers.IO) {
                     val pdfFile = generateInvoicePdf(context, invoiceEntity, company)
                     renderPdfToPages(pdfFile)
@@ -172,12 +173,16 @@ class InvoicePreviewViewModel @Inject constructor(
         }
     }
 
-    private fun Invoice.toEntity(serie: String = if (type == InvoiceType.FACTURA) "F001" else "B001") = InvoiceEntity(
+    // Solo para renderizar el PDF de vista previa. Nunca se persiste ni se envía a SUNAT.
+    // correlative = 0L es el sentinel que PdfUtils detecta para mostrar "--------" en lugar del número real.
+    // igvAmount asume 18% flat; productos exonerados mostrarán montos aproximados en el PDF.
+    // Los valores reales los calcula la Edge Function al emitir.
+    private fun Invoice.toPreviewEntity(serie: String = if (type == InvoiceType.FACTURA) "F001" else "B001") = InvoiceEntity(
         id = "",
         companyId = "",
-        documentType = if (type == InvoiceType.FACTURA) "01" else "03",
+        documentType = if (type == InvoiceType.FACTURA) ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA,
         serie = serie,
-        correlative = 1,
+        correlative = 0L,
         total = total.toString(),
         status = "BORRADOR",
         statusInfo = null,
@@ -203,7 +208,7 @@ class InvoicePreviewViewModel @Inject constructor(
                 quantity = item.quantity.toString(),
                 unitPrice = item.unitPrice.toString(),
                 salePrice = item.unitPrice.toString(),
-                igvAmount = (item.subtotal * 0.18).toString(), // Estimado para preview
+                igvAmount = (item.subtotal * 0.18).toString(),
                 total = item.subtotal.toString(),
                 igvType = "10",
                 discountAmount = "0.0"

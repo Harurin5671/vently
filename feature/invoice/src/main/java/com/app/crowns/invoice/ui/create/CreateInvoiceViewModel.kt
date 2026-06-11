@@ -1,19 +1,18 @@
 package com.app.crowns.invoice.ui.create
 
-import com.app.crowns.domain.company.usecase.GetCompanyUseCase
-import com.app.crowns.domain.company.usecase.SearchCompanyUseCase
-import com.app.crowns.domain.customer.usecase.SearchPersonUseCase
-import com.app.crowns.domain.catalog.usecase.GetIdentityDocumentTypesUseCase
 import com.app.crowns.domain.catalog.entities.IdentityDocumentTypeEntity
+import com.app.crowns.domain.catalog.usecase.GetIdentityDocumentTypesUseCase
+import com.app.crowns.domain.company.usecase.GetCompanyUseCase
+import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
+import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceItem
 import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
-import com.app.crowns.network.fold
+import com.app.crowns.invoice.domain.usecase.ClientSearchResult
+import com.app.crowns.invoice.domain.usecase.SearchClientByDocumentUseCase
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.app.crowns.domain.product.usecase.GetCategoriesUseCase
-import com.app.crowns.domain.product.usecase.GetProductsUseCase
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -27,8 +26,7 @@ import javax.inject.Inject
 @HiltViewModel
 class CreateInvoiceViewModel @Inject constructor(
     private val draftStore: InvoiceDraftStore,
-    private val searchCompanyUseCase: SearchCompanyUseCase,
-    private val searchPersonUseCase: SearchPersonUseCase,
+    private val searchClientByDocument: SearchClientByDocumentUseCase,
     private val getCompanyUseCase: GetCompanyUseCase,
     private val getProductsUseCase: GetProductsUseCase,
     private val getCategoriesUseCase: GetCategoriesUseCase,
@@ -146,12 +144,19 @@ class CreateInvoiceViewModel @Inject constructor(
             }
 
             is CreateInvoiceEvent.OnSearchRuc -> {
-                val state = _state.value
-                if (state.selectedDocumentType?.isDni == true) {
-                    searchDni()
-                } else {
-                    searchRuc()
+                val doc = _state.value.clientRuc
+                val isRuc = _state.value.selectedDocumentType?.isRuc == true
+                val validationError = when {
+                    isRuc && doc.length != 11 -> "El RUC debe tener 11 dígitos"
+                    isRuc && doc == myCompanyRuc -> "No puedes emitir una factura a tu propio RUC"
+                    !isRuc && doc.length != 8 -> "El DNI debe tener 8 dígitos"
+                    else -> null
                 }
+                if (validationError != null) {
+                    _state.update { it.copy(rucError = validationError) }
+                    return
+                }
+                searchClient(doc, isRuc)
             }
             is CreateInvoiceEvent.OnAddItem -> addItem(event.item)
             is CreateInvoiceEvent.OnRemoveItem -> removeItem(event.productId)
@@ -179,84 +184,23 @@ class CreateInvoiceViewModel @Inject constructor(
         }
     }
 
-    private fun searchDni() {
-        val dni = _state.value.clientRuc
-        if (dni.length != 8) {
-            _state.update { it.copy(rucError = "El DNI debe tener 8 dígitos") }
-            return
-        }
-
+    private fun searchClient(documentNumber: String, isRuc: Boolean) {
         viewModelScope.launch {
             _state.update { it.copy(isSearchingRuc = true, rucError = null) }
-            searchPersonUseCase(dni).fold(
-                onSuccess = { person ->
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            clientName = person.fullName,
-                        )
-                    }
-                },
-                onHttpError = { error ->
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            rucError = "No se encontró el DNI o hubo un error"
-                        )
-                    }
-                },
-                onNetworkError = {
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            rucError = "Sin conexión a internet"
-                        )
+            searchClientByDocument(documentNumber, isRuc)
+                .onSuccess { result ->
+                    when (result) {
+                        is ClientSearchResult.PersonFound -> _state.update {
+                            it.copy(isSearchingRuc = false, clientName = result.fullName)
+                        }
+                        is ClientSearchResult.CompanyFound -> _state.update {
+                            it.copy(isSearchingRuc = false, clientBusinessName = result.businessName)
+                        }
                     }
                 }
-            )
-        }
-    }
-
-    private fun searchRuc() {
-        val ruc = _state.value.clientRuc
-        if (ruc.length != 11) {
-            _state.update { it.copy(rucError = "El RUC debe tener 11 dígitos") }
-            return
-        }
-
-        if (ruc == myCompanyRuc) {
-            _state.update { it.copy(rucError = "No puedes emitir una factura a tu propio RUC") }
-            return
-        }
-
-        viewModelScope.launch {
-            _state.update { it.copy(isSearchingRuc = true, rucError = null) }
-            searchCompanyUseCase(ruc).fold(
-                onSuccess = { company ->
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            clientBusinessName = company.businessName,
-                        )
-                    }
-                },
-                onHttpError = { _ ->
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            rucError = "No se encontró el RUC o hubo un error"
-                        )
-                    }
-                },
-                onNetworkError = {
-                    _state.update {
-                        it.copy(
-                            isSearchingRuc = false,
-                            rucError = "Sin conexión a internet"
-                        )
-                    }
+                .onFailure { e ->
+                    _state.update { it.copy(isSearchingRuc = false, rucError = e.message ?: "Error al buscar") }
                 }
-            )
         }
     }
 

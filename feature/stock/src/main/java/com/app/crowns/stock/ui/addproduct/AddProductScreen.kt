@@ -87,8 +87,9 @@ fun AddProductScreen(
     }
 
     LaunchedEffect(state.error, state.showAddCategoryDialog) {
-        if (state.error != null && !state.showAddCategoryDialog && state.newCategoryName.isBlank()) {
-            snackbarHostState.showSnackbar(state.error!!)
+        val error = state.error
+        if (error != null && !state.showAddCategoryDialog && state.newCategoryName.isBlank()) {
+            snackbarHostState.showSnackbar(error)
             viewModel.onEvent(AddProductEvent.OnDismissError)
         }
     }
@@ -235,97 +236,11 @@ private fun AddProductContent(
                     horizontalArrangement = Arrangement.spacedBy(12.dp),
                     verticalAlignment = Alignment.Top
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
-                        Text(
-                            text = "SKU",
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                            color = OnSurfaceVariant,
-                        )
-                        Spacer(Modifier.height(4.dp))
-
-                        val isSkuFieldActive = state.sku.isNotEmpty()
-                        val isSkuCorrect = state.sku.matches(Regex("^[A-Z]{3}-[0-9]{3}$"))
-                        val skuColor = when {
-                            isSkuFieldActive && !isSkuCorrect -> ErrorBright
-                            isSkuCorrect -> Success
-                            else -> OnSurface
-                        }
-                        val borderColor = when {
-                            isSkuFieldActive && !isSkuCorrect -> ErrorBright
-                            isSkuCorrect -> Success
-                            else -> OutlineVariant
-                        }
-
-                        var skuFieldValue by remember { mutableStateOf(TextFieldValue(state.sku, TextRange(state.sku.length))) }
-                        LaunchedEffect(state.sku) {
-                            if (state.sku != skuFieldValue.text) {
-                                skuFieldValue = TextFieldValue(state.sku, TextRange(state.sku.length))
-                            }
-                        }
-
-                        BasicTextField(
-                            value = skuFieldValue,
-                            onValueChange = { tfv ->
-                                val clean = tfv.text.replace("-", "").uppercase()
-                                val letters = clean.filter { it.isLetter() }.take(3)
-                                val digits = clean.filter { it.isDigit() }.take(3)
-                                val newSku = if (letters.length == 3 && digits.isNotEmpty()) {
-                                    "$letters-$digits"
-                                } else {
-                                    letters
-                                }
-                                // When dash is auto-inserted the raw length jumps by 2,
-                                // so we always place the cursor at the end of the new value.
-                                val newCursor = if (newSku.length > tfv.text.length) {
-                                    newSku.length
-                                } else {
-                                    minOf(tfv.selection.end, newSku.length)
-                                }
-                                skuFieldValue = TextFieldValue(newSku, TextRange(newCursor))
-                                onEvent(AddProductEvent.OnSkuChanged(newSku))
-                            },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .height(56.dp)
-                                .clip(RoundedCornerShape(12.dp))
-                                .border(1.dp, borderColor, RoundedCornerShape(12.dp)),
-                            singleLine = true,
-                            textStyle = TextStyle(
-                                fontSize = 16.sp,
-                                fontWeight = FontWeight.Medium,
-                                color = skuColor,
-                                textAlign = TextAlign.Center,
-                                letterSpacing = 2.sp,
-                            ),
-                            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
-                            decorationBox = { innerTextField ->
-                                Box(
-                                    modifier = Modifier.fillMaxWidth(),
-                                    contentAlignment = Alignment.Center,
-                                ) {
-                                    if (state.sku.isEmpty()) {
-                                        Text(
-                                            text = "AAA-000",
-                                            color = Outline,
-                                            fontSize = 16.sp,
-                                            fontWeight = FontWeight.Medium,
-                                            letterSpacing = 2.sp,
-                                        )
-                                    }
-                                    innerTextField()
-                                }
-                            },
-                        )
-                        if (isSkuFieldActive && !isSkuCorrect) {
-                            Text(
-                                text = "Formato: 3 letras y 3 números (Ej. ABC-123)",
-                                fontSize = 11.sp,
-                                color = ErrorBright,
-                                modifier = Modifier.padding(start = 4.dp, top = 4.dp)
-                            )
-                        }
-                    }
+                    SkuInputField(
+                        sku = state.sku,
+                        onSkuChanged = { onEvent(AddProductEvent.OnSkuChanged(it)) },
+                        modifier = Modifier.weight(1f),
+                    )
 
                     CategoryDropdown(
                         categories = state.categories,
@@ -513,4 +428,90 @@ private fun AddProductContent(
         }
     }
 
+}
+
+@Composable
+private fun SkuInputField(
+    sku: String,
+    onSkuChanged: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val isActive = sku.isNotEmpty()
+    val isCorrect = sku.matches(Regex("^[A-Z]{3}-[0-9]{3}$"))
+    val textColor = when {
+        isActive && !isCorrect -> ErrorBright
+        isCorrect -> Success
+        else -> OnSurface
+    }
+    val borderColor = when {
+        isActive && !isCorrect -> ErrorBright
+        isCorrect -> Success
+        else -> OutlineVariant
+    }
+
+    var fieldValue by remember { mutableStateOf(TextFieldValue(sku, TextRange(sku.length))) }
+    LaunchedEffect(sku) {
+        if (sku != fieldValue.text) {
+            fieldValue = TextFieldValue(sku, TextRange(sku.length))
+        }
+    }
+
+    Column(modifier = modifier) {
+        Text(
+            text = "SKU",
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Medium,
+            color = OnSurfaceVariant,
+        )
+        Spacer(Modifier.height(4.dp))
+        BasicTextField(
+            value = fieldValue,
+            onValueChange = { tfv ->
+                val clean = tfv.text.replace("-", "").uppercase()
+                val letters = clean.filter { it.isLetter() }.take(3)
+                val digits = clean.filter { it.isDigit() }.take(3)
+                val newSku = if (letters.length == 3 && digits.isNotEmpty()) "$letters-$digits" else letters
+                val newCursor = if (newSku.length > tfv.text.length) newSku.length
+                                else minOf(tfv.selection.end, newSku.length)
+                fieldValue = TextFieldValue(newSku, TextRange(newCursor))
+                onSkuChanged(newSku)
+            },
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(56.dp)
+                .clip(RoundedCornerShape(12.dp))
+                .border(1.dp, borderColor, RoundedCornerShape(12.dp)),
+            singleLine = true,
+            textStyle = TextStyle(
+                fontSize = 16.sp,
+                fontWeight = FontWeight.Medium,
+                color = textColor,
+                textAlign = TextAlign.Center,
+                letterSpacing = 2.sp,
+            ),
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Text),
+            decorationBox = { innerTextField ->
+                Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
+                    if (sku.isEmpty()) {
+                        Text(
+                            text = "AAA-000",
+                            color = Outline,
+                            fontSize = 16.sp,
+                            fontWeight = FontWeight.Medium,
+                            letterSpacing = 2.sp,
+                        )
+                    }
+                    innerTextField()
+                }
+            },
+        )
+        if (isActive && !isCorrect) {
+            Text(
+                text = "Formato: 3 letras y 3 números (Ej. ABC-123)",
+                fontSize = 11.sp,
+                color = ErrorBright,
+                modifier = Modifier.padding(start = 4.dp, top = 4.dp),
+            )
+        }
+    }
 }

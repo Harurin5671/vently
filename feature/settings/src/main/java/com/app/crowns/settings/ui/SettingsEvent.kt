@@ -13,4 +13,6 @@ sealed interface SettingsEvent {
         val facturaCorrelative: Int
     ) : SettingsEvent
     data class UpdateSolCredentials(val username: String, val password: String) : SettingsEvent
+    data class SetError(val message: String) : SettingsEvent
+    data object DismissError : SettingsEvent
 }

@@ -5,6 +5,7 @@ import android.graphics.Paint
 import android.graphics.pdf.PdfDocument
 import androidx.core.graphics.toColorInt
 import androidx.core.graphics.withRotation
+import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.domain.invoice.entities.documentName
@@ -94,7 +95,9 @@ fun generateInvoicePdf(
     
     canvas.drawText(invoiceTypeLabel, pageWidth - margin, rightY, paintRightLabel)
     rightY += 18f
-    canvas.drawText(invoice.formattedId, pageWidth - margin, rightY, paintRightPrimary)
+    // correlative == 0L indica preview — el correlativo real lo asigna generate-xml al emitir
+    val displayId = if (invoice.correlative == 0L) "${invoice.serie}---------" else invoice.formattedId
+    canvas.drawText(displayId, pageWidth - margin, rightY, paintRightPrimary)
     rightY += 18f
     
     val dateStr = try {
@@ -124,12 +127,12 @@ fun generateInvoicePdf(
     // Client
     canvas.drawText("DATOS DEL RECEPTOR", margin, y, paintLabel)
     y += 18f
-    val clientLabel = if (invoice.documentType == "01") "Razón Social: " else "Nombre: "
+    val clientLabel = if (invoice.documentType == ElectronicDocumentTypeEntity.FACTURA) "Razón Social: " else "Nombre: "
     canvas.drawText(clientLabel, margin, y, paintBody)
     y = drawWrappedText(invoice.customerLegalName, margin + 85f, y, pageWidth - margin - (margin + 85f), paintBold, canvas)
 
     if (invoice.customerDocNumber.isNotBlank()) {
-        val docLabel = if (invoice.documentType == "01") "RUC: " else "Documento: "
+        val docLabel = if (invoice.documentType == ElectronicDocumentTypeEntity.FACTURA) "RUC: " else "Documento: "
         canvas.drawText(docLabel, margin, y, paintBody)
         canvas.drawText(invoice.customerDocNumber, margin + 85f, y, paintBody)
         y += 16f

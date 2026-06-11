@@ -9,6 +9,8 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
@@ -49,7 +51,24 @@ fun HistoryScreen(
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
 
+    val snackbarHostState = remember { SnackbarHostState() }
     var pendingFileToDownload by remember { mutableStateOf<File?>(null) }
+
+    LaunchedEffect(state.loadError) {
+        val error = state.loadError
+        if (error != null) {
+            snackbarHostState.showSnackbar(error)
+            viewModel.onEvent(HistoryEvent.OnDismissLoadError)
+        }
+    }
+
+    LaunchedEffect(state.cancelError) {
+        val error = state.cancelError
+        if (error != null) {
+            snackbarHostState.showSnackbar(error)
+            viewModel.onEvent(HistoryEvent.OnDismissCancelError)
+        }
+    }
     
     val downloadLauncher = rememberLauncherForActivityResult(
         contract = ActivityResultContracts.CreateDocument("application/pdf")
@@ -103,6 +122,7 @@ fun HistoryScreen(
     HistoryContent(
         state = state,
         onEvent = viewModel::onEvent,
+        snackbarHostState = snackbarHostState,
     )
 }
 
@@ -111,11 +131,13 @@ fun HistoryScreen(
 private fun HistoryContent(
     state: HistoryUiState,
     onEvent: (HistoryEvent) -> Unit,
+    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
 ) {
     val filteredInvoices = state.filteredInvoices
-    
+
     Scaffold(
         containerColor = SurfaceContainerHigh,
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             HistoryTopBar(
                 state = state,
