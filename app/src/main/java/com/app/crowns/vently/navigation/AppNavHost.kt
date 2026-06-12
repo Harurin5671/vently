@@ -161,7 +161,7 @@ fun AppNavHost(
                     CreateInvoiceScreen(
                         onNavigateBack = { backStack.removeLastOrNull() },
                         onNavigateToPreview = {
-                            backStack.add(AppDestination.InvoicePreview)
+                            backStack.add(AppDestination.InvoicePreview(id = UUID.randomUUID().toString()))
                         },
                         onNavigateToAddProduct = {
                             backStack.add(AppDestination.AddProduct(id = UUID.randomUUID().toString()))
@@ -181,7 +181,8 @@ fun AppNavHost(
                         onNavigateToHistory = {
                             backStack.clear()
                             backStack.add(AppDestination.Home(initialTab = 2))
-                        }
+                        },
+                        viewModel = hiltViewModel(key = destination.id)
                     )
                 }
 

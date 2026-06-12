@@ -60,6 +60,13 @@ INSERT INTO cat_currencies (code, name, symbol, is_active) VALUES
   ('CNY', 'Yuan Chino',         '¥',   false)
 ON CONFLICT (code) DO NOTHING;
 
+-- cat_payment_types (Forma de Pago SUNAT — requerido por el servicio externo de emisión)
+-- Referenciado por invoices.payment_type (FK) y validado en la Edge Function generate-xml.
+INSERT INTO cat_payment_types (code, name, description) VALUES
+  ('Contado', 'Contado', 'Pago al contado'),
+  ('Credito', 'Crédito', 'Pago a crédito')
+ON CONFLICT (code) DO NOTHING;
+
 -- cat_operation_types
 INSERT INTO cat_operation_types (code, name, applies_to) VALUES
   ('0101', 'Venta interna',                                               'ALL'),

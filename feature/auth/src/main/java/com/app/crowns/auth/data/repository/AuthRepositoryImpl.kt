@@ -103,7 +103,10 @@ class AuthRepositoryImpl @Inject constructor(
                 ?.jsonPrimitive
                 ?.content
 
-            val result = if (status != null && SubscriptionStatus.valueOf(status.uppercase()).isAllowed) {
+            val subStatus = status?.let { raw ->
+                SubscriptionStatus.entries.find { it.name == raw.uppercase() }
+            }
+            val result = if (subStatus?.isAllowed == true) {
                 Result.Success(Unit)
             } else {
                 Result.Failure(AuthError.SubscriptionNotActive)

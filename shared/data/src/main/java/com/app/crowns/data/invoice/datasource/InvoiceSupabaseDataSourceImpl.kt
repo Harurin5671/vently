@@ -39,6 +39,8 @@ class InvoiceSupabaseDataSourceImpl @Inject constructor(
                     lte("issue_date", endDate)
                 }
                 order("issue_date", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
+                // Criterio secundario: dentro del mismo día, la última emitida primero.
+                order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
                 range(offset.toLong(), (offset + limit - 1).toLong())
             }
             .decodeList<InvoiceSupabaseModel>()

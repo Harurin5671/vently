@@ -90,20 +90,27 @@ class CreateInvoiceViewModel @Inject constructor(
 
     fun onEvent(event: CreateInvoiceEvent) {
         when (event) {
-            is CreateInvoiceEvent.OnInvoiceTypeChanged -> _state.update {
-                val newDocType = if (event.type == InvoiceType.FACTURA) {
-                    it.documentTypes.find { t -> t.isRuc }
-                } else {
-                    it.documentTypes.find { t -> t.isDni } ?: it.documentTypes.firstOrNull()
+            is CreateInvoiceEvent.OnInvoiceTypeChanged -> {
+                // Ignorar si el tipo no cambió. Esto evita que el re-init del
+                // LaunchedEffect (al volver de crear un producto) vuelva a limpiar
+                // los datos del cliente que el usuario ya había ingresado.
+                if (event.type != _state.value.invoiceType) {
+                    _state.update {
+                        val newDocType = if (event.type == InvoiceType.FACTURA) {
+                            it.documentTypes.find { t -> t.isRuc }
+                        } else {
+                            it.documentTypes.find { t -> t.isDni } ?: it.documentTypes.firstOrNull()
+                        }
+                        it.copy(
+                            invoiceType = event.type,
+                            selectedDocumentType = newDocType,
+                            clientName = "",
+                            clientRuc = "",
+                            clientBusinessName = "",
+                            rucError = null,
+                        )
+                    }
                 }
-                it.copy(
-                    invoiceType = event.type,
-                    selectedDocumentType = newDocType,
-                    clientName = "",
-                    clientRuc = "",
-                    clientBusinessName = "",
-                    rucError = null,
-                )
             }
 
             is CreateInvoiceEvent.OnDocumentTypeChanged -> _state.update {

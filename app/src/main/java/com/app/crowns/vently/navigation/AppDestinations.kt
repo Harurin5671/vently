@@ -24,7 +24,7 @@ sealed interface AppDestination : NavKey {
     data class CreateInvoice(val isFactura: Boolean, val id: String) : AppDestination
 
     @Serializable
-    data object InvoicePreview : AppDestination
+    data class InvoicePreview(val id: String) : AppDestination
 
     @Serializable
     data object EditBusinessProfile : AppDestination

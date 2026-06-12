@@ -8,7 +8,7 @@ import kotlinx.serialization.json.JsonElement
 data class InvoiceItemSupabaseModel(
     val id: String,
     @SerialName("invoice_id") val invoiceID: String,
-    @SerialName("product_id") val productID: String,
+    @SerialName("product_id") val productID: String? = null,
     val orden: Long = 0,
     val descripcion: String,
     val unidad: String,

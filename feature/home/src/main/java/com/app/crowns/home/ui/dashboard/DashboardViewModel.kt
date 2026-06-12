@@ -6,11 +6,14 @@ import com.app.crowns.domain.catalog.usecase.GetInvoiceStatusesUseCase
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.invoice.usecase.CalculateDashboardStatsUseCase
 import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase
+import com.app.crowns.domain.invoice.repository.InvoiceRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -22,6 +25,7 @@ class DashboardViewModel @Inject constructor(
     private val getInvoicesHistory: GetInvoicesHistoryUseCase,
     private val getInvoiceStatusesUseCase: GetInvoiceStatusesUseCase,
     private val calculateDashboardStats: CalculateDashboardStatsUseCase,
+    invoiceRepository: InvoiceRepository,
 ) : ViewModel() {
     private val _state = MutableStateFlow(DashboardUiState())
     val state: StateFlow<DashboardUiState> = _state.asStateFlow()
@@ -31,6 +35,13 @@ class DashboardViewModel @Inject constructor(
 
     init {
         loadDashboard()
+
+        // Recargar reactivamente cuando se emite una factura/boleta, para que al
+        // volver al dashboard la información ya venga actualizada (sin el flash de
+        // datos viejos). Mismo patrón que StockViewModel con productChanges.
+        invoiceRepository.invoiceChanges
+            .onEach { loadDashboard(isSilent = true) }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: DashboardEvent) {

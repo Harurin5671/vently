@@ -336,7 +336,7 @@ private fun AddProductContent(
 
                 IgvTypeSelector(
                     selected = state.igvType,
-                    types = state.igvTypes,
+                    types = state.igvTypes.filter { it.isSellableForSale },
                     onSelect = { onEvent(AddProductEvent.OnIgvTypeSelected(it)) },
                     isError = state.showErrors && state.igvType == null
                 )

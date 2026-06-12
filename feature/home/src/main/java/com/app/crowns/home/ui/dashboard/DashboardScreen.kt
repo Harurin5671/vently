@@ -224,8 +224,8 @@ private fun DashboardContent(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Invoice list card
-                RecentInvoicesCard(invoices = state.recentInvoices, onEvent = onEvent)
+                // Invoice list card (solo las 3 últimas; el resto está en Historial)
+                RecentInvoicesCard(invoices = state.recentInvoices.take(3), onEvent = onEvent)
 
                 Spacer(Modifier.height(80.dp)) // espacio para el FAB
             }

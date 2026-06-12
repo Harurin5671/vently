@@ -8,7 +8,7 @@ import com.app.crowns.domain.invoice.entities.InvoiceItemEntity
 fun InvoiceItemSupabaseModel.toDomain(): InvoiceItemEntity = InvoiceItemEntity(
     id = id,
     invoiceId = invoiceID,
-    productId = productID,
+    productId = productID ?: "",
     order = orden,
     description = descripcion,
     unit = unidad,
@@ -40,10 +40,10 @@ fun InvoiceSupabaseModel.toDomain(): InvoiceEntity = InvoiceEntity(
     totalInafecta = totalInafecta.toString(),
     totalGravada = totalGravada.toString(),
     totalIgv = totalIgv.toString(),
-    xmlDocument = xmlDocument,
+    xmlDocument = xmlDocument ?: "",
     items = items.map { it.toDomain() },
-    customerDocNumber = customerDocNumber,
-    customerLegalName = customerLegalName,
+    customerDocNumber = customerDocNumber ?: "",
+    customerLegalName = customerLegalName ?: "",
     customerAddress = customerAddress,
     customerEmail = customerEmail
 )
