@@ -107,6 +107,7 @@ dependencies {
     implementation(project(":shared:domain"))
     implementation(project(":core:network"))
     implementation(project(":core:designsystem"))
+    implementation(project(":core:ui"))
     implementation(project(":core:common"))
     implementation(project(":feature:auth"))
     implementation(project(":feature:onboarding"))

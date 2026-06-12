@@ -8,6 +8,7 @@ import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.catalog.usecase.GetInvoiceStatusesUseCase
 import com.app.crowns.domain.company.usecase.GetCompanyUseCase
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
+import com.app.crowns.domain.invoice.repository.InvoiceRepository
 import com.app.crowns.domain.invoice.usecase.CancelAcceptedInvoiceUseCase
 import com.app.crowns.domain.invoice.usecase.CancelInvoiceUseCase
 import com.app.crowns.domain.invoice.usecase.GetInvoicesHistoryUseCase
@@ -21,6 +22,8 @@ import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.launchIn
+import kotlinx.coroutines.flow.onEach
 import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
@@ -41,6 +44,7 @@ class HistoryViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
     private val cancelInvoiceUseCase: CancelInvoiceUseCase,
     private val cancelAcceptedInvoiceUseCase: CancelAcceptedInvoiceUseCase,
+    private val invoiceRepository: InvoiceRepository,
     @ApplicationContext private val context: Context,
 ) : ViewModel() {
 
@@ -53,6 +57,9 @@ class HistoryViewModel @Inject constructor(
     init {
         loadHistory()
         loadCompanyInfo()
+        invoiceRepository.invoiceChanges
+            .onEach { loadHistory(isSilent = true) }
+            .launchIn(viewModelScope)
     }
 
     fun onEvent(event: HistoryEvent) {
