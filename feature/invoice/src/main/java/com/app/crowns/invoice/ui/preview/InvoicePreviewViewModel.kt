@@ -22,6 +22,7 @@ import com.app.crowns.domain.invoice.usecase.SignInvoiceUseCase
 import com.app.crowns.invoice.domain.model.Invoice
 import com.app.crowns.invoice.domain.model.InvoiceType
 import com.app.crowns.invoice.domain.store.InvoiceDraftStore
+import com.app.crowns.common.util.toUserFriendlyMessage
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
@@ -37,6 +38,9 @@ import java.io.File
 import java.time.LocalDate
 import javax.inject.Inject
 import androidx.core.graphics.createBitmap
+import android.util.Log
+
+private const val TAG = "InvoicePreview"
 
 sealed class InvoicePreviewNavigationEvent {
     data object NavigateBack : InvoicePreviewNavigationEvent()
@@ -68,31 +72,42 @@ class InvoicePreviewViewModel @Inject constructor(
     fun onDismissEmitDialog() = _state.update { it.copy(showEmitDialog = false) }
 
     fun onConfirmEmit() {
-        val draft = draftStore.draft.value ?: return
+        val draft = draftStore.draft.value ?: run {
+            Log.w(TAG, "onConfirmEmit: draft is null, aborting")
+            return
+        }
+
+        Log.d(TAG, "onConfirmEmit: iniciando emisión | type=${draft.type} client=${draft.clientBusinessName ?: draft.clientName} items=${draft.items.size}")
 
         viewModelScope.launch {
             val existingInvoiceId = _state.value.invoiceId
             val alreadySigned = _state.value.isSigned
+            Log.d(TAG, "onConfirmEmit: existingInvoiceId=$existingInvoiceId alreadySigned=$alreadySigned")
             _state.update { it.copy(isEmitting = true, showEmitDialog = false, error = null) }
 
             try {
                 val invoiceId: String
 
                 if (existingInvoiceId == null) {
+                    Log.d(TAG, "generateXml: obteniendo empresa...")
                     val company = getCompanyUseCase().getOrNull()
                     if (company == null) {
+                        Log.e(TAG, "generateXml: no se pudo obtener la empresa")
                         _state.update { it.copy(isEmitting = false, error = "No se pudo obtener la información de tu empresa") }
                         return@launch
                     }
+                    Log.d(TAG, "generateXml: empresa obtenida id=${company.id} name=${company.businessName}")
 
                     val documentTypeCode = if (draft.type == InvoiceType.FACTURA)
                         ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA
                     val documentSeriesList = getDocumentSeriesUseCase(company.id).getOrNull()
+                    Log.d(TAG, "generateXml: series disponibles=${documentSeriesList?.map { "${it.documentType}:${it.serie}" }}")
                     val matchingSeries = documentSeriesList?.find { it.documentType == documentTypeCode }
                     val series = matchingSeries?.serie ?: "${draft.type.prefix}001"
                     val customerDocType = if (draft.type == InvoiceType.FACTURA) IdentityDocumentTypeEntity.Type.RUC.code else (draft.clientDocumentType ?: IdentityDocumentTypeEntity.Type.DNI.code)
+                    Log.d(TAG, "generateXml: serie=$series docType=$documentTypeCode customerDocType=$customerDocType")
 
-                    val xmlResponse = generateXmlUseCase(GenerateXmlRequestEntity(
+                    val request = GenerateXmlRequestEntity(
                         companyId = company.id,
                         series = series,
                         issueDate = LocalDate.now().toString(),
@@ -107,7 +122,11 @@ class InvoicePreviewViewModel @Inject constructor(
                                 quantity = it.quantity.toDouble()
                             )
                         }
-                    )).getOrThrow()
+                    )
+                    Log.d(TAG, "generateXml: request=$request")
+
+                    val xmlResponse = generateXmlUseCase(request).getOrThrow()
+                    Log.i(TAG, "generateXml: OK | invoiceId=${xmlResponse.invoiceId} documentId=${xmlResponse.documentId} correlative=${xmlResponse.correlative}")
 
                     invoiceId = xmlResponse.invoiceId
                     _state.update { it.copy(
@@ -117,29 +136,42 @@ class InvoicePreviewViewModel @Inject constructor(
                         correlative = xmlResponse.correlative.toString()
                     ) }
                 } else {
+                    Log.d(TAG, "generateXml: reutilizando invoiceId existente=$existingInvoiceId")
                     invoiceId = existingInvoiceId
                 }
 
                 if (!alreadySigned) {
+                    Log.d(TAG, "signInvoice: firmando invoiceId=$invoiceId...")
                     val signResult = signInvoiceUseCase(invoiceId).getOrThrow()
+                    Log.d(TAG, "signInvoice: resultado success=${signResult.success} status=${signResult.status}")
                     if (!signResult.success) {
+                        Log.e(TAG, "signInvoice: firma fallida status=${signResult.status}")
                         _state.update { it.copy(isEmitting = false, error = "Error en firma: ${signResult.status}") }
                         return@launch
                     }
+                    Log.i(TAG, "signInvoice: OK")
                     _state.update { it.copy(isSigned = true) }
+                } else {
+                    Log.d(TAG, "signInvoice: omitido (ya firmado)")
                 }
 
+                Log.d(TAG, "sendToSunat: enviando invoiceId=$invoiceId...")
                 val sunatResult = sendToSunatUseCase(invoiceId).getOrThrow()
+                Log.i(TAG, "sendToSunat: OK | isSuccess=${sunatResult.isSuccess} response=$sunatResult")
                 _state.update { it.copy(
                     isEmitting = false,
                     showResultScreen = true,
                     sunatResponse = sunatResult
                 ) }
 
-                if (sunatResult.isSuccess) draftStore.clear()
+                if (sunatResult.isSuccess) {
+                    Log.d(TAG, "sendToSunat: borrador limpiado del store")
+                    draftStore.clear()
+                }
 
             } catch (e: Exception) {
-                _state.update { it.copy(isEmitting = false, error = "Error: ${e.message}") }
+                Log.e(TAG, "onConfirmEmit: error inesperado", e)
+                _state.update { it.copy(isEmitting = false, error = e.toUserFriendlyMessage("Error al emitir el comprobante")) }
             }
         }
     }

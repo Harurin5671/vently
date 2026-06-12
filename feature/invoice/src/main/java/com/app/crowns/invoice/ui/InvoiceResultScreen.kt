@@ -202,32 +202,33 @@ fun InvoiceResultScreen(
                     ResultRow("Fecha:", LocalDate.now().toString())
 
                     // Hash section
-                    Column(modifier = Modifier.padding(top = 4.dp)) {
-                        Text("Hash CDR:", fontSize = 14.sp, color = OnSurfaceVariant)
-                        Spacer(Modifier.height(8.dp))
-                        Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .clip(RoundedCornerShape(8.dp))
-                                .background(SurfaceContainerHigh)
-                                .padding(horizontal = 12.dp, vertical = 8.dp),
-                            verticalAlignment = Alignment.CenterVertically,
-                            horizontalArrangement = Arrangement.SpaceBetween
-                        ) {
-                            Text(
-                                text = "a3f8c2b5d4e6f7a8b9c0d1e2f3a4b5c6", // Mock hash
-                                fontSize = 12.sp,
-                                fontFamily = FontFamily.Monospace,
-                                color = Outline,
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis,
-                                modifier = Modifier.weight(1f)
-                            )
-                            IconButton(onClick = { /* Copy hash */ }, modifier = Modifier.size(24.dp)) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = Primary, modifier = Modifier.size(18.dp))
-                            }
-                        }
-                    }
+//                    Column(modifier = Modifier.padding(top = 4.dp)) {
+//                        Text("Hash CDR:", fontSize = 14.sp, color = OnSurfaceVariant)
+//                        Spacer(Modifier.height(8.dp))
+//                        Row(
+//                            modifier = Modifier
+//                                .fillMaxWidth()
+//                                .clip(RoundedCornerShape(8.dp))
+//                                .background(SurfaceContainerHigh)
+//                                .padding(horizontal = 12.dp, vertical = 8.dp),
+//                            verticalAlignment = Alignment.CenterVertically,
+//                            horizontalArrangement = Arrangement.SpaceBetween
+//                        ) {
+//                            Text(
+//                                text = "a3f8c2b5d4e6f7a8b9c0d1e2f3a4b5c6", // Mock hash
+//                                fontSize = 12.sp,
+//                                fontFamily = FontFamily.Monospace,
+//                                color = Outline,
+//                                maxLines = 1,
+//                                overflow = TextOverflow.Ellipsis,
+//                                modifier = Modifier.weight(1f)
+//                            )
+//                            IconButton(onClick = { /* Copy hash */ }, modifier = Modifier.size(24.dp)) {
+//                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = Primary, modifier = Modifier.size(18.dp))
+//                            }
+//                        }
+//                    }
+//
                 }
 
                 Spacer(Modifier.height(32.dp))

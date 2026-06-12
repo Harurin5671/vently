@@ -28,8 +28,6 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
@@ -56,6 +54,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
 import com.app.crowns.ui.components.VentlyImageSelector
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.rememberVentlySnackbarState
 import androidx.compose.ui.platform.LocalLocale
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import com.app.crowns.stock.ui.addproduct.components.AddProductSkeleton
@@ -74,7 +75,7 @@ fun AddProductScreen(
     viewModel: AddProductViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberVentlySnackbarState()
 
     // Determinar si estamos cargando inicialmente un producto para editar
     val isEditing = productId != null
@@ -89,7 +90,7 @@ fun AddProductScreen(
     LaunchedEffect(state.error, state.showAddCategoryDialog) {
         val error = state.error
         if (error != null && !state.showAddCategoryDialog && state.newCategoryName.isBlank()) {
-            snackbarHostState.showSnackbar(error)
+            snackbarState.show(error)
             viewModel.onEvent(AddProductEvent.OnDismissError)
         }
     }
@@ -104,7 +105,7 @@ fun AddProductScreen(
 
     AddProductContent(
         state = state.copy(isLoading = state.isLoading || isInitialLoading),
-        snackbarHostState = snackbarHostState,
+        snackbarState = snackbarState,
         onEvent = viewModel::onEvent,
         onNavigateBack = onNavigateBack,
     )
@@ -114,13 +115,13 @@ fun AddProductScreen(
 @Composable
 private fun AddProductContent(
     state: AddProductUiState,
-    snackbarHostState: SnackbarHostState,
+    snackbarState: VentlySnackbarState,
     onEvent: (AddProductEvent) -> Unit,
     onNavigateBack: () -> Unit,
 ) {
     Scaffold(
         containerColor = Surface,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { VentlySnackbarHost(snackbarState) },
         topBar = {
             TopAppBar(
                 title = {

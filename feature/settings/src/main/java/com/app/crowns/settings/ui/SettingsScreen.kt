@@ -1,6 +1,7 @@
 package com.app.crowns.settings.ui
 
 import android.util.Base64
+import android.provider.OpenableColumns
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
@@ -29,8 +30,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -61,6 +60,9 @@ import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.rememberVentlySnackbarState
 import com.app.crowns.settings.ui.components.BusinessProfileCard
 import com.app.crowns.settings.ui.components.SettingsItem
 import com.app.crowns.settings.ui.components.SettingsItemWithBadge
@@ -87,12 +89,12 @@ fun SettingsScreen(
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
     val lifecycleOwner = LocalLifecycleOwner.current
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberVentlySnackbarState()
 
     LaunchedEffect(state.error) {
         val error = state.error
         if (error != null) {
-            snackbarHostState.showSnackbar(error)
+            snackbarState.show(error)
             viewModel.onEvent(SettingsEvent.DismissError)
         }
     }
@@ -116,13 +118,36 @@ fun SettingsScreen(
     ) { uri ->
         uri?.let {
             try {
+                val fileName = context.contentResolver.query(it, null, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
+                        if (idx != -1) cursor.getString(idx) else null
+                    } else null
+                } ?: ""
+
+                val ext = fileName.substringAfterLast('.', "").lowercase()
+                if (ext != "p12" && ext != "pfx") {
+                    viewModel.onEvent(SettingsEvent.SetError("Formato no válido. El certificado debe ser un archivo .p12 o .pfx"))
+                    return@rememberLauncherForActivityResult
+                }
+
                 val inputStream = context.contentResolver.openInputStream(it)
                 val bytes = inputStream?.readBytes()
                 inputStream?.close()
-                bytes?.let { b ->
-                    val base64 = Base64.encodeToString(b, Base64.NO_WRAP)
-                    viewModel.onEvent(SettingsEvent.UploadCertificate(base64))
+
+                if (bytes == null || bytes.size < 4) {
+                    viewModel.onEvent(SettingsEvent.SetError("El archivo está vacío o dañado"))
+                    return@rememberLauncherForActivityResult
                 }
+
+                // Verificar firma PKCS#12: ASN.1 SEQUENCE (0x30) + long-form length (0x82)
+                if (bytes[0] != 0x30.toByte() || bytes[1] != 0x82.toByte()) {
+                    viewModel.onEvent(SettingsEvent.SetError("El archivo no es un certificado .p12/.pfx válido"))
+                    return@rememberLauncherForActivityResult
+                }
+
+                val base64 = Base64.encodeToString(bytes, Base64.NO_WRAP)
+                viewModel.onEvent(SettingsEvent.UploadCertificate(base64))
             } catch (e: Exception) {
                 viewModel.onEvent(SettingsEvent.SetError("No se pudo leer el archivo del certificado"))
             }
@@ -136,7 +161,7 @@ fun SettingsScreen(
         userInfo = state.userInfo,
         documentSeries = state.documentSeries,
         isSubscriptionActive = state.isSubscriptionActive,
-        snackbarHostState = snackbarHostState,
+        snackbarState = snackbarState,
         onNavigateToEditBusiness = onNavigateToEditBusiness,
         onSelectCertificate = { launcher.launch("*/*") },
         onUpdateCertificatePassword = { viewModel.onEvent(SettingsEvent.UpdateCertificatePassword(it)) },
@@ -168,7 +193,7 @@ private fun SettingsContent(
     userInfo: com.app.crowns.domain.auth.model.User?,
     documentSeries: List<DocumentSeries>,
     isSubscriptionActive: Boolean?,
-    snackbarHostState: SnackbarHostState,
+    snackbarState: VentlySnackbarState,
     onNavigateToEditBusiness: () -> Unit,
     onSelectCertificate: () -> Unit,
     onUpdateCertificatePassword: (String) -> Unit,
@@ -211,7 +236,7 @@ private fun SettingsContent(
 
     Scaffold(
         containerColor = Surface,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VentlySnackbarHost(snackbarState) },
         topBar = {
             TopAppBar(
                 title = {

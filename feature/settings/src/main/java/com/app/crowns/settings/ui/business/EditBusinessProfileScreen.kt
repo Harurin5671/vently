@@ -16,6 +16,9 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material3.*
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.rememberVentlySnackbarState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -47,11 +50,11 @@ fun EditBusinessProfileScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val context = LocalContext.current
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberVentlySnackbarState()
 
     LaunchedEffect(state.error) {
         state.error?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarState.show(it)
         }
     }
 
@@ -66,7 +69,7 @@ fun EditBusinessProfileScreen(
 
     EditBusinessProfileContent(
         state = state,
-        snackbarHostState = snackbarHostState,
+        snackbarState = snackbarState,
         onNavigateBack = onNavigateBack,
         onLogoClick = { launcher.launch("image/*") },
         onSave = viewModel::onSave
@@ -84,7 +87,7 @@ fun EditBusinessProfileScreen(
 @Composable
 fun EditBusinessProfileContent(
     state: EditBusinessProfileUiState,
-    snackbarHostState: SnackbarHostState,
+    snackbarState: VentlySnackbarState,
     onNavigateBack: () -> Unit,
     onLogoClick: () -> Unit,
     onSave: () -> Unit
@@ -101,7 +104,7 @@ fun EditBusinessProfileContent(
 
     Scaffold(
         containerColor = Surface,
-        snackbarHost = { SnackbarHost(hostState = snackbarHostState) },
+        snackbarHost = { VentlySnackbarHost(snackbarState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -373,7 +376,7 @@ fun EditBusinessProfileScreenPreview() {
         state = EditBusinessProfileUiState(
             companyInfo = null
         ),
-        snackbarHostState = remember { SnackbarHostState() },
+        snackbarState = rememberVentlySnackbarState(),
         onNavigateBack = {},
         onLogoClick = {},
         onSave = {}

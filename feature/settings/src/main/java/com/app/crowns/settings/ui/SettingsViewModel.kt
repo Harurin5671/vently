@@ -166,7 +166,11 @@ class SettingsViewModel @Inject constructor(
             updateCertificateUseCase(base64).onSuccess {
                 loadCompanyInfo()
             }.onFailure { e ->
-                _state.update { it.copy(error = e.toUserFriendlyMessage("Error al subir certificado"), isLoading = false) }
+                val message = if (e.message?.contains("INVALID_CERTIFICATE_FORMAT") == true)
+                    "El certificado no es válido. Sube un archivo .p12 o .pfx"
+                else
+                    e.toUserFriendlyMessage("Error al subir certificado")
+                _state.update { it.copy(error = message, isLoading = false) }
             }
         }
     }

@@ -16,6 +16,7 @@ import java.time.YearMonth
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
+import com.app.crowns.common.util.toUserFriendlyMessage
 import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -157,7 +158,7 @@ class HistoryViewModel @Inject constructor(
                     }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(cancelError = e.message ?: "No se pudo enviar la comunicación de baja a SUNAT") }
+                    _state.update { it.copy(cancelError = e.toUserFriendlyMessage("No se pudo enviar la comunicación de baja a SUNAT")) }
                 }
             _state.update { it.copy(cancellingInvoiceId = null) }
         }
@@ -178,7 +179,7 @@ class HistoryViewModel @Inject constructor(
                     )
                 }
             }.onFailure { e ->
-                _state.update { it.copy(isLoading = false, loadError = e.message ?: "Error al cargar el historial") }
+                _state.update { it.copy(isLoading = false, loadError = e.toUserFriendlyMessage("Error al cargar el historial")) }
             }
         }
     }
@@ -200,7 +201,7 @@ class HistoryViewModel @Inject constructor(
                     )
                 }
             }.onFailure { e ->
-                _state.update { it.copy(isLoadingMore = false, loadError = e.message ?: "Error al cargar más comprobantes") }
+                _state.update { it.copy(isLoadingMore = false, loadError = e.toUserFriendlyMessage("Error al cargar más comprobantes")) }
             }
         }
     }

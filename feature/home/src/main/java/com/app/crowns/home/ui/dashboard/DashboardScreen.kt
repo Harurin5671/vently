@@ -30,8 +30,6 @@ import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -56,6 +54,9 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
 import com.app.crowns.designsystem.preview.ThemePreviews
 import com.app.crowns.designsystem.theme.VentlyTheme
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.rememberVentlySnackbarState
 import com.app.crowns.home.ui.components.QuickActionCard
 import com.app.crowns.home.ui.components.RecentInvoiceItem
 import com.app.crowns.home.ui.components.StatCard
@@ -103,12 +104,12 @@ fun DashboardScreen(
         }
     }
 
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberVentlySnackbarState()
 
     LaunchedEffect(state.error) {
         val error = state.error
         if (error != null) {
-            snackbarHostState.showSnackbar(error)
+            snackbarState.show(error)
             viewModel.onEvent(DashboardEvent.DismissError)
         }
     }
@@ -116,7 +117,7 @@ fun DashboardScreen(
     DashboardContent(
         state = state,
         onEvent = viewModel::onEvent,
-        snackbarHostState = snackbarHostState,
+        snackbarState = snackbarState,
     )
 }
 
@@ -125,13 +126,13 @@ fun DashboardScreen(
 private fun DashboardContent(
     state: DashboardUiState,
     onEvent: (DashboardEvent) -> Unit,
-    snackbarHostState: SnackbarHostState = remember { SnackbarHostState() },
+    snackbarState: VentlySnackbarState = rememberVentlySnackbarState(),
 ) {
     val locale = LocalConfiguration.current.locales[0]
 
     Scaffold(
         containerColor = Surface,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VentlySnackbarHost(snackbarState) },
         topBar = {
 //            DashboardTopAppBaR(companyInfo = state.companyInfo, userName = state.userName)
         }

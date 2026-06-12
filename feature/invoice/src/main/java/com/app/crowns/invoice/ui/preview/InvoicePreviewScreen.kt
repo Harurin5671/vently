@@ -31,8 +31,6 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
@@ -54,6 +52,9 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.rememberVentlySnackbarState
 import com.app.crowns.invoice.ui.InvoiceResultScreen
 import com.app.crowns.invoice.ui.InvoiceSendingScreen
 
@@ -65,11 +66,11 @@ fun InvoicePreviewScreen(
     viewModel: InvoicePreviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
-    val snackbarHostState = remember { SnackbarHostState() }
+    val snackbarState = rememberVentlySnackbarState()
 
     LaunchedEffect(state.error) {
         state.error?.let {
-            snackbarHostState.showSnackbar(it)
+            snackbarState.show(it)
         }
     }
 
@@ -98,7 +99,7 @@ fun InvoicePreviewScreen(
             else -> {
                 InvoicePreviewContent(
                     state = state,
-                    snackbarHostState = snackbarHostState,
+                    snackbarState = snackbarState,
                     onNavigateBack = onNavigateBack,
                     onShowEmitDialog = viewModel::onShowEmitDialog,
                     onDismissEmitDialog = viewModel::onDismissEmitDialog,
@@ -113,7 +114,7 @@ fun InvoicePreviewScreen(
 @Composable
 private fun InvoicePreviewContent(
     state: InvoicePreviewUiState,
-    snackbarHostState: SnackbarHostState,
+    snackbarState: VentlySnackbarState,
     onNavigateBack: () -> Unit,
     onShowEmitDialog: () -> Unit,
     onDismissEmitDialog: () -> Unit,
@@ -121,7 +122,7 @@ private fun InvoicePreviewContent(
 ) {
     Scaffold(
         containerColor = Surface,
-        snackbarHost = { SnackbarHost(snackbarHostState) },
+        snackbarHost = { VentlySnackbarHost(snackbarState) },
         topBar = {
             TopAppBar(
                 title = {
