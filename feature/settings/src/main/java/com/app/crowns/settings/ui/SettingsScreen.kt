@@ -1,13 +1,12 @@
 package com.app.crowns.settings.ui
 
-import android.util.Base64
 import android.provider.OpenableColumns
+import android.util.Base64
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -15,20 +14,11 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.rememberScrollState
-import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ChevronRight
-import androidx.compose.material.icons.filled.Visibility
-import androidx.compose.material.icons.filled.VisibilityOff
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -41,14 +31,12 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.text.input.PasswordVisualTransformation
-import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -60,15 +48,20 @@ import com.app.crowns.designsystem.color.*
 import com.app.crowns.domain.catalog.entities.ElectronicDocumentTypeEntity
 import com.app.crowns.domain.company.model.CompanyInfo
 import com.app.crowns.domain.company.model.DocumentSeries
-import com.app.crowns.ui.components.VentlySnackbarHost
-import com.app.crowns.ui.components.VentlySnackbarState
-import com.app.crowns.ui.components.rememberVentlySnackbarState
 import com.app.crowns.settings.ui.components.BusinessProfileCard
 import com.app.crowns.settings.ui.components.SettingsItem
 import com.app.crowns.settings.ui.components.SettingsItemWithBadge
 import com.app.crowns.settings.ui.components.SettingsSection
 import com.app.crowns.settings.ui.components.SettingsShimmer
-import com.app.crowns.ui.components.VentlyModalBottomSheet
+import com.app.crowns.settings.ui.components.dialogs.CertPasswordDialog
+import com.app.crowns.settings.ui.components.dialogs.DeleteAccountDialog
+import com.app.crowns.settings.ui.components.dialogs.SeriesDialog
+import com.app.crowns.settings.ui.components.dialogs.SolDialog
+import com.app.crowns.ui.components.VentlySnackbarHost
+import com.app.crowns.ui.components.VentlySnackbarState
+import com.app.crowns.ui.components.VentlySnackbarType
+import com.app.crowns.ui.components.rememberVentlySnackbarState
+import kotlinx.coroutines.launch
 
 // ---------------------------------------------------------------------------
 // Entry point
@@ -212,6 +205,8 @@ private fun SettingsContent(
     var showSeriesDialog by remember { mutableStateOf(false) }
     var showSolDialog by remember { mutableStateOf(false) }
     var showDeleteAccountDialog by remember { mutableStateOf(false) }
+
+    val scope = rememberCoroutineScope()
 
     val boletaData = remember(documentSeries) { documentSeries.find { it.documentType == ElectronicDocumentTypeEntity.BOLETA } }
     val facturaData = remember(documentSeries) { documentSeries.find { it.documentType == ElectronicDocumentTypeEntity.FACTURA } }
@@ -374,6 +369,9 @@ private fun SettingsContent(
                     onSave = { bs, bc, fs, fc ->
                         onUpdateDocumentSeries(bs, bc, fs, fc)
                         showSeriesDialog = false
+                        scope.launch {
+                            snackbarState.show("Guardado correctamente", VentlySnackbarType.SUCCESS)
+                        }
                     },
                     onDismiss = { showSeriesDialog = false },
                 )
@@ -385,6 +383,9 @@ private fun SettingsContent(
                     onSave = { password ->
                         onUpdateCertificatePassword(password)
                         showPasswordDialog = false
+                        scope.launch {
+                            snackbarState.show("Guardado correctamente", VentlySnackbarType.SUCCESS)
+                        }
                     },
                     onDismiss = { showPasswordDialog = false },
                 )
@@ -408,274 +409,13 @@ private fun SettingsContent(
                     onSave = { u, p ->
                         onUpdateSolCredentials(u, p)
                         showSolDialog = false
+                        scope.launch {
+                            snackbarState.show("Guardado correctamente", VentlySnackbarType.SUCCESS)
+                        }
                     },
                     onDismiss = { showSolDialog = false },
                 )
             }
         }
-    }
-}
-
-// ---------------------------------------------------------------------------
-// Dialog composables
-// ---------------------------------------------------------------------------
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SeriesDialog(
-    initialBoletaSeries: String,
-    initialBoletaCorrelative: Int,
-    initialFacturaSeries: String,
-    initialFacturaCorrelative: Int,
-    onSave: (boletaSeries: String, boletaCorrelative: Int, facturaSeries: String, facturaCorrelative: Int) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var boletaSeries by remember { mutableStateOf(initialBoletaSeries) }
-    var boletaCorrelative by remember { mutableStateOf(initialBoletaCorrelative.toString()) }
-    var facturaSeries by remember { mutableStateOf(initialFacturaSeries) }
-    var facturaCorrelative by remember { mutableStateOf(initialFacturaCorrelative.toString()) }
-
-    VentlyModalBottomSheet(onDismiss = onDismiss, title = "Series y correlativos") {
-        Column(verticalArrangement = Arrangement.spacedBy(20.dp)) {
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("BOLETAS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Outline)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = boletaSeries,
-                        onValueChange = { },
-                        label = { Text("Serie") },
-                        readOnly = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = OutlineVariant,
-                        ),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = boletaCorrelative,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) boletaCorrelative = it },
-                        label = { Text("Correlativo") },
-                        placeholder = { Text("0") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = OutlineVariant,
-                        ),
-                        modifier = Modifier.weight(1.5f),
-                    )
-                }
-            }
-            Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                Text("FACTURAS", fontSize = 11.sp, fontWeight = FontWeight.Bold, color = Outline)
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    OutlinedTextField(
-                        value = facturaSeries,
-                        onValueChange = { },
-                        label = { Text("Serie") },
-                        readOnly = true,
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = OutlineVariant,
-                        ),
-                        modifier = Modifier.weight(1f),
-                    )
-                    OutlinedTextField(
-                        value = facturaCorrelative,
-                        onValueChange = { if (it.all { c -> c.isDigit() }) facturaCorrelative = it },
-                        label = { Text("Correlativo") },
-                        placeholder = { Text("0") },
-                        singleLine = true,
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = OutlineVariant,
-                        ),
-                        modifier = Modifier.weight(1.5f),
-                    )
-                }
-            }
-        }
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = {
-                onSave(
-                    boletaSeries,
-                    boletaCorrelative.toIntOrNull() ?: 0,
-                    facturaSeries,
-                    facturaCorrelative.toIntOrNull() ?: 0,
-                )
-            },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun CertPasswordDialog(
-    initialPassword: String,
-    onSave: (String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var password by remember { mutableStateOf(initialPassword) }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    VentlyModalBottomSheet(onDismiss = onDismiss, title = "Contraseña del certificado") {
-        OutlinedTextField(
-            value = password,
-            onValueChange = { password = it },
-            label = { Text("Contraseña") },
-            singleLine = true,
-            visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-            trailingIcon = {
-                IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                    Icon(
-                        imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                        contentDescription = null,
-                        tint = OnSurfaceVariant,
-                    )
-                }
-            },
-            colors = OutlinedTextFieldDefaults.colors(
-                focusedBorderColor = Primary,
-                unfocusedBorderColor = OutlineVariant,
-            ),
-            modifier = Modifier.fillMaxWidth(),
-        )
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onSave(password) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun DeleteAccountDialog(
-    isDeleting: Boolean,
-    onConfirm: () -> Unit,
-    onDismiss: () -> Unit,
-) {
-    VentlyModalBottomSheet(onDismiss = onDismiss, title = "Eliminar cuenta") {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            Text(
-                text = "Esta acción es permanente e irreversible.",
-                style = MaterialTheme.typography.bodyMedium,
-                fontWeight = FontWeight.SemiBold,
-                color = MaterialTheme.colorScheme.onSurface,
-            )
-            Text(
-                text = "Se eliminarán permanentemente:",
-                style = MaterialTheme.typography.bodySmall,
-                color = OnSurfaceVariant,
-            )
-            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
-                listOf(
-                    "Tu cuenta y datos de acceso",
-                    "Información de tu empresa",
-                    "Historial de boletas y facturas",
-                    "Productos e inventario",
-                ).forEach { item ->
-                    Row(
-                        horizontalArrangement = Arrangement.spacedBy(8.dp),
-                        verticalAlignment = Alignment.CenterVertically,
-                    ) {
-                        Text("•", color = MaterialTheme.colorScheme.error, fontSize = 16.sp)
-                        Text(item, style = MaterialTheme.typography.bodySmall, color = OnSurfaceVariant)
-                    }
-                }
-            }
-        }
-        Spacer(Modifier.height(24.dp))
-        Button(
-            onClick = onConfirm,
-            enabled = !isDeleting,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = MaterialTheme.colorScheme.error),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text(
-                text = if (isDeleting) "Eliminando cuenta..." else "Sí, eliminar mi cuenta",
-                color = OnPrimary,
-                fontWeight = FontWeight.SemiBold,
-            )
-        }
-        Spacer(Modifier.height(4.dp))
-        TextButton(onClick = onDismiss, modifier = Modifier.fillMaxWidth()) {
-            Text("Cancelar", color = OnSurfaceVariant, fontWeight = FontWeight.Medium)
-        }
-        Spacer(Modifier.height(8.dp))
-    }
-}
-
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-private fun SolDialog(
-    initialUsername: String,
-    initialPassword: String,
-    onSave: (username: String, password: String) -> Unit,
-    onDismiss: () -> Unit,
-) {
-    var username by remember { mutableStateOf(initialUsername) }
-    var password by remember { mutableStateOf(initialPassword) }
-    var passwordVisible by remember { mutableStateOf(false) }
-
-    VentlyModalBottomSheet(onDismiss = onDismiss, title = "Credenciales SOL") {
-        Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-            OutlinedTextField(
-                value = username,
-                onValueChange = { username = it },
-                label = { Text("Usuario SOL") },
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = OutlineVariant,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-            OutlinedTextField(
-                value = password,
-                onValueChange = { password = it },
-                label = { Text("Contraseña SOL") },
-                singleLine = true,
-                visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
-                trailingIcon = {
-                    IconButton(onClick = { passwordVisible = !passwordVisible }) {
-                        Icon(
-                            imageVector = if (passwordVisible) Icons.Default.Visibility else Icons.Default.VisibilityOff,
-                            contentDescription = null,
-                            tint = OnSurfaceVariant,
-                        )
-                    }
-                },
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Primary,
-                    unfocusedBorderColor = OutlineVariant,
-                ),
-                modifier = Modifier.fillMaxWidth(),
-            )
-        }
-        Spacer(Modifier.height(16.dp))
-        Button(
-            onClick = { onSave(username, password) },
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(containerColor = Primary),
-            shape = MaterialTheme.shapes.medium,
-        ) {
-            Text("Guardar", color = OnPrimary, fontWeight = FontWeight.SemiBold)
-        }
-        Spacer(Modifier.height(8.dp))
     }
 }

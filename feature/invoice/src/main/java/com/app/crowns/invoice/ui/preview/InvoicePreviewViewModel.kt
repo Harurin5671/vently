@@ -45,6 +45,15 @@ private const val TAG = "InvoicePreview"
 sealed class InvoicePreviewNavigationEvent {
     data object NavigateBack : InvoicePreviewNavigationEvent()
     data object InvoiceEmitted : InvoicePreviewNavigationEvent()
+    data class ShareInvoice(
+        val companyName: String,
+        val companyRuc: String,
+        val documentName: String,
+        val documentId: String,
+        val customerName: String,
+        val total: String,
+        val pdfFile: File?
+    ) : InvoicePreviewNavigationEvent()
 }
 
 @HiltViewModel
@@ -176,6 +185,43 @@ class InvoicePreviewViewModel @Inject constructor(
         }
     }
 
+    fun onSharePdf() {
+        val draft = draftStore.draft.value ?: return
+        val currentState = _state.value
+        if (currentState.sunatResponse?.isSuccess != true) return
+
+        viewModelScope.launch {
+            try {
+                val company = getCompanyUseCase().getOrNull()
+                val invoiceEntity = draft.toPreviewEntity(
+                    serie = currentState.series ?: "",
+                    correlative = currentState.correlative?.toLongOrNull() ?: 0L,
+                    status = "ACEPTADA"
+                )
+                val pdfFile = withContext(Dispatchers.IO) {
+                    generateInvoicePdf(context, invoiceEntity, company)
+                }
+                
+                _navigationEvent.send(InvoicePreviewNavigationEvent.ShareInvoice(
+                    companyName = company?.businessName ?: "Mi Empresa",
+                    companyRuc = company?.documentNumber ?: "",
+                    documentName = if (draft.type == InvoiceType.FACTURA) "Factura" else "Boleta",
+                    documentId = currentState.documentId ?: "",
+                    customerName = draft.clientBusinessName ?: draft.clientName ?: "Cliente",
+                    total = draft.total.toString(),
+                    pdfFile = pdfFile
+                ))
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al generar PDF para compartir") }
+            }
+        }
+    }
+
+    fun onShareMail() {
+        // Por ahora usamos el mismo flujo de compartir que permite elegir el correo
+        onSharePdf()
+    }
+
     private fun generatePdfPreview() {
         val draft = draftStore.draft.value
         if (draft == null) {
@@ -209,14 +255,18 @@ class InvoicePreviewViewModel @Inject constructor(
     // correlative = 0L es el sentinel que PdfUtils detecta para mostrar "--------" en lugar del número real.
     // igvAmount asume 18% flat; productos exonerados mostrarán montos aproximados en el PDF.
     // Los valores reales los calcula la Edge Function al emitir.
-    private fun Invoice.toPreviewEntity(serie: String = if (type == InvoiceType.FACTURA) "F001" else "B001") = InvoiceEntity(
+    private fun Invoice.toPreviewEntity(
+        serie: String = if (type == InvoiceType.FACTURA) "F001" else "B001",
+        correlative: Long = 0L,
+        status: String = "BORRADOR"
+    ) = InvoiceEntity(
         id = "",
         companyId = "",
         documentType = if (type == InvoiceType.FACTURA) ElectronicDocumentTypeEntity.FACTURA else ElectronicDocumentTypeEntity.BOLETA,
         serie = serie,
-        correlative = 0L,
+        correlative = correlative,
         total = total.toString(),
-        status = "BORRADOR",
+        status = status,
         statusInfo = null,
         issueDate = LocalDate.now().toString(),
         operationType = "0101",

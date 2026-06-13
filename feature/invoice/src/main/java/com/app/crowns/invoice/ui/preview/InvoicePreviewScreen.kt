@@ -57,6 +57,8 @@ import com.app.crowns.ui.components.VentlySnackbarState
 import com.app.crowns.ui.components.rememberVentlySnackbarState
 import com.app.crowns.invoice.ui.InvoiceResultScreen
 import com.app.crowns.invoice.ui.InvoiceSendingScreen
+import com.app.crowns.domain.util.shareInvoice
+import androidx.compose.ui.platform.LocalContext
 
 @Composable
 fun InvoicePreviewScreen(
@@ -67,6 +69,7 @@ fun InvoicePreviewScreen(
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarState = rememberVentlySnackbarState()
+    val context = LocalContext.current
 
     LaunchedEffect(state.error) {
         state.error?.let {
@@ -79,6 +82,17 @@ fun InvoicePreviewScreen(
             when (event) {
                 is InvoicePreviewNavigationEvent.NavigateBack -> onNavigateBack()
                 is InvoicePreviewNavigationEvent.InvoiceEmitted -> onInvoiceEmitted()
+                is InvoicePreviewNavigationEvent.ShareInvoice -> {
+                    context.shareInvoice(
+                        companyName = event.companyName,
+                        companyRuc = event.companyRuc,
+                        documentName = event.documentName,
+                        documentId = event.documentId,
+                        customerName = event.customerName,
+                        total = event.total,
+                        pdfFile = event.pdfFile
+                    )
+                }
             }
         }
     }
@@ -90,7 +104,9 @@ fun InvoicePreviewScreen(
                     state = state,
                     onClose = onNavigateBack,
                     onNavigateToHistory = onNavigateToHistory,
-                    onFinish = onInvoiceEmitted
+                    onFinish = onInvoiceEmitted,
+                    onSharePdf = viewModel::onSharePdf,
+                    onShareMail = viewModel::onShareMail
                 )
             }
             isEmitting -> {

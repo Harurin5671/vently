@@ -1,10 +1,5 @@
 package com.app.crowns.ui.components
 
-import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.animation.fadeIn
-import androidx.compose.animation.fadeOut
-import androidx.compose.animation.slideInVertically
-import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Row
@@ -45,12 +40,10 @@ import com.app.crowns.designsystem.color.Error
 import com.app.crowns.designsystem.color.ErrorContainer
 import com.app.crowns.designsystem.color.OnErrorContainer
 import com.app.crowns.designsystem.color.OnPrimaryContainer
-import com.app.crowns.designsystem.color.OnSurface
 import com.app.crowns.designsystem.color.Primary
 import com.app.crowns.designsystem.color.PrimaryFixed
 import com.app.crowns.designsystem.color.Success
 import com.app.crowns.designsystem.color.SuccessBg
-import com.app.crowns.designsystem.color.SurfaceContainerLowest
 
 enum class VentlySnackbarType { ERROR, SUCCESS, INFO }
 

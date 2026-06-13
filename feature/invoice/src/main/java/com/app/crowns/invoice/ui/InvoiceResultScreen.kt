@@ -21,7 +21,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.ContentCopy
 import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.PictureAsPdf
 import androidx.compose.material.icons.filled.Warning
@@ -58,7 +57,9 @@ fun InvoiceResultScreen(
     state: InvoicePreviewUiState,
     onClose: () -> Unit,
     onNavigateToHistory: () -> Unit,
-    onFinish: () -> Unit
+    onFinish: () -> Unit,
+    onSharePdf: () -> Unit,
+    onShareMail: () -> Unit,
 ) {
     val isSuccess = state.sunatResponse?.isSuccess == true
 
@@ -200,35 +201,6 @@ fun InvoiceResultScreen(
                     ResultRow("Número:", state.correlative ?: "")
                     HorizontalDivider(color = OutlineVariant.copy(alpha = 0.3f))
                     ResultRow("Fecha:", LocalDate.now().toString())
-
-                    // Hash section
-//                    Column(modifier = Modifier.padding(top = 4.dp)) {
-//                        Text("Hash CDR:", fontSize = 14.sp, color = OnSurfaceVariant)
-//                        Spacer(Modifier.height(8.dp))
-//                        Row(
-//                            modifier = Modifier
-//                                .fillMaxWidth()
-//                                .clip(RoundedCornerShape(8.dp))
-//                                .background(SurfaceContainerHigh)
-//                                .padding(horizontal = 12.dp, vertical = 8.dp),
-//                            verticalAlignment = Alignment.CenterVertically,
-//                            horizontalArrangement = Arrangement.SpaceBetween
-//                        ) {
-//                            Text(
-//                                text = "a3f8c2b5d4e6f7a8b9c0d1e2f3a4b5c6", // Mock hash
-//                                fontSize = 12.sp,
-//                                fontFamily = FontFamily.Monospace,
-//                                color = Outline,
-//                                maxLines = 1,
-//                                overflow = TextOverflow.Ellipsis,
-//                                modifier = Modifier.weight(1f)
-//                            )
-//                            IconButton(onClick = { /* Copy hash */ }, modifier = Modifier.size(24.dp)) {
-//                                Icon(Icons.Default.ContentCopy, contentDescription = "Copy", tint = Primary, modifier = Modifier.size(18.dp))
-//                            }
-//                        }
-//                    }
-//
                 }
 
                 Spacer(Modifier.height(32.dp))
@@ -249,9 +221,9 @@ fun InvoiceResultScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ShareButton(Icons.Default.PictureAsPdf, "PDF") { /* Share PDF */ }
+                    ShareButton(Icons.Default.PictureAsPdf, "PDF") { onSharePdf() }
                     Spacer(Modifier.width(24.dp))
-                    ShareButton(Icons.Default.Mail, "Correo") { /* Share Mail */ }
+                    ShareButton(Icons.Default.Mail, "Correo") { onShareMail() }
                 }
             }
         }
