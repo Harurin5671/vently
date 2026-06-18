@@ -108,6 +108,7 @@ class CreateInvoiceViewModel @Inject constructor(
                             clientRuc = "",
                             clientBusinessName = "",
                             rucError = null,
+                            clientNameManualFallback = false,
                         )
                     }
                 }
@@ -116,10 +117,11 @@ class CreateInvoiceViewModel @Inject constructor(
             is CreateInvoiceEvent.OnDocumentTypeChanged -> _state.update {
                 it.copy(
                     selectedDocumentType = event.type,
-                    clientRuc = "", // Clear number when type changes to avoid length conflicts
+                    clientRuc = "",
                     rucError = null,
                     clientName = "",
-                    clientBusinessName = ""
+                    clientBusinessName = "",
+                    clientNameManualFallback = false,
                 )
             }
 
@@ -146,7 +148,7 @@ class CreateInvoiceViewModel @Inject constructor(
                 }
 
                 _state.update {
-                    it.copy(clientRuc = newValue, rucError = error, clientBusinessName = "", clientName = "")
+                    it.copy(clientRuc = newValue, rucError = error, clientBusinessName = "", clientName = "", clientNameManualFallback = false)
                 }
             }
 
@@ -198,15 +200,15 @@ class CreateInvoiceViewModel @Inject constructor(
                 .onSuccess { result ->
                     when (result) {
                         is ClientSearchResult.PersonFound -> _state.update {
-                            it.copy(isSearchingRuc = false, clientName = result.fullName)
+                            it.copy(isSearchingRuc = false, clientName = result.fullName, clientNameManualFallback = false)
                         }
                         is ClientSearchResult.CompanyFound -> _state.update {
-                            it.copy(isSearchingRuc = false, clientBusinessName = result.businessName)
+                            it.copy(isSearchingRuc = false, clientBusinessName = result.businessName, clientNameManualFallback = false)
                         }
                     }
                 }
                 .onFailure { e ->
-                    _state.update { it.copy(isSearchingRuc = false, rucError = e.message ?: "Error al buscar") }
+                    _state.update { it.copy(isSearchingRuc = false, rucError = e.message ?: "Error al buscar", clientNameManualFallback = true) }
                 }
         }
     }

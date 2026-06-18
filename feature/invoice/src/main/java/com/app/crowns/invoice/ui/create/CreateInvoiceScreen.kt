@@ -208,6 +208,7 @@ private fun CreateInvoiceContent(
                     clientBusinessName = state.clientBusinessName,
                     isSearchingRuc = state.isSearchingRuc,
                     rucError = state.rucError,
+                    clientNameManualFallback = state.clientNameManualFallback,
                     total = state.total,
                     documentTypes = state.documentTypes,
                     selectedDocumentType = state.selectedDocumentType,

@@ -21,8 +21,8 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Close
-import androidx.compose.material.icons.filled.Mail
 import androidx.compose.material.icons.filled.PictureAsPdf
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,10 +39,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.*
@@ -56,10 +54,10 @@ import java.time.LocalDate
 fun InvoiceResultScreen(
     state: InvoicePreviewUiState,
     onClose: () -> Unit,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToHistory: (invoiceId: String?) -> Unit,
     onFinish: () -> Unit,
-    onSharePdf: () -> Unit,
-    onShareMail: () -> Unit,
+    onDownloadPdf: () -> Unit,
+    onShare: () -> Unit,
 ) {
     val isSuccess = state.sunatResponse?.isSuccess == true
 
@@ -95,7 +93,7 @@ fun InvoiceResultScreen(
                 verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedButton(
-                    onClick = onNavigateToHistory,
+                    onClick = { onNavigateToHistory(state.invoiceId) },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(48.dp),
@@ -221,9 +219,9 @@ fun InvoiceResultScreen(
                     horizontalArrangement = Arrangement.Center,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    ShareButton(Icons.Default.PictureAsPdf, "PDF") { onSharePdf() }
+                    ShareButton(Icons.Default.PictureAsPdf, "PDF") { onDownloadPdf() }
                     Spacer(Modifier.width(24.dp))
-                    ShareButton(Icons.Default.Mail, "Correo") { onShareMail() }
+                    ShareButton(Icons.Default.Share, "Compartir") { onShare() }
                 }
             }
         }

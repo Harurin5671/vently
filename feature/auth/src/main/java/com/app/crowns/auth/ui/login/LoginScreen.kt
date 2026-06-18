@@ -34,7 +34,6 @@ import com.app.crowns.auth.ui.AuthNavigationEvent
 import com.app.crowns.auth.ui.AuthUiState
 import com.app.crowns.auth.ui.AuthViewModel
 import com.app.crowns.auth.ui.toMessage
-import com.app.crowns.auth.ui.login.components.TextRegister
 import com.app.crowns.auth.ui.login.components.TextTermsAndConditions
 import com.app.crowns.designsystem.R
 import com.app.crowns.designsystem.preview.ThemePreviews
@@ -145,9 +144,6 @@ fun LoginContent(
                 GoogleSignInButton(
                     onClick = onLoginClick
                 )
-
-                Spacer(Modifier.height(16.dp))
-                TextRegister {}
 
                 Spacer(Modifier.height(24.dp))
                 TextTermsAndConditions()

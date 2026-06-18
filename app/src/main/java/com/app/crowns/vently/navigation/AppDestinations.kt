@@ -15,7 +15,7 @@ sealed interface AppDestination : NavKey {
     data object Onboarding : AppDestination
 
     @Serializable
-    data class Home(val initialTab: Int = 0) : AppDestination
+    data class Home(val initialTab: Int = 0, val expandInvoiceId: String? = null) : AppDestination
 
     @Serializable
     data class AddProduct(val id: String, val productId: String? = null) : AppDestination

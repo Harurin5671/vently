@@ -1,5 +1,7 @@
 package com.app.crowns.invoice.ui.preview
 
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -38,13 +40,16 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -52,24 +57,37 @@ import androidx.compose.ui.unit.sp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.domain.util.copyFileToUri
+import com.app.crowns.domain.util.shareInvoice
+import com.app.crowns.invoice.ui.InvoiceResultScreen
+import com.app.crowns.invoice.ui.InvoiceSendingScreen
 import com.app.crowns.ui.components.VentlySnackbarHost
 import com.app.crowns.ui.components.VentlySnackbarState
 import com.app.crowns.ui.components.rememberVentlySnackbarState
-import com.app.crowns.invoice.ui.InvoiceResultScreen
-import com.app.crowns.invoice.ui.InvoiceSendingScreen
-import com.app.crowns.domain.util.shareInvoice
-import androidx.compose.ui.platform.LocalContext
+import java.io.File
 
 @Composable
 fun InvoicePreviewScreen(
     onNavigateBack: () -> Unit,
     onInvoiceEmitted: () -> Unit,
-    onNavigateToHistory: () -> Unit,
+    onNavigateToHistory: (invoiceId: String?) -> Unit,
     viewModel: InvoicePreviewViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val snackbarState = rememberVentlySnackbarState()
     val context = LocalContext.current
+    var pendingFileToDownload by remember { mutableStateOf<File?>(null) }
+
+    val downloadLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.CreateDocument("application/pdf")
+    ) { uri ->
+        uri?.let {
+            pendingFileToDownload?.let { file ->
+                context.copyFileToUri(file, it)
+                pendingFileToDownload = null
+            }
+        }
+    }
 
     LaunchedEffect(state.error) {
         state.error?.let {
@@ -93,6 +111,10 @@ fun InvoicePreviewScreen(
                         pdfFile = event.pdfFile
                     )
                 }
+                is InvoicePreviewNavigationEvent.DownloadPdf -> {
+                    pendingFileToDownload = event.file
+                    downloadLauncher.launch(event.fileName)
+                }
             }
         }
     }
@@ -103,10 +125,10 @@ fun InvoicePreviewScreen(
                 InvoiceResultScreen(
                     state = state,
                     onClose = onNavigateBack,
-                    onNavigateToHistory = onNavigateToHistory,
+                    onNavigateToHistory = { onNavigateToHistory(state.invoiceId) },
                     onFinish = onInvoiceEmitted,
-                    onSharePdf = viewModel::onSharePdf,
-                    onShareMail = viewModel::onShareMail
+                    onDownloadPdf = viewModel::onDownloadPdf,
+                    onShare = viewModel::onShare
                 )
             }
             isEmitting -> {

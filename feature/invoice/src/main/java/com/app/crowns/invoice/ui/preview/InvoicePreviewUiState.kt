@@ -2,6 +2,7 @@ package com.app.crowns.invoice.ui.preview
 
 import android.graphics.Bitmap
 import com.app.crowns.domain.invoice.entities.SendSunatResponseEntity
+import com.app.crowns.invoice.domain.model.Invoice
 
 data class InvoicePreviewUiState(
     val isGeneratingPdf: Boolean = true,
@@ -16,4 +17,5 @@ data class InvoicePreviewUiState(
     val correlative: String? = null,
     val invoiceId: String? = null,
     val isSigned: Boolean = false,
+    val emittedDraft: Invoice? = null,
 )

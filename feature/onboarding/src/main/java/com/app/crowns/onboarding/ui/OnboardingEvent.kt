@@ -19,8 +19,10 @@ sealed class OnboardingEvent {
 
     data class OnChangedRuc(val ruc: String) : OnboardingEvent()
     data class OnLogoSelected(val uri: Uri) : OnboardingEvent()
+    data object FinishWithoutLogo : OnboardingEvent()
 }
 
 sealed class OnboardingNavigationEvent {
     data object NavigateToHome : OnboardingNavigationEvent()
+    data object NavigateToLogin : OnboardingNavigationEvent()
 }

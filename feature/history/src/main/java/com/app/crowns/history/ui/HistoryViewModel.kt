@@ -92,6 +92,9 @@ class HistoryViewModel @Inject constructor(
                 val newId = if (it.expandedInvoiceId == event.invoiceId) null else event.invoiceId
                 it.copy(expandedInvoiceId = newId)
             }
+            is HistoryEvent.ExpandInvoice -> _state.update {
+                it.copy(expandedInvoiceId = event.invoiceId)
+            }
             is HistoryEvent.OnDownloadPdf -> { 
                 viewModelScope.launch {
                     _state.value.invoices.find { it.id == event.invoiceId }?.let { invoice ->
@@ -176,6 +179,7 @@ class HistoryViewModel @Inject constructor(
             if (!isSilent) _state.update { it.copy(isLoading = true, invoices = emptyList(), hasMorePages = false, loadError = null) }
             val statuses = getInvoiceStatusesUseCase().getOrDefault(emptyList())
             val invoicesResult = getInvoicesHistoryUseCase(month, offset = 0)
+            if (month != _state.value.currentMonth) return@launch
             invoicesResult.onSuccess { rawInvoices ->
                 val invoices = rawInvoices.map { inv -> inv.copy(statusInfo = statuses.find { it.code == inv.status }) }
                 _state.update {

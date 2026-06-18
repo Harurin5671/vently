@@ -1,5 +1,6 @@
 package com.app.crowns.data.invoice.datasource
 
+import android.util.Log
 import com.app.crowns.data.invoice.dto.GenerateXmlRequestDto
 import com.app.crowns.data.invoice.model.CancelInvoiceResponseModel
 import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
@@ -30,20 +31,24 @@ class InvoiceSupabaseDataSourceImpl @Inject constructor(
         offset: Int,
         limit: Int,
     ): Result<List<InvoiceSupabaseModel>> = runCatching {
-        supabase
+        Log.d("HISTORY_DS", "Query: companyId=$companyId start=$startDate end=$endDate offset=$offset")
+        val result = supabase
             .from("invoices")
             .select(Columns.raw("*, invoice_items(*)")) {
                 filter {
-                    eq("company_id", companyId)
-                    gte("issue_date", startDate)
-                    lte("issue_date", endDate)
+                    and {
+                        eq("company_id", companyId)
+                        gte("issue_date", startDate)
+                        lte("issue_date", endDate)
+                    }
                 }
                 order("issue_date", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
-                // Criterio secundario: dentro del mismo día, la última emitida primero.
                 order("created_at", io.github.jan.supabase.postgrest.query.Order.DESCENDING)
                 range(offset.toLong(), (offset + limit - 1).toLong())
             }
             .decodeList<InvoiceSupabaseModel>()
+        Log.d("HISTORY_DS", "Resultado: ${result.size} facturas. Fechas: ${result.map { it.issueDate }}")
+        result
     }
 
     override suspend fun getInvoiceItems(invoiceId: String): Result<List<InvoiceItemSupabaseModel>> =

@@ -54,6 +54,10 @@ sealed class InvoicePreviewNavigationEvent {
         val total: String,
         val pdfFile: File?
     ) : InvoicePreviewNavigationEvent()
+    data class DownloadPdf(
+        val file: File,
+        val fileName: String
+    ) : InvoicePreviewNavigationEvent()
 }
 
 @HiltViewModel
@@ -175,6 +179,7 @@ class InvoicePreviewViewModel @Inject constructor(
 
                 if (sunatResult.isSuccess) {
                     Log.d(TAG, "sendToSunat: borrador limpiado del store")
+                    _state.update { it.copy(emittedDraft = draft) }
                     draftStore.clear()
                 }
 
@@ -185,9 +190,9 @@ class InvoicePreviewViewModel @Inject constructor(
         }
     }
 
-    fun onSharePdf() {
-        val draft = draftStore.draft.value ?: return
+    fun onDownloadPdf() {
         val currentState = _state.value
+        val draft = currentState.emittedDraft ?: return
         if (currentState.sunatResponse?.isSuccess != true) return
 
         viewModelScope.launch {
@@ -201,7 +206,30 @@ class InvoicePreviewViewModel @Inject constructor(
                 val pdfFile = withContext(Dispatchers.IO) {
                     generateInvoicePdf(context, invoiceEntity, company)
                 }
-                
+                val fileName = "Comprobante_${currentState.documentId ?: "comprobante"}.pdf"
+                _navigationEvent.send(InvoicePreviewNavigationEvent.DownloadPdf(pdfFile, fileName))
+            } catch (e: Exception) {
+                _state.update { it.copy(error = "Error al generar PDF") }
+            }
+        }
+    }
+
+    fun onShare() {
+        val currentState = _state.value
+        val draft = currentState.emittedDraft ?: return
+        if (currentState.sunatResponse?.isSuccess != true) return
+
+        viewModelScope.launch {
+            try {
+                val company = getCompanyUseCase().getOrNull()
+                val invoiceEntity = draft.toPreviewEntity(
+                    serie = currentState.series ?: "",
+                    correlative = currentState.correlative?.toLongOrNull() ?: 0L,
+                    status = "ACEPTADA"
+                )
+                val pdfFile = withContext(Dispatchers.IO) {
+                    generateInvoicePdf(context, invoiceEntity, company)
+                }
                 _navigationEvent.send(InvoicePreviewNavigationEvent.ShareInvoice(
                     companyName = company?.businessName ?: "Mi Empresa",
                     companyRuc = company?.documentNumber ?: "",
@@ -212,14 +240,9 @@ class InvoicePreviewViewModel @Inject constructor(
                     pdfFile = pdfFile
                 ))
             } catch (e: Exception) {
-                _state.update { it.copy(error = "Error al generar PDF para compartir") }
+                _state.update { it.copy(error = "Error al compartir el comprobante") }
             }
         }
-    }
-
-    fun onShareMail() {
-        // Por ahora usamos el mismo flujo de compartir que permite elegir el correo
-        onSharePdf()
     }
 
     private fun generatePdfPreview() {

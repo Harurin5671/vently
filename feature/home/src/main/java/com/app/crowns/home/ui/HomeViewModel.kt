@@ -1,6 +1,5 @@
 package com.app.crowns.home.ui
 
-import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.app.crowns.domain.company.model.CompanyInfo
@@ -22,10 +21,9 @@ data class HomeUiState(
 @HiltViewModel
 class HomeViewModel @Inject constructor(
     private val getCompanyUseCase: GetCompanyUseCase,
-    savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow(HomeUiState(selectedTab = savedStateHandle["initialTab"] ?: 0))
+    private val _state = MutableStateFlow(HomeUiState())
     val state: StateFlow<HomeUiState> = _state.asStateFlow()
 
     init {

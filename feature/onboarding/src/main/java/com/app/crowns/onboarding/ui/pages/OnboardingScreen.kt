@@ -18,6 +18,7 @@ import com.app.crowns.onboarding.ui.OnboardingViewModel
 @Composable
 fun OnboardingScreen(
     onFinished: () -> Unit,
+    onNavigateToLogin: () -> Unit = {},
     viewModel: OnboardingViewModel = hiltViewModel()
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
@@ -27,6 +28,7 @@ fun OnboardingScreen(
         viewModel.navigationEvent.collect { event ->
             when (event) {
                 is OnboardingNavigationEvent.NavigateToHome -> onFinished()
+                is OnboardingNavigationEvent.NavigateToLogin -> onNavigateToLogin()
             }
         }
     }
@@ -67,13 +69,14 @@ fun OnboardingScreen(
                 logoUri = state.logoUri,
                 isFinishing = state.isFinishing,
                 error = state.searchError,
+                logoUploadFailed = state.logoUploadFailed,
                 onNavigateToApp = {
-                    // Comprime la imagen antes de enviarla
                     val logoBytes = state.logoUri?.let { uri ->
                         ImageUtils.compressImage(context, uri)
                     }
                     viewModel.onEvent(OnboardingEvent.Finish(logoBytes = logoBytes))
                 },
+                onSkipLogo = { viewModel.onEvent(OnboardingEvent.FinishWithoutLogo) },
                 onLogoSelected = { uri -> viewModel.onEvent(OnboardingEvent.OnLogoSelected(uri)) }
             )
         }

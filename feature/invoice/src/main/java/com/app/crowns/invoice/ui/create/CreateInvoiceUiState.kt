@@ -15,6 +15,7 @@ data class CreateInvoiceUiState(
     val clientBusinessName: String = "",
     val isSearchingRuc: Boolean = false,
     val rucError: String? = null,
+    val clientNameManualFallback: Boolean = false,
     val items: List<InvoiceItem> = emptyList(),
     val availableProducts: List<Product> = emptyList(),
     val categories: List<Category> = emptyList(),

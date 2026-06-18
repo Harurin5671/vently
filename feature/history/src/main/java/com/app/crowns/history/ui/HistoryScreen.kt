@@ -46,11 +46,18 @@ import com.app.crowns.history.ui.components.HistoryTopBar
 
 @Composable
 fun HistoryScreen(
+    expandInvoiceId: String? = null,
     viewModel: HistoryViewModel = hiltViewModel(),
 ) {
     val state by viewModel.state.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
     val context = LocalContext.current
+
+    LaunchedEffect(expandInvoiceId) {
+        if (expandInvoiceId != null) {
+            viewModel.onEvent(HistoryEvent.ExpandInvoice(expandInvoiceId))
+        }
+    }
 
     val snackbarState = rememberVentlySnackbarState()
     var pendingFileToDownload by remember { mutableStateOf<File?>(null) }

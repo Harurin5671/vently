@@ -49,6 +49,7 @@ fun ClientSection(
     clientBusinessName: String,
     isSearchingRuc: Boolean,
     rucError: String?,
+    clientNameManualFallback: Boolean = false,
     total: Double = 0.0,
     documentTypes: List<IdentityDocumentTypeEntity> = emptyList(),
     selectedDocumentType: IdentityDocumentTypeEntity? = null,
@@ -198,29 +199,52 @@ fun ClientSection(
                     val isRuc = selectedDocumentType.isRuc
                     val isDni = selectedDocumentType.isDni
                     val label = if (isRuc) "Razón Social *" else "Nombre / Razón Social *"
-                    val placeholder = if (isRuc || isDni) "Autocompletado" else "Obligatorio"
-                    
-                    // Jamás es editable si es RUC o DNI (debe usarse el botón Buscar)
-                    // Solo es editable para otros tipos de documento (Pasaporte, etc.)
-                    val isReadOnly = isRuc || isDni
 
-                    OutlinedTextField(
-                        value = if (isRuc) clientBusinessName else clientName,
-                        onValueChange = onClientNameChanged,
-                        readOnly = isReadOnly,
-                        enabled = !isReadOnly,
-                        label = { Text(label) },
-                        placeholder = { Text(placeholder, color = Outline) },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = Primary,
-                            unfocusedBorderColor = OutlineVariant,
-                            disabledBorderColor = OutlineVariant,
-                            disabledLabelColor = OnSurfaceVariant,
-                            disabledTextColor = OnSurface,
-                        ),
-                    )
+                    // El campo es editable solo cuando la búsqueda falló (fallback manual).
+                    // En búsqueda exitosa permanece read-only para no alterar datos del padrón.
+                    val isReadOnly = (isRuc || isDni) && !clientNameManualFallback
+                    val placeholder = when {
+                        clientNameManualFallback -> "Ingresa el nombre manualmente"
+                        isRuc || isDni -> "Autocompletado"
+                        else -> "Obligatorio"
+                    }
+                    val borderColor = when {
+                        clientNameManualFallback -> StockLow
+                        else -> Primary
+                    }
+                    val unfocusedBorderColor = when {
+                        clientNameManualFallback -> StockLow
+                        else -> OutlineVariant
+                    }
+
+                    Column {
+                        OutlinedTextField(
+                            value = if (isRuc) clientBusinessName else clientName,
+                            onValueChange = onClientNameChanged,
+                            readOnly = isReadOnly,
+                            enabled = !isReadOnly,
+                            label = { Text(label) },
+                            placeholder = { Text(placeholder, color = Outline) },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = borderColor,
+                                unfocusedBorderColor = unfocusedBorderColor,
+                                disabledBorderColor = OutlineVariant,
+                                disabledLabelColor = OnSurfaceVariant,
+                                disabledTextColor = OnSurface,
+                            ),
+                        )
+                        if (clientNameManualFallback) {
+                            Spacer(Modifier.height(4.dp))
+                            Text(
+                                text = "No encontrado en el padrón. Puedes ingresar el nombre para continuar.",
+                                fontSize = 11.sp,
+                                color = StockLow,
+                                fontWeight = FontWeight.Medium,
+                            )
+                        }
+                    }
                 } else {
                     // Si es "Sin documento", mostramos un mensaje informativo
                     Text(
@@ -312,25 +336,35 @@ fun ClientSection(
                     }
                 }
 
-                // Business name readonly
-                if (clientBusinessName.isNotBlank()) {
+                // Business name: read-only si vino de SUNAT, editable si la búsqueda falló
+                if (clientBusinessName.isNotBlank() || clientNameManualFallback) {
                     Column {
                         OutlinedTextField(
                             value = clientBusinessName,
-                            onValueChange = {},
-                            readOnly = true,
+                            onValueChange = onClientNameChanged,
+                            readOnly = !clientNameManualFallback,
+                            enabled = clientNameManualFallback,
+                            placeholder = if (clientNameManualFallback) {
+                                { Text("Ingresa la razón social manualmente", color = Outline) }
+                            } else null,
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = if (clientNameManualFallback) StockLow else Primary,
+                                unfocusedBorderColor = if (clientNameManualFallback) StockLow else OutlineVariant,
                                 disabledBorderColor = OutlineVariant,
-                                unfocusedBorderColor = OutlineVariant,
+                                disabledTextColor = OnSurface,
                             ),
                         )
                         Spacer(Modifier.height(2.dp))
                         Text(
-                            text = "Autocompletado desde SUNAT",
+                            text = if (clientNameManualFallback)
+                                "No encontrado en SUNAT. Puedes ingresar la razón social para continuar."
+                            else
+                                "Autocompletado desde SUNAT",
                             fontSize = 11.sp,
-                            color = OnSurfaceVariant,
+                            color = if (clientNameManualFallback) StockLow else OnSurfaceVariant,
+                            fontWeight = if (clientNameManualFallback) FontWeight.Medium else FontWeight.Normal,
                         )
                     }
                 }

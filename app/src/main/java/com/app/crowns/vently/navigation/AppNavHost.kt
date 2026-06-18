@@ -2,6 +2,7 @@ package com.app.crowns.vently.navigation
 
 import androidx.compose.animation.togetherWith
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
@@ -82,6 +83,10 @@ fun AppNavHost(
                         onFinished = {
                             backStack.clear()
                             backStack.add(AppDestination.Home())
+                        },
+                        onNavigateToLogin = {
+                            backStack.clear()
+                            backStack.add(AppDestination.Auth)
                         }
                     )
                 }
@@ -89,6 +94,9 @@ fun AppNavHost(
                 is AppDestination.Home -> NavEntry(destination) {
                     val homeViewModel: HomeViewModel = hiltViewModel()
                     val homeState by homeViewModel.state.collectAsStateWithLifecycle()
+                    LaunchedEffect(destination.initialTab) {
+                        homeViewModel.onTabSelected(destination.initialTab)
+                    }
                     HomeScreen(
                         selectedTab = homeState.selectedTab,
                         onTabSelected = { homeViewModel.onTabSelected(it) },
@@ -123,7 +131,7 @@ fun AppNavHost(
                                 },
                             )
                         },
-                        historyContent = { HistoryScreen() },
+                        historyContent = { HistoryScreen(expandInvoiceId = destination.expandInvoiceId) },
                         settingsContent = {
                             SettingsScreen(
                                 onNavigateToEditBusiness = {
@@ -178,9 +186,9 @@ fun AppNavHost(
                             backStack.clear()
                             backStack.add(AppDestination.Home())
                         },
-                        onNavigateToHistory = {
+                        onNavigateToHistory = { invoiceId ->
                             backStack.clear()
-                            backStack.add(AppDestination.Home(initialTab = 2))
+                            backStack.add(AppDestination.Home(initialTab = 2, expandInvoiceId = invoiceId))
                         },
                         viewModel = hiltViewModel(key = destination.id)
                     )

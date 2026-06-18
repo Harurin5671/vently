@@ -34,6 +34,7 @@ class OnboardingViewModel @Inject constructor(
             is OnboardingEvent.NextPage -> nextPage()
             is OnboardingEvent.PreviousPage -> previousPage()
             is OnboardingEvent.Finish -> saveAndFinish(event.logoBytes)
+            is OnboardingEvent.FinishWithoutLogo -> saveWithoutLogo()
             is OnboardingEvent.OnChangedRuc -> onChangedRuc(ruc = event.ruc)
             is OnboardingEvent.OnLogoSelected -> _state.update { it.copy(logoUri = event.uri) }
         }
@@ -48,7 +49,9 @@ class OnboardingViewModel @Inject constructor(
 
     private fun previousPage() {
         val current = _state.value
-        if (!current.isFirstPage) {
+        if (current.isFirstPage) {
+            viewModelScope.launch { _navigationEvent.send(OnboardingNavigationEvent.NavigateToLogin) }
+        } else {
             _state.update { it.copy(currentPage = it.currentPage - 1) }
         }
     }
@@ -58,15 +61,23 @@ class OnboardingViewModel @Inject constructor(
             val state = _state.value
             if (state.isFinishing) return@launch
             val companyInfo = state.companyInfo ?: return@launch
-            _state.update { it.copy(isFinishing = true, searchError = null) }
+            _state.update { it.copy(isFinishing = true, searchError = null, logoUploadFailed = false) }
 
             var logoUrl: String? = null
             if (logoBytes != null) {
-                uploadCompanyLogoUseCase(
-                    imageBytes = logoBytes,
-                ).onSuccess { url ->
-                    logoUrl = url
-                }
+                uploadCompanyLogoUseCase(imageBytes = logoBytes)
+                    .onSuccess { url -> logoUrl = url }
+                    .onFailure { error ->
+                        val message = error.toUserFriendlyMessage("No se pudo cargar el logo")
+                        _state.update {
+                            it.copy(
+                                isFinishing = false,
+                                logoUploadFailed = true,
+                                searchError = message,
+                            )
+                        }
+                        return@launch
+                    }
             }
 
             saveCompanyUseCase(companyInfo, logoUrl)
@@ -81,6 +92,24 @@ class OnboardingViewModel @Inject constructor(
                             searchError = message
                         )
                     }
+                }
+        }
+    }
+
+    private fun saveWithoutLogo() {
+        viewModelScope.launch {
+            val state = _state.value
+            if (state.isFinishing) return@launch
+            val companyInfo = state.companyInfo ?: return@launch
+            _state.update { it.copy(isFinishing = true, searchError = null, logoUploadFailed = false) }
+
+            saveCompanyUseCase(companyInfo, null)
+                .onSuccess {
+                    _navigationEvent.send(OnboardingNavigationEvent.NavigateToHome)
+                }
+                .onFailure { error ->
+                    val message = error.toUserFriendlyMessage("Error al guardar los datos")
+                    _state.update { it.copy(isFinishing = false, searchError = message) }
                 }
         }
     }

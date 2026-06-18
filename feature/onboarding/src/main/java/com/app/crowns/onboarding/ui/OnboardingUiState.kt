@@ -13,6 +13,7 @@ data class OnboardingUiState(
     val searchError: String? = null,
     val logoUri: Uri? = null,
     val isFinishing: Boolean = false,
+    val logoUploadFailed: Boolean = false,
 )
 
 val OnboardingUiState.isFirstPage get() = currentPage == 0
