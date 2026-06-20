@@ -137,6 +137,8 @@ class HistoryViewModel @Inject constructor(
 
     private fun cancelInvoice(invoiceId: String) {
         val invoice = _state.value.invoices.find { it.id == invoiceId } ?: return
+        val cancellableStatuses = setOf(InvoiceStatusEntity.ACCEPTED, InvoiceStatusEntity.OBSERVED, InvoiceStatusEntity.PENDING)
+        if (invoice.status !in cancellableStatuses) return
         if (invoice.status == InvoiceStatusEntity.ACCEPTED || invoice.status == InvoiceStatusEntity.OBSERVED) {
             _state.update { it.copy(showCancelReasonDialog = true, pendingCancelInvoiceId = invoiceId, cancelReasonInput = "") }
             return

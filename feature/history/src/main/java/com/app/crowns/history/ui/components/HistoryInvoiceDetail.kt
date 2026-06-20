@@ -20,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.app.crowns.designsystem.color.*
+import com.app.crowns.domain.catalog.entities.InvoiceStatusEntity
 import com.app.crowns.domain.invoice.entities.InvoiceEntity
 import com.app.crowns.ui.components.InvoiceActionButtons
 import com.app.crowns.ui.utils.formatDateTime
@@ -159,20 +160,27 @@ fun HistoryInvoiceDetail(
         }
 
         // Actions
+        val canCancel = invoice.status in setOf(
+            InvoiceStatusEntity.PENDING,
+            InvoiceStatusEntity.ACCEPTED,
+            InvoiceStatusEntity.OBSERVED,
+        )
         Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
             InvoiceActionButtons(
                 onDownloadPdf = onDownloadPdf,
                 onSend = onSend,
             )
-            TextButton(
-                onClick = onCancel,
-                modifier = Modifier.fillMaxWidth(),
-            ) {
-                Text(
-                    text = "Anular Documento",
-                    color = Error,
-                    fontSize = 14.sp,
-                )
+            if (canCancel) {
+                TextButton(
+                    onClick = onCancel,
+                    modifier = Modifier.fillMaxWidth(),
+                ) {
+                    Text(
+                        text = "Anular Documento",
+                        color = Error,
+                        fontSize = 14.sp,
+                    )
+                }
             }
         }
     }

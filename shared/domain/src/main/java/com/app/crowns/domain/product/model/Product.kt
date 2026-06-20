@@ -9,7 +9,7 @@ data class Product(
     val sku: String? = null,
     val category: Category? = null,
     val salePrice: Double,
-    val costPrice: Double? = null,
+    val costPrice: Double,
     val igvType: IgvTypeEntity,
     val unitOfMeasure: String,
     val trackStock: Boolean,
@@ -20,7 +20,6 @@ data class Product(
 
 val Product.profitMargin: Double
     get() {
-        val cost = costPrice ?: return 0.0
-        if (cost == 0.0) return 0.0
-        return ((salePrice - cost) / salePrice) * 100
+        if (costPrice == 0.0) return 0.0
+        return ((salePrice - costPrice) / salePrice) * 100
     }

@@ -115,16 +115,14 @@ fun ProductDetailSheet(
             label = "Precio de venta",
             value = "S/ ${String.format(locale, "%.2f", product.salePrice)}",
         )
-        if (product.costPrice != null) {
-            ProductDetailRow(
-                label = "Precio de costo",
-                value = "S/ ${String.format(locale, "%.2f", product.costPrice)}",
-            )
-            ProductDetailRow(
-                label = "Margen de ganancia",
-                value = "${String.format(locale, "%.1f", product.profitMargin)}%",
-            )
-        }
+        ProductDetailRow(
+            label = "Precio de costo",
+            value = "S/ ${String.format(locale, "%.2f", product.costPrice)}",
+        )
+        ProductDetailRow(
+            label = "Margen de ganancia",
+            value = "${String.format(locale, "%.1f", product.profitMargin)}%",
+        )
         ProductDetailRow(
             label = "Stock actual",
             value = "${product.currentStock} uds",

@@ -12,7 +12,7 @@ data class ProductEntity(
     @SerialName("sku") val sku: String? = null,
     @SerialName("category_id") val categoryId: String? = null,
     @SerialName("sale_price") val salePrice: Double,
-    @SerialName("cost_price") val costPrice: Double? = null,
+    @SerialName("cost_price") val costPrice: Double,
     @SerialName("igv_type") val igvType: String,
     @SerialName("unit_of_measure") val unitOfMeasure: String,
     @SerialName("track_stock") val trackStock: Boolean,

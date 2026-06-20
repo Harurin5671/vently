@@ -124,16 +124,6 @@ fun EditBusinessProfileContent(
                         )
                     }
                 },
-                actions = {
-                    TextButton(onClick = onSave, enabled = !state.isSaving) {
-                        Text(
-                            text = if (state.isSaving) "Guardando..." else "Guardar",
-                            color = Primary,
-                            fontSize = 14.sp,
-                            fontWeight = FontWeight.Medium,
-                        )
-                    }
-                },
                 colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
                 modifier = Modifier.border(0.5.dp, OutlineVariant)
             )

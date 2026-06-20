@@ -8,10 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Inventory
-import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -94,20 +91,7 @@ private fun StockContent(
                         color = OnSurface,
                     )
                 },
-                actions = {
-                    if (state.products.isNotEmpty() || state.isLoading) {
-                        IconButton(onClick = { }) {
-                            Icon(
-                                imageVector = Icons.Filled.Search,
-                                contentDescription = "Buscar",
-                                tint = OnSurfaceVariant,
-                            )
-                        }
-                    }
-                },
-                colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = Surface,
-                ),
+                colors = TopAppBarDefaults.topAppBarColors(containerColor = Surface),
             )
         }
     ) { innerPadding ->
@@ -184,6 +168,16 @@ private fun StockContent(
                         StockFiltersRow(
                             selectedFilter = state.selectedFilter,
                             onFilterSelected = { onEvent(StockEvent.OnFilterSelected(it)) },
+                        )
+                    }
+                }
+
+                // Search bar
+                if (!state.isLoading || state.products.isNotEmpty()) {
+                    item {
+                        StockSearchBar(
+                            query = state.searchQuery,
+                            onQueryChange = { onEvent(StockEvent.OnSearchChanged(it)) },
                         )
                     }
                 }
